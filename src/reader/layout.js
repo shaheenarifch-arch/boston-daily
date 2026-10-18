@@ -44,7 +44,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&family=Public+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/css/reader.css?v=10">
+<link rel="stylesheet" href="/css/reader.css?v=11">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
@@ -108,6 +108,43 @@ ${body}
     <p>© ${new Date().getFullYear()} ${esc(site.name)}, ${esc(site.network)}.</p>
   </div>
 </footer>
+<div id="site-toast" class="site-toast" role="status" aria-live="polite" hidden></div>
+<script>
+(() => {
+  // Every form shows it is working the moment it is submitted.
+  document.addEventListener('submit', (e) => {
+    const f = e.target;
+    if (!(f instanceof HTMLFormElement) || f.method.toLowerCase() !== 'post') return;
+    const b = f.querySelector('button[type=submit], button:not([type])');
+    if (b) { b.dataset.label = b.textContent; b.textContent = 'Sending…'; b.disabled = true; b.setAttribute('aria-busy', 'true'); }
+  });
+  window.addEventListener('pageshow', () => document.querySelectorAll('button[aria-busy]').forEach((b) => { b.disabled = false; b.removeAttribute('aria-busy'); if (b.dataset.label) b.textContent = b.dataset.label; }));
+  // Confirmation after any submission, on every page.
+  const p = new URLSearchParams(location.search);
+  const msgs = {
+    sent: p.get('sent') === '1' && (location.pathname.startsWith('/advertise')
+      ? 'Thank you. Your inquiry was received and saved. Our partnerships team will reply by email.'
+      : 'Thank you. You are subscribed. Look for your first email tomorrow morning.'),
+    comment: { sent: 'Thank you. Your comment was received and will appear once an editor approves it.', error: 'Your comment was not sent: add your name and at least 10 characters.', slow: 'Your comment was not sent: please wait a few minutes and try again.' }[p.get('comment')],
+    unsubscribed: p.get('unsubscribed') && 'You have been unsubscribed.',
+    error: p.get('error') && ({ email: 'Not sent: please enter a valid email address.', choose: 'Not sent: choose at least one newsletter.' }[p.get('error')] || 'Not sent: ' + p.get('error')),
+  };
+  const key = Object.keys(msgs).find((k) => msgs[k]);
+  if (!key) return;
+  const t = document.getElementById('site-toast');
+  const bad = key === 'error' || (key === 'comment' && p.get('comment') !== 'sent');
+  t.textContent = msgs[key];
+  t.className = 'site-toast ' + (bad ? 'site-toast-err' : 'site-toast-ok');
+  t.hidden = false;
+  const close = document.createElement('button'); close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', 'Dismiss'); close.onclick = () => { t.hidden = true; }; t.append(close);
+  setTimeout(() => { t.hidden = true; }, 10000);
+  const inPage = document.querySelector('.flash');
+  if (inPage) inPage.scrollIntoView({ block: 'center' });
+  // Clean the address bar so a refresh does not repeat the message.
+  ['sent', 'comment', 'unsubscribed', 'error'].forEach((k) => p.delete(k));
+  history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
+})();
+</script>
 </body>
 </html>`;
 }

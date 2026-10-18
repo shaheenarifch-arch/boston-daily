@@ -520,7 +520,7 @@ export async function advertisePage(env, url) {
   const body = `<div class="page-head"><h1>Advertise with Boston Daily</h1>
       <p class="page-sub">Email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>${site.phone ? ` or call ${esc(site.phone)}` : ''}. Every campaign is reviewed before it runs.</p></div>
     ${sent ? '<p class="flash flash-ok">Thanks. Your inquiry reached our partnerships team, and we will reply by email.</p>' : ''}
-    ${err ? `<p class="flash flash-err">${esc(err)}</p>` : ''}
+    ${err ? `<p class="flash flash-err">${err === 'email' ? 'Not sent: please enter a valid email address.' : esc(err)}</p>` : ''}
     <div class="columns"><div class="col-main">
       <table class="ad-table"><thead><tr><th scope="col">Product</th><th scope="col">What it is</th><th scope="col">Ask about it</th></tr></thead>
       <tbody>${products.map(([tag, name, desc]) => `<tr><td>${esc(name)}</td><td>${esc(desc)}</td><td>${mail(tag, name)}</td></tr>`).join('')}</tbody></table>
@@ -534,8 +534,9 @@ export async function advertisePage(env, url) {
           <li>We do not accept ads for illegal products, weapons, adult content, counterfeit goods, unapproved health or financial claims, or unreviewed crypto schemes.</li>
         </ul></section>
     </div>
-    <aside class="col-rail"><form class="inquiry" method="post" action="/api/inquiry">
+    <aside class="col-rail"><form class="inquiry" id="inquiry" method="post" action="/api/inquiry">
       <h2>Send an inquiry</h2>
+      ${sent ? '<p class="flash flash-ok">Received. Thank you. We saved your inquiry and will reply by email.</p>' : ''}
       <label>Inquiry type<select name="type" required>
         ${['ADS', 'FRONT PAGE', 'SPONSORED', 'LISTING', 'PARTNER', 'NEWSLETTER', 'COURSES'].map((t) => `<option value="${t}">${t.charAt(0) + t.slice(1).toLowerCase()}</option>`).join('')}
       </select></label>
@@ -552,17 +553,28 @@ export async function advertisePage(env, url) {
   return html(layout(env, chrome, { title: 'Advertise with us', description: 'Advertising, listings and sponsorships on Boston Daily.', canonical: '/advertise', body }));
 }
 
-export async function submitInquiry(env, request) {
+export async function submitInquiry(env, request, ctx) {
   const form = await request.formData();
   const get = (k, max = 300) => String(form.get(k) || '').trim().slice(0, max);
-  if (get('company_site')) return Response.redirect(new URL('/advertise?sent=1', request.url), 303); // honeypot
+  if (get('company_site')) return Response.redirect(new URL('/advertise?sent=1#inquiry', request.url), 303); // honeypot
   const email = get('email', 200);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.redirect(new URL('/advertise?error=' + encodeURIComponent('Enter a valid email address.'), request.url), 303);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.redirect(new URL('/advertise?error=email#inquiry', request.url), 303);
   const website = get('website');
   await env.DB.prepare('INSERT INTO inquiries (id, type, company, name, email, website, package, budget, dates, message, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
     .bind(uid(), get('type', 40) || 'ADS', get('company', 160), get('name', 120), email, website && isHttpUrl(website) ? website : null, get('type', 40),
       get('budget', 80), get('dates', 120), get('message', 3000), 'new', nowIso()).run();
-  return Response.redirect(new URL('/advertise?sent=1', request.url), 303);
+  // Tell the team right away (when email sending is configured); the inquiry is also in /admin under Ad inquiries.
+  if (env.RESEND_API_KEY && env.NEWSLETTER_FROM) {
+    const site = SITE(env);
+    const lines = [['Type', get('type', 40)], ['Company', get('company', 160)], ['Name', get('name', 120)], ['Email', email], ['Website', website], ['Budget', get('budget', 80)], ['Dates', get('dates', 120)], ['Message', get('message', 3000)]];
+    const notify = fetch('https://api.resend.com/emails', {
+      method: 'POST', headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ from: env.NEWSLETTER_FROM, to: [env.INQUIRY_EMAIL || site.email], reply_to: email, subject: `New ad inquiry: ${get('company', 160) || get('name', 120) || email}`,
+        html: `<p>New inquiry from the Boston Daily Advertise page.</p><table>${lines.map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td>${esc(v || '')}</td></tr>`).join('')}</table><p>Manage it in /admin under Ad inquiries.</p>` }),
+    }).catch((e) => console.error('inquiry notify', e));
+    ctx?.waitUntil?.(notify);
+  }
+  return Response.redirect(new URL('/advertise?sent=1#inquiry', request.url), 303);
 }
 
 // ───────────────────────────── Trust pages, search, feeds ─────────────────────────────

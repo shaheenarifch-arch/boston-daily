@@ -68,7 +68,7 @@ const worker = {
         }
       }
 
-      if (pathname === '/api/inquiry' && method === 'POST') return await submitInquiry(env, request);
+      if (pathname === '/api/inquiry' && method === 'POST') return await submitInquiry(env, request, ctx);
       if (pathname === '/subscribe' && method === 'POST') return await subscribe(env, request);
       let cm;
       if ((cm = pathname.match(/^\/story\/([a-z0-9-]+)\/comment$/)) && method === 'POST') return await submitComment(env, request, cm[1]);

@@ -425,3 +425,12 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .more-title { font: 700 .95rem/1.2 var(--sans); margin: 0 0 .5rem; padding-bottom: .4rem; border-bottom: 2px solid var(--ink); }
 .more-title a { color: var(--ink); text-decoration: none; }
 .more-col .card-s:first-of-type { padding-top: .2rem; }
+
+/* Site-wide confirmation toast after any form submission */
+.site-toast { position: fixed; z-index: 50; top: 1rem; left: 50%; transform: translateX(-50%); width: min(36rem, calc(100% - 2rem)); display: flex; gap: 1rem; align-items: flex-start; justify-content: space-between; padding: .9rem 1rem; border-radius: 6px; font: 500 .95rem/1.45 var(--sans); box-shadow: 0 8px 30px rgba(0,0,0,.18); }
+.site-toast[hidden] { display: none; }
+.site-toast-ok { background: var(--common-ink); color: #fff; }
+.site-toast-err { background: #8a2f1d; color: #fff; }
+.site-toast button { background: none; border: 0; color: inherit; font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 .2rem; }
+button[aria-busy="true"] { opacity: .7; cursor: progress; }
+.inquiry .flash { margin: .5rem 0 1rem; }
