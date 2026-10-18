@@ -119,6 +119,23 @@ ${body}
     if (b) { b.dataset.label = b.textContent; b.textContent = 'Sending…'; b.disabled = true; b.setAttribute('aria-busy', 'true'); }
   });
   window.addEventListener('pageshow', () => document.querySelectorAll('button[aria-busy]').forEach((b) => { b.disabled = false; b.removeAttribute('aria-busy'); if (b.dataset.label) b.textContent = b.dataset.label; }));
+  // A picture that fails to load is swapped for a neat section plate (cards) or removed, never a broken icon.
+  window.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    const fig = img.closest('.card-figure, .card-thumb, .story-figure, .shop-img, .premium-img');
+    if (!fig) return;
+    if (fig.classList.contains('card-figure')) {
+      const card = fig.closest('.card');
+      const label = card?.querySelector('.card-section')?.textContent || 'Boston Daily';
+      fig.className = 'card-figure card-figure-empty'; fig.innerHTML = '<span></span>'; fig.firstChild.textContent = label;
+    } else if (fig.classList.contains('shop-img') || fig.classList.contains('premium-img')) {
+      img.style.visibility = 'hidden';
+    } else fig.remove();
+  }, true);
+  document.querySelectorAll('.card-figure img, .card-thumb img, .story-figure img').forEach((img) => {
+    if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) img.dispatchEvent(new Event('error'));
+  });
   // Confirmation after any submission, on every page.
   const p = new URLSearchParams(location.search);
   const msgs = {

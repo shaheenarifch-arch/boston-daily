@@ -4,7 +4,7 @@ import { handleAdmin } from './admin-api.js';
 import { ingestBlogPost, ingestProducts, ingestBusinesses, ingestCourses } from './ingest.js';
 import { publishDueScheduled } from './lifecycle.js';
 import { buildEdition } from './editions.js';
-import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
+import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
 import { ensureDatabase } from './bootstrap.js';
 import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
@@ -114,7 +114,7 @@ const worker = {
   async scheduled(event, env, ctx) {
     await ensureDatabase(env.DB);
     if (event.cron === '*/5 * * * *') {
-      ctx.waitUntil(publishDueScheduled(env.DB));
+      ctx.waitUntil(publishDueScheduled(env.DB).then(() => checkStoryImages(env.DB, 12)));
       return;
     }
     // Daily: build and publish today's edition, then routine link and health checks.

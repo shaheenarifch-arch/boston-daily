@@ -10,7 +10,7 @@ import {
 import { buildEdition, curateEdition } from './editions.js';
 import { visitorStats } from './analytics.js';
 import { searchConsoleReport } from './gsc.js';
-import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
+import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
   'hero_image_rights', 'disclosure_label', 'disclosure_text', 'sponsor_name', 'sensitive', 'priority', 'is_lead_candidate', 'slug'];
@@ -195,6 +195,7 @@ export async function handleAdmin(request, env, url, editor) {
       }
     }
 
+    if (path === '/maintenance/images' && method === 'POST') return json({ ok: true, images: await checkStoryImages(db, 20) });
     if (path === '/maintenance/link-check' && method === 'POST') {
       return json({ ok: true, products: await checkProductLinks(db, 25), businesses: await checkBusinessHealth(db, 15) });
     }
@@ -342,6 +343,7 @@ async function editStory(db, id, body, editor) {
     binds.push(value);
   }
   if (!sets.length) return errorJson('Nothing to change', 400);
+  if (body.hero_image_url !== undefined) sets.push('image_checked_at = NULL'); // re-check a newly set image
   const ts = nowIso();
   // Editing approved content invalidates the approval: it must be reviewed again.
   const invalidates = ['APPROVED', 'SCHEDULED'].includes(story.status);
