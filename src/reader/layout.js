@@ -68,7 +68,7 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
   <nav class="nav nav-niche" aria-label="More sections"><div class="wrap nav-scroll">
     ${niche.map(navLink).join('')}
     <a href="/shop"${active === 'shop' ? ' aria-current="page"' : ''}>Partner picks</a>
-    <a href="/courses"${active === 'courses' ? ' aria-current="page"' : ''}>Courses</a>
+    <a href="/courses"${active === 'courses' ? ' aria-current="page"' : ''}>Skill Center</a>
   </div></nav>
 </header>
 <main id="main" class="wrap">

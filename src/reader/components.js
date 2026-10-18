@@ -133,13 +133,13 @@ export function networkModule(businesses, network, { title = 'From our network' 
   </aside>`;
 }
 
-export function courseModule(courses, network, { title = 'Learn with RealSkillSet' } = {}) {
+export function courseModule(courses, network, { title = 'Skill Center' } = {}) {
   if (!courses || !courses.length) return '';
   return `<aside class="module module-courses" aria-label="${esc(title)}">
     <header class="module-head"><h2 class="module-title">${esc(title)}</h2></header>
     <p class="module-disclosure">RealSkillSet is part of the ${esc(network)} network. Some courses are affiliate partners.</p>
     <ul class="course-list">${courses.map(courseItem).join('')}</ul>
-    <a class="module-more" href="/courses">Browse RealSkillSet courses</a>
+    <a class="module-more" href="/courses">Visit the Skill Center</a>
   </aside>`;
 }
 
@@ -149,7 +149,7 @@ export function courseItem(c) {
     <a href="/go/c/${esc(c.slug)}" rel="${c.type === 'affiliate' ? 'sponsored nofollow noopener' : 'noopener'}" target="_blank">
       <strong>${esc(c.title)}</strong>
       ${meta ? `<span class="course-meta">${meta}</span>` : ''}
-      <span class="course-price">${c.price ? esc(money(c.price, c.currency)) : 'Free'}${c.type === 'affiliate' ? ' <span class="label label-commerce">Affiliate</span>' : ''}</span>
+      <span class="course-price">${c.price ? esc(money(c.price, c.currency)) : 'Free to start'}${c.type === 'affiliate' ? ' <span class="label label-commerce">Affiliate</span>' : ''}</span>
     </a>
   </li>`;
 }

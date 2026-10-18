@@ -6,6 +6,8 @@ import d20261017sections from './2026-10-17-sections.sql';
 import d20261017guides from './2026-10-17-guides.sql';
 import d20261018 from './2026-10-18.sql';
 import d20261018sports from './2026-10-18-sports.sql';
+import d20261018more from './2026-10-18-more.sql';
+import d20261018courses from './2026-10-18-courses.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -13,4 +15,6 @@ export const CONTENT_PACKAGES = [
   ['2026-10-17-guides', d20261017guides],
   ['2026-10-18', d20261018],
   ['2026-10-18-sports', d20261018sports],
+  ['2026-10-18-more', d20261018more],
+  ['2026-10-18-courses', d20261018courses],
 ];

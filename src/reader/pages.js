@@ -11,7 +11,7 @@ const PUBLIC = "('PUBLISHED','UPDATED','CORRECTED')";
 const STORY_COLS = `s.id, s.slug, s.lane, s.type, s.section_slug, s.status, s.sensitive, s.headline, s.dek, substr(s.body, 1, 600) AS body,
   s.hero_image_url, s.hero_image_rights, s.disclosure_label, s.published_at, s.last_updated_at, s.corrected_at, s.priority, s.is_lead_candidate, sec.name AS section_name`;
 const PRODUCT_COLS = 'p.*, m.name AS merchant_name, m.display_name_allowed';
-const COURSE_SECTIONS = ['education-careers', 'business', 'technology', 'ai'];
+const COURSE_SECTIONS = ['education-careers', 'business', 'technology', 'ai', 'science'];
 
 /**
  * Commercial share of a page stays around 10-15%: one commercial module per ~7 content blocks,
@@ -172,7 +172,7 @@ export async function homePage(env, editionDate = null) {
     <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
     <div class="row-cards">${partnerGuides.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
   </section>` : '',
-    courseModule(cotd, site.network, { title: 'RealSkillSet course of the day' }),
+    courseModule(cotd, site.network, { title: 'Skill Center: course of the day' }),
   ]);
   const isMain = (m) => m.includes('partner-row') || m.includes('product-grid') || m.includes('shop-band');
   const railCommercial = picked.filter((m) => !isMain(m)).join('');
@@ -210,7 +210,7 @@ export async function homePage(env, editionDate = null) {
   <section class="section-row">
     <h2 class="row-title">Guides and shopping</h2>
     <ul class="section-grid">${nicheSections.map((x) => `<li><a href="/section/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}
-      <li><a href="/courses">RealSkillSet courses</a></li></ul>
+      <li><a href="/courses">Skill Center</a></li></ul>
   </section>
   ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}`;
 
@@ -476,13 +476,13 @@ export async function coursesPage(env, url) {
     ? await env.DB.prepare("SELECT * FROM courses WHERE status = 'active' AND category = ? ORDER BY title").bind(cat).all()
     : await env.DB.prepare("SELECT * FROM courses WHERE status = 'active' ORDER BY category, title").all();
   const { results: cats } = await env.DB.prepare("SELECT category, COUNT(*) AS n FROM courses WHERE status = 'active' AND category IS NOT NULL GROUP BY category ORDER BY category").all();
-  const body = `<div class="page-head"><h1>RealSkillSet courses</h1>
-      <p class="page-sub">Courses from RealSkillSet, part of the ${esc(site.network)} network. Partner courses are marked Affiliate.</p>
+  const body = `<div class="page-head"><h1>Skill Center</h1>
+      <p class="page-sub">Online courses to learn new skills, curated by RealSkillSet (part of the ${esc(site.network)} network). Partner courses are marked Affiliate; check certificate fees on the provider’s site.</p>
       ${cats.length ? `<nav class="chips" aria-label="Course categories"><a href="/courses"${!cat ? ' aria-current="page"' : ''}>All</a>${cats.map((c) => `<a href="/courses?category=${encodeURIComponent(c.category)}"${cat === c.category ? ' aria-current="page"' : ''}>${esc(c.category)}</a>`).join('')}</nav>` : ''}
     </div>
     ${results.length ? `<ul class="course-list course-list-wide">${results.map(courseItem).join('')}</ul>` : emptyState('The RealSkillSet catalog is being added. Visit realskillset.com in the meantime.', '<p><a class="button" href="https://realskillset.com" rel="noopener" target="_blank">Visit RealSkillSet</a></p>')}
     <p class="cta-line"><a href="mailto:${esc(site.email)}?subject=${encodeURIComponent('[COURSES] List my course')}">List your course</a></p>`;
-  return html(layout(env, chrome, { title: 'RealSkillSet courses', description: 'Learn new skills with RealSkillSet.', canonical: '/courses', active: 'courses', body }));
+  return html(layout(env, chrome, { title: 'Skill Center', description: 'Online courses to learn new skills: technology, business, languages, science and more.', canonical: '/courses', active: 'courses', body }));
 }
 
 export async function advertisePage(env, url) {
