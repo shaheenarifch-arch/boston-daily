@@ -7,12 +7,14 @@
  */
 import m0001 from '../migrations/0001_init.sql';
 import m0002 from '../migrations/0002_comments_and_attribution.sql';
+import m0003 from '../migrations/0003_fix_wikimedia_image_host.sql';
 import seedSql from '../seed/seed.sql';
 import { CONTENT_PACKAGES } from '../content/index.js';
 
 const MIGRATIONS = [
   ['0001_init.sql', m0001],
   ['0002_comments_and_attribution.sql', m0002],
+  ['0003_fix_wikimedia_image_host.sql', m0003],
 ];
 
 let ready = null;
