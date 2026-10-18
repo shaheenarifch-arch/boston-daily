@@ -69,7 +69,7 @@ export function approvalProblems(story, section, sources, actor) {
 
   if (story.lane === 'newsroom') {
     if (!NEWSROOM_TYPES.includes(story.type)) problems.push(`Type "${story.type}" is not allowed in the newsroom lane.`);
-    if (story.type === 'opinion' && story.section_slug !== 'opinion') problems.push('Opinion pieces must be filed in the Opinion section.');
+    if (story.type === 'opinion' && story.section_slug !== 'opinion' && section?.parent_slug !== 'opinion') problems.push('Opinion pieces must be filed in the Opinion section.');
     if (story.disclosure_label === 'Sponsored' || story.sponsor_name) problems.push('Newsroom stories cannot carry sponsorship.');
     problems.push(...sourceProblems(sources, story.type));
   } else {

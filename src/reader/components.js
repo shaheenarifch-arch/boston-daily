@@ -84,6 +84,27 @@ export function partnerPicks(products, { title = 'Partner picks', more = '/shop'
   </aside>`;
 }
 
+/**
+ * Front-page "Shop" band: a print-style advertising strip. Products only (no business names
+ * beyond the merchant when allowed), always labeled Advertisement with an affiliate disclosure.
+ */
+export function shopBand(products, { title = 'Shop the day' } = {}) {
+  const list = (products || []).filter((p) => p.image_url && p.image_rights_ok).slice(0, 6);
+  if (list.length < 3) return '';
+  return `<section class="shop-band" aria-label="Advertisement">
+    <header class="shop-head"><span class="label label-ad">Advertisement</span><h2 class="shop-title">${esc(title)}</h2>
+      <p class="shop-disclosure">Affiliate links. We may earn a commission; partners never influence our news coverage.</p></header>
+    <ul class="shop-row">${list.map((p) => `<li class="shop-item">
+      <a href="/go/p/${esc(p.id)}" rel="sponsored nofollow noopener" target="_blank">
+        <span class="shop-img"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async"></span>
+        <span class="shop-name">${esc(p.name)}</span>
+        ${p.price != null ? `<span class="shop-price">${esc(money(p.price, p.currency))}</span>` : ''}
+        <span class="shop-cta">Shop now</span>
+      </a></li>`).join('')}</ul>
+    <a class="shop-more" href="/shop">More partner picks</a>
+  </section>`;
+}
+
 export function networkModule(businesses, network, { title = 'From our network' } = {}) {
   if (!businesses || !businesses.length) return '';
   return `<aside class="module module-network" aria-label="${esc(title)}">

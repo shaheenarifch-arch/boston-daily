@@ -3,7 +3,7 @@ import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { layout, loadChrome } from './layout.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, networkModule, courseModule, courseItem, houseAd, productCard,
+  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, courseModule, courseItem, houseAd, productCard,
   sourcesBlock, noticesBlock, emptyState, storyStamp,
 } from './components.js';
 
@@ -71,17 +71,19 @@ export async function homePage(env, editionDate = null) {
   if (editionDate && !data) return notFound(env, chrome, 'There is no edition for that date.');
 
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-  const [{ results: latest }, { results: mostRead }, picks, network, cotd] = await Promise.all([
+  const [{ results: pool }, { results: mostRead }, picks, network, cotd] = await Promise.all([
     db.prepare(`SELECT ${STORY_COLS}, COALESCE(s.corrected_at, s.last_updated_at, s.published_at) AS activity FROM stories s JOIN sections sec ON sec.slug = s.section_slug
-      WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} ORDER BY activity DESC LIMIT 8`).all(),
+      WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} ORDER BY activity DESC LIMIT 80`).all(),
     db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
       WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} AND s.published_at >= ? AND s.view_count > 0 ORDER BY s.view_count DESC LIMIT 5`).bind(weekAgo).all(),
-    deals(db, { limit: 4 }),
-    networkFor(db, null, 5),
+    deals(db, { limit: 6 }),
+    [],
     courseOfTheDay(db, site.tz),
   ]);
   const { results: partnerGuides } = await db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
     WHERE s.lane = 'partner_commerce' AND s.status IN ${PUBLIC} AND s.sensitive = 0 AND sec.commerce_allowed = 1 ORDER BY s.published_at DESC LIMIT 3`).all();
+
+  const latest = pool.slice(0, 8);
 
   // Hydrate section names for edition items.
   const nameOf = Object.fromEntries(chrome.sections.map((s) => [s.slug, s.name]));
@@ -89,10 +91,12 @@ export async function homePage(env, editionDate = null) {
   if (!editionDate) {
     const placed = new Set(items.map((i) => i.id));
     // Newest first, but a flagged lead candidate or higher-priority story leads.
-    const extra = latest.filter((s) => !placed.has(s.id))
+    const extra = pool.filter((s) => !placed.has(s.id))
       .sort((a, b) => (b.is_lead_candidate - a.is_lead_candidate) || (b.priority - a.priority) || String(b.published_at).localeCompare(String(a.published_at)));
     if (!items.some((i) => i.slot === 'lead') && extra.length) items.unshift({ ...extra.shift(), slot: 'lead' });
-    while (items.filter((i) => i.slot === 'top').length < 6 && extra.length) items.push({ ...extra.shift(), slot: 'top' });
+    while (items.filter((i) => i.slot === 'top').length < 8 && extra.length) items.push({ ...extra.shift(), slot: 'top' });
+    // Everything else published fills the section rows below the fold (until an edition curates them).
+    for (const s of extra) items.push({ ...s, slot: 'section' });
   }
   const lead = items.find((i) => i.slot === 'lead');
   const top = items.filter((i) => i.slot === 'top');
@@ -150,8 +154,7 @@ export async function homePage(env, editionDate = null) {
   const contentBlocks = hasNews ? (1 + top.length + rest.length + selection.length + latest.length) : 8;
   const picked = commercialBudget(contentBlocks, [
     houseAd(site, 'FRONT PAGE', 'home'),
-    partnerPicks(picks, { title: 'Today’s deals' }),
-    networkModule(network, site.network),
+    shopBand(picks),
     partnerGuides.length ? `<section class="section-row partner-row">
     <h2 class="row-title">Guides from our partners</h2>
     <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
@@ -159,7 +162,7 @@ export async function homePage(env, editionDate = null) {
   </section>` : '',
     courseModule(cotd, site.network, { title: 'RealSkillSet course of the day' }),
   ]);
-  const isMain = (m) => m.includes('partner-row') || m.includes('product-grid');
+  const isMain = (m) => m.includes('partner-row') || m.includes('product-grid') || m.includes('shop-band');
   const railCommercial = picked.filter((m) => !isMain(m)).join('');
   const mainCommercial = picked.filter(isMain).join('');
 
@@ -186,16 +189,16 @@ export async function homePage(env, editionDate = null) {
     <div class="fg-b">${colB}</div>
     <aside class="fg-c">${colC}</aside>
   </section>
+  ${mainCommercial}
   ${sectionRows}
   ${selection.length ? `<section class="section-row selection">
     <h2 class="row-title">Editor’s selection</h2>
     <div class="row-cards">${selection.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
   </section>` : ''}
-  ${mainCommercial}
   <section class="section-row">
     <h2 class="row-title">Guides and shopping</h2>
     <ul class="section-grid">${nicheSections.map((x) => `<li><a href="/section/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}
-      <li><a href="/businesses">Recommended businesses</a></li><li><a href="/courses">RealSkillSet courses</a></li></ul>
+      <li><a href="/courses">RealSkillSet courses</a></li></ul>
   </section>
   ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}`;
 
@@ -249,7 +252,7 @@ export async function sectionPage(env, slug) {
     showCommerce ? db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
       WHERE s.lane = 'partner_commerce' AND s.status IN ${PUBLIC} AND s.section_slug IN (${ph}) ORDER BY s.published_at DESC LIMIT 6`).bind(...slugs).all().then((r) => r.results) : [],
     showCommerce ? deals(db, { section: slug, limit: 6 }) : [],
-    showCommerce ? networkFor(db, slug, 4) : [],
+    [],
     showCommerce && COURSE_SECTIONS.includes(slug) ? coursesFor(db, slug, 3) : [],
   ]);
 
@@ -262,7 +265,6 @@ export async function sectionPage(env, slug) {
           <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
           <div class="row-cards">${commercial.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
         </section>` : '',
-    networkModule(network, site.network),
     courseModule(courses, site.network),
   ];
   // News sections keep commercial content to ~15% of the page; guide/shopping sections are partner-led.
@@ -312,7 +314,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   const showCommerce = commerceAllowed(section, story);
   const [products, network] = await Promise.all([
     showCommerce ? deals(db, { section: story.section_slug, limit: 3 }) : [],
-    showCommerce && commercial ? networkFor(db, story.section_slug, 3) : [],
+    [],
   ]);
 
   const typeLabel = { analysis: 'Analysis', opinion: 'Opinion', feature: 'Feature' }[story.type];
@@ -347,7 +349,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   ${related.length ? `<section class="section-row related"><h2 class="row-title">More in ${esc(section?.name || '')}</h2>
     <div class="row-cards">${related.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div></section>` : ''}
   ${partnerPicks(products, { title: 'Related partner picks', more: `/shop?section=${encodeURIComponent(story.section_slug)}` })}
-  ${networkModule(network, site.network)}`;
+`;
 
   const url = site.url ? `${site.url}/story/${story.slug}` : undefined;
   const jsonLd = {

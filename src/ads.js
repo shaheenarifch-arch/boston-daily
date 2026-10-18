@@ -13,6 +13,8 @@ export const CAMPAIGNS = [
     cta: 'See Boston passes',
     url: 'https://tickets.online/?utm_source=bostondaily&utm_medium=display&utm_campaign=boston-passes',
     placements: ['home', 'travel', 'lifestyle', 'entertainment', 'us', 'food-culture', 'outdoor', 'deals'],
+    // Paused: tickets.online does not resolve (no such domain). Set the correct URL, then set active: true.
+    active: false,
     start: '2026-10-18',
     end: null,
   },
@@ -20,5 +22,5 @@ export const CAMPAIGNS = [
 
 export function campaignFor(placement, now = new Date()) {
   const today = now.toISOString().slice(0, 10);
-  return CAMPAIGNS.find((c) => c.placements.includes(placement) && (!c.start || c.start <= today) && (!c.end || c.end >= today)) || null;
+  return CAMPAIGNS.find((c) => c.active !== false && c.placements.includes(placement) && (!c.start || c.start <= today) && (!c.end || c.end >= today)) || null;
 }

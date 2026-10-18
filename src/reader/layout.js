@@ -44,7 +44,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&family=Public+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/css/reader.css?v=4">
+<link rel="stylesheet" href="/css/reader.css?v=5">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
@@ -68,7 +68,6 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
   <nav class="nav nav-niche" aria-label="More sections"><div class="wrap nav-scroll">
     ${niche.map(navLink).join('')}
     <a href="/shop"${active === 'shop' ? ' aria-current="page"' : ''}>Partner picks</a>
-    <a href="/businesses"${active === 'businesses' ? ' aria-current="page"' : ''}>Businesses</a>
     <a href="/courses"${active === 'courses' ? ' aria-current="page"' : ''}>Courses</a>
   </div></nav>
 </header>
@@ -90,9 +89,8 @@ ${body}
       ${news.map((s) => `<p><a href="/section/${esc(s.slug)}">${esc(s.name)}</a></p>`).join('')}
     </div>
     <div>
-      <p class="footer-h">Our network</p>
-      ${chrome.network.map((b) => `<p><a href="/businesses/${esc(b.slug)}">${esc(b.name)}</a></p>`).join('')}
-      <p class="footer-small">These businesses are part of the ${esc(site.network)} network.</p>
+      <p class="footer-h">Guides</p>
+      ${chrome.sections.filter((s) => s.in_nav && s.kind === 'niche').slice(0, 8).map((s) => `<p><a href="/section/${esc(s.slug)}">${esc(s.name)}</a></p>`).join('')}
     </div>
     <div>
       <p class="footer-h">Work with us</p>
