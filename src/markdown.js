@@ -3,7 +3,7 @@ import { esc, isHttpUrl } from './util.js';
 /**
  * Minimal, safe Markdown → HTML for story bodies.
  * Everything is escaped first; only a small whitelist of constructs is produced.
- * Supports: ## / ### headings, paragraphs, - and 1. lists, > quotes, **bold**, *italic*, [text](https://url).
+ * Supports: ## / ### headings, paragraphs, - and 1. lists, > quotes, | pipe | tables |, **bold**, *italic*, [text](https://url).
  * Raw HTML in the source is never passed through.
  */
 export function renderMarkdown(src, { sponsoredLinks = false } = {}) {
@@ -12,6 +12,7 @@ export function renderMarkdown(src, { sponsoredLinks = false } = {}) {
   let para = [];
   let list = null; // { tag, items }
   let quote = [];
+  let table = [];
 
   const flushPara = () => {
     if (para.length) out.push(`<p>${inline(para.join(' '), sponsoredLinks)}</p>`);
@@ -25,12 +26,28 @@ export function renderMarkdown(src, { sponsoredLinks = false } = {}) {
     if (quote.length) out.push(`<blockquote><p>${inline(quote.join(' '), sponsoredLinks)}</p></blockquote>`);
     quote = [];
   };
-  const flushAll = () => { flushPara(); flushList(); flushQuote(); };
+  const cells = (row) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+  const flushTable = () => {
+    if (!table.length) return;
+    const rows = table.filter((r) => !/^\s*\|?\s*:?-{2,}/.test(r.replace(/\|/g, '|')) || /[A-Za-z0-9]/.test(r.replace(/[-:|\s]/g, '')));
+    const hasHead = table.length > 1 && /^[\s|:-]+$/.test(table[1]);
+    const body = hasHead ? table.slice(2) : rows;
+    const head = hasHead ? `<thead><tr>${cells(table[0]).map((c) => `<th>${inline(c, sponsoredLinks)}</th>`).join('')}</tr></thead>` : '';
+    out.push(`<div class="table-wrap"><table>${head}<tbody>${body.map((r) => `<tr>${cells(r).map((c) => `<td>${inline(c, sponsoredLinks)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+    table = [];
+  };
+  const flushAll = () => { flushPara(); flushList(); flushQuote(); flushTable(); };
 
   for (const raw of lines) {
     const line = raw.trimEnd();
     if (!line.trim()) { flushAll(); continue; }
     let m;
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      flushPara(); flushList(); flushQuote();
+      table.push(line);
+      continue;
+    }
+    flushTable();
     if ((m = line.match(/^(#{2,3})\s+(.*)$/))) {
       flushAll();
       const level = m[1].length;
@@ -103,6 +120,7 @@ export function htmlToMarkdown(input) {
 export function excerpt(src, max = 180) {
   const text = String(src || '')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^\s*\|.*$/gm, '')
     .replace(/^\s*(#{1,6}\s.*|[-*]\s+|\d+[.)]\s+)/gm, (m) => (m.trim().startsWith('#') ? '' : ''))
     .replace(/[#>*_`]/g, '')
     .replace(/\s+/g, ' ')

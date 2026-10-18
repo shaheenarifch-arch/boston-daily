@@ -377,15 +377,18 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     description: story.dek || excerpt(story.body, 200),
     datePublished: story.published_at,
     dateModified: story.corrected_at || story.last_updated_at || story.published_at,
-    author: story.byline ? { '@type': commercial ? 'Organization' : 'Person', name: story.byline } : undefined,
+    author: story.byline ? { '@type': commercial || /staff$/i.test(story.byline) ? 'Organization' : 'Person', name: story.byline } : undefined,
     publisher: { '@type': 'NewsMediaOrganization', name: site.name },
     mainEntityOfPage: url,
     image: story.hero_image_url && story.hero_image_rights ? [story.hero_image_url] : undefined,
     articleSection: section?.name,
   };
+  // Answer-engine markup: a "Frequently asked questions" section with ### questions becomes FAQPage data.
+  const faq = faqFromBody(story.body);
+  const ld = faq.length >= 2 ? [jsonLd, { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : jsonLd;
   return html(layout(env, chrome, {
     title: story.headline, description: story.dek || excerpt(story.body, 160), canonical: `/story/${story.slug}`,
-    ogType: 'article', image: story.hero_image_rights ? story.hero_image_url : '', body, jsonLd, active: section?.parent?.slug || story.section_slug,
+    ogType: 'article', image: story.hero_image_rights ? story.hero_image_url : '', body, jsonLd: ld, active: section?.parent?.slug || story.section_slug,
   }));
 }
 
@@ -734,4 +737,17 @@ export async function shareRedirect(env, slug, network, ctx) {
   ctx?.waitUntil?.(env.DB.prepare('UPDATE stories SET share_count = share_count + 1 WHERE id = ?').bind(story.id).run().catch(() => {}));
   const base = (env.SITE_URL || '').replace(/\/$/, '');
   return new Response(null, { status: 302, headers: { location: make(`${base}/story/${story.slug}`, story.headline), 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+}
+
+function faqFromBody(body) {
+  const text = String(body || '');
+  const i = text.search(/^##\s+(frequently asked questions|faq)/im);
+  if (i < 0) return [];
+  const pairs = [];
+  for (const block of text.slice(i).split(/^###\s+/m).slice(1)) {
+    const [q, ...rest] = block.split('\n');
+    const a = excerpt(rest.join('\n').split(/^##\s/m)[0], 600);
+    if (q.trim() && a) pairs.push([q.trim(), a]);
+  }
+  return pairs.slice(0, 10);
 }

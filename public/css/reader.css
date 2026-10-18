@@ -382,3 +382,10 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .premium-note { font: 600 .85rem var(--sans); color: var(--ink-soft); }
 .premium-cta { margin-top: auto; padding-top: .4rem; font: 600 .78rem var(--sans); color: var(--ink); border-top: 1px solid var(--rule); }
 .premium-disclosure { margin: 1rem 0 0; font: 400 .72rem var(--sans); color: var(--granite); }
+
+/* Tables inside stories */
+.prose .table-wrap, .story-body .table-wrap { overflow-x: auto; margin: 1.25rem 0; }
+.prose table, .story-body table { width: 100%; border-collapse: collapse; font: 400 .92rem/1.4 var(--sans); }
+.prose th, .story-body th { text-align: left; font-weight: 700; border-bottom: 2px solid var(--ink); padding: .45rem .6rem; white-space: nowrap; }
+.prose td, .story-body td { border-bottom: 1px solid var(--rule); padding: .45rem .6rem; vertical-align: top; }
+.prose tbody tr:nth-child(even), .story-body tbody tr:nth-child(even) { background: var(--wash); }
