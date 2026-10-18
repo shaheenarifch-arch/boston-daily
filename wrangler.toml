@@ -1,0 +1,40 @@
+name = "boston-daily"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets (reader CSS, newsroom console). Anything not matching a file goes to the Worker.
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "boston_daily"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# Authorized publication assets (licensed images, archives). Create with: wrangler r2 bucket create boston-daily-assets
+# [[r2_buckets]]
+# binding = "ASSETS_BUCKET"
+# bucket_name = "boston-daily-assets"
+
+[triggers]
+# Every 5 min: publish due SCHEDULED stories. 09:50 UTC daily (~5:50/6:50 AM Boston): build the daily edition.
+crons = ["*/5 * * * *", "50 9 * * *"]
+
+[vars]
+SITE_NAME = "Boston Daily"
+SITE_TAGLINE = "A GetServices.ai publication"
+SITE_URL = "https://bostondaily.example.com"
+TIMEZONE = "America/New_York"
+CONTACT_EMAIL = "agents@getservices.ai"
+CONTACT_PHONE = "313-729-1534"
+NETWORK_NAME = "GetServices.ai"
+# true = commercial (partner lane) items that pass every policy gate publish without an editor.
+# Newsroom stories never auto-publish. Politics/Health/sensitive always need a human.
+AUTO_PUBLISH_COMMERCE = "true"
+
+# Secrets (set with `wrangler secret put <NAME>`, never commit):
+#   ADMIN_TOKENS  — comma-separated editor credentials, e.g. "Shaheen:long-random-token,Talha:another-token"
+#   INGEST_SECRET — shared HMAC secret used by seo-controller and the merchant sync job

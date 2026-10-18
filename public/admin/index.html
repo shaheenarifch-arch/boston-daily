@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Newsroom | Boston Daily</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&display=swap">
+<link rel="stylesheet" href="/admin/admin.css?v=1">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <form id="login-form" class="login-card">
+    <p class="login-brand">Boston Daily</p>
+    <h1>GetServices.ai newsroom</h1>
+    <p class="login-help">Sign in with your editor token. Approvals and publishes are recorded under your name.</p>
+    <label for="token">Editor token</label>
+    <input id="token" type="password" autocomplete="current-password" required>
+    <button type="submit" class="btn btn-primary">Sign in</button>
+    <p id="login-error" class="login-error" role="alert"></p>
+  </form>
+</div>
+
+<div id="app" class="app" hidden>
+  <aside class="side">
+    <div class="side-brand">
+      <span class="side-mark">B</span>
+      <div><p class="side-title">Boston Daily</p><p class="side-sub">GetServices.ai newsroom</p></div>
+    </div>
+    <nav class="side-nav" aria-label="Console">
+      <a href="#/live" data-nav="live">Live newsroom</a>
+      <a href="#/queue" data-nav="queue">Editorial queue <span id="queue-count" class="pill" hidden></span></a>
+      <a href="#/stories" data-nav="stories">Story pipeline</a>
+      <a href="#/editions" data-nav="editions">Daily editions</a>
+      <a href="#/commerce" data-nav="commerce">Commerce</a>
+      <a href="#/businesses" data-nav="businesses">Business registry</a>
+      <a href="#/inquiries" data-nav="inquiries">Ad inquiries <span id="inq-count" class="pill" hidden></span></a>
+    </nav>
+    <div class="side-foot">
+      <p>Signed in as <strong id="editor-name"></strong></p>
+      <a href="/" target="_blank" rel="noopener">Open reader site</a>
+      <button id="logout" class="link-btn" type="button">Sign out</button>
+    </div>
+  </aside>
+  <main id="view" class="view" tabindex="-1"></main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script src="/admin/app.js?v=1" type="module"></script>
+</body>
+</html>

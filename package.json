@@ -1,0 +1,19 @@
+{
+  "name": "boston-daily",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply boston_daily --local",
+    "db:migrate:remote": "wrangler d1 migrations apply boston_daily --remote",
+    "db:seed:local": "wrangler d1 execute boston_daily --local --file=seed/seed.sql",
+    "db:seed:remote": "wrangler d1 execute boston_daily --remote --file=seed/seed.sql",
+    "test": "node --test test/rules.test.mjs",
+    "test:e2e": "node test/e2e.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}
