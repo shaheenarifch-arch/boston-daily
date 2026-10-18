@@ -82,3 +82,14 @@ The admin Live page shows unique visitors and page views (counted without cookie
 3. In Cloudflare, add to the Worker: secret `GSC_SERVICE_ACCOUNT` = the whole JSON key file contents, and `GSC_SITE` = `sc-domain:bostondaily.us` for a Domain property (or `https://bostondaily.us/` for a URL-prefix property).
 
 Reports are cached for 6 hours; use Refresh on the Live page to update sooner.
+
+## Partner Offers
+
+Category-matched products from every affiliate merchant, in the side panel of section and story pages (`src/offers.js`). Desktop shows up to 4 (sticky, stops before the footer), tablet 3, mobile 2 after the article.
+
+- **Scoring:** exact subcategory +100, primary category +70, each approved tag (category keywords or headline words) +15, region match +20, in stock +15, active promotion +10, editorially featured +10. Expired promotions, out-of-stock, missing image/link and region-ineligible products are excluded. Products that match nothing never fill the module; with fewer than two matches it shows one strong match or nothing. Commission plays no part.
+- **Never automatic** on US Politics, Opinion/Columns, sensitive stories (and crime, emergencies, obituaries): an editor can hand-pick products for a page, and only products marked `sensitive_ok` will show there.
+- **Disclosure:** one line above the first card; the footer carries the short partner-link line. Paid placements (`sponsored`) show a Sponsored label.
+- **Editors** (`/api/admin`): `PATCH /products/:id` (tags, extra_sections, regions, section_slug, category, promo_label/start/end, featured, sponsored, sensitive_ok, availability, status) · `PATCH /offers/sections/:slug` (partner_offers on/off, offer_tags) · `PATCH /offers/stories/:id` (partner_offers on/off, partner_offer_ids) · `GET /offers/preview?story=|section=` · `GET /offers/stats?days=30`.
+- **Merchant sync** (`/api/ingest/products`) may send `tags`, `sections`, `regions`, `promo_label`, `promo_start`, `promo_end`, `sponsored`; fields it omits keep their editor values.
+- **Analytics:** `offer_stats` counts impressions and clicks per day, page category and product. No story, candidate or viewpoint is recorded, and merchant tracking links are not changed.

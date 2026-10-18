@@ -1,10 +1,11 @@
+import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
 import { esc, html, formatDateLong, formatDateTime, localDate, slugify, isHttpUrl, nowIso, uid } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { layout, loadChrome } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
+  SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
   sourcesBlock, noticesBlock, emptyState, storyStamp,
 } from './components.js';
 
@@ -261,7 +262,7 @@ export async function editionsArchive(env) {
 
 // ───────────────────────────── Section ─────────────────────────────
 
-export async function sectionPage(env, slug) {
+export async function sectionPage(env, slug, ctx = null) {
   const db = env.DB;
   const site = SITE(env);
   const chrome = await loadChrome(env);
@@ -278,14 +279,19 @@ export async function sectionPage(env, slug) {
       WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} AND s.section_slug IN (${ph}) ORDER BY s.published_at DESC LIMIT 30`).bind(...slugs).all(),
     showCommerce ? db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
       WHERE s.lane = 'partner_commerce' AND s.status IN ${PUBLIC} AND s.section_slug IN (${ph}) ORDER BY s.published_at DESC LIMIT 6`).bind(...slugs).all().then((r) => r.results) : [],
-    showCommerce ? deals(db, { section: slug, limit: 6 }) : [],
+    cachedCandidates(db),
     [],
     showCommerce && COURSE_SECTIONS.includes(slug) ? coursesFor(db, slug, 3) : [],
   ]);
 
   const [first, ...others] = news;
+  // Partner Offers: category-matched products from every affiliate merchant (src/offers.js).
+  const offerCtx = pageContext(section);
+  const offers = selectOffers(products, offerCtx);
+  recordImpressions(db, offerCtx, offers, ctx?.waitUntil?.bind(ctx));
+  const offersHtml = partnerOffers(offers, offerCtx);
   const sectionMods = [
-    partnerPicks(products, { title: `${section.name} picks`, more: `/shop?section=${encodeURIComponent(slug)}` }),
+    offersHtml,
     showCommerce ? houseAd(site, 'SPONSORED', slug) : '',
     commercial.length ? `<section class="section-row partner-row">
           <h2 class="row-title">Guides from our partners</h2>
@@ -296,7 +302,7 @@ export async function sectionPage(env, slug) {
   ];
   // News sections keep commercial content to ~15% of the page; guide/shopping sections are partner-led.
   const pickedMods = section.kind === 'news' || section.parent?.kind === 'news' ? commercialBudget(Math.max(news.length, 4), sectionMods, 2) : sectionMods.filter(Boolean);
-  const isMainMod = (m) => m.includes('partner-row') || m.includes('product-grid');
+  const isMainMod = (m) => m.includes('partner-row') || (m.includes('product-grid') && !m.includes('partner-offers'));
   const mainMods = pickedMods.filter(isMainMod).join('');
   const railMods = pickedMods.filter((m) => !isMainMod(m)).join('');
   const body = `<div class="page-head">
@@ -341,10 +347,12 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
 
   const commercial = story.lane === 'partner_commerce';
   const showCommerce = commerceAllowed(section, story);
-  const [products, network] = await Promise.all([
-    showCommerce ? deals(db, { section: story.section_slug, limit: 3 }) : [],
-    [],
-  ]);
+  // Partner Offers in the side panel: category-matched, never on sensitive pages unless an editor picked approved products.
+  const offerCtx = pageContext(section, story);
+  const offers = commercial ? [] : selectOffers(await cachedCandidates(db), offerCtx);
+  recordImpressions(db, offerCtx, offers, ctx?.waitUntil?.bind(ctx));
+  const offersHtml = partnerOffers(offers, offerCtx);
+  const products = commercial && showCommerce ? await deals(db, { section: story.section_slug, limit: 3 }) : [];
 
   const typeLabel = { analysis: 'Analysis', opinion: 'Opinion', feature: 'Feature' }[story.type];
   const times = [
@@ -353,7 +361,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     story.corrected_at ? `<span class="stamp-corrected">Corrected <time datetime="${esc(story.corrected_at)}">${esc(formatDateTime(story.corrected_at, site.tz))}</time></span>` : '',
   ].filter(Boolean).join('');
 
-  const body = `<article class="story${commercial ? ' story-commercial' : ''}">
+  const body = `${offersHtml ? '<div class="story-with-offers">' : ''}<article class="story${commercial ? ' story-commercial' : ''}">
     <header class="story-head">
       <p class="story-kicker">
         <a href="/section/${esc(story.section_slug)}">${esc(section?.name || '')}</a>
@@ -375,7 +383,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     ${shareBar(story)}
     ${commentsBlock(story, comments, commentNote, site.tz)}
     <p class="story-standards"><a href="/standards">Our editorial standards</a>${commercial ? ' explain how partner content is labeled.' : '. Spotted an error? Email <a href="mailto:' + esc(site.email) + '?subject=' + encodeURIComponent('Correction request: ' + story.headline) + '">' + esc(site.email) + '</a>.'}</p>
-  </article>
+  </article>${offersHtml ? `<div class="story-offers">${offersHtml}</div></div>` : ''}
   ${related.length ? `<section class="section-row related"><h2 class="row-title">More in ${esc(section?.name || '')}</h2>
     <div class="row-cards">${related.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div></section>` : ''}
   ${partnerPicks(products, { title: 'Related partner picks', more: `/shop?section=${encodeURIComponent(story.section_slug)}` })}
@@ -708,7 +716,7 @@ ${stories.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc>${s
 }
 
 /** Outbound click redirect for products (/go/p), businesses (/go/b) and courses (/go/c). */
-export async function outbound(env, kind, id, ctx) {
+export async function outbound(env, kind, id, ctx, reqUrl = null) {
   const db = env.DB;
   let row = null;
   if (kind === 'p') row = await db.prepare("SELECT id, deep_link AS url FROM products WHERE id = ? AND status = 'active'").bind(id).first();
@@ -717,6 +725,8 @@ export async function outbound(env, kind, id, ctx) {
   if (!row || !isHttpUrl(row.url)) return new Response('Link unavailable', { status: 404, headers: { 'content-type': 'text/plain' } });
   const table = { p: 'products', b: 'businesses', c: 'courses' }[kind];
   ctx?.waitUntil?.(db.prepare(`UPDATE ${table} SET clicks = clicks + 1 WHERE id = ?`).bind(row.id).run().catch(() => {}));
+  const po = kind === 'p' ? reqUrl?.searchParams.get('po') : null;
+  if (po) recordClick(db, row.id, po, ctx?.waitUntil?.bind(ctx));
   return new Response(null, { status: 302, headers: { location: row.url, 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer-when-downgrade' } });
 }
 

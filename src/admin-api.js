@@ -11,6 +11,7 @@ import { buildEdition, curateEdition } from './editions.js';
 import { visitorStats } from './analytics.js';
 import { searchConsoleReport } from './gsc.js';
 import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
+import { pageContext, selectOffers, cachedCandidates, clearOfferCache } from './offers.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
   'hero_image_rights', 'disclosure_label', 'disclosure_text', 'sponsor_name', 'sensitive', 'priority', 'is_lead_candidate', 'slug'];
@@ -139,9 +140,65 @@ export async function handleAdmin(request, env, url, editor) {
     }
     if (seg[0] === 'products' && seg[1] && method === 'PATCH') {
       const b = (await readJson(request)) || {};
-      if (!['active', 'inactive'].includes(b.status)) return errorJson('status must be active or inactive');
-      await db.prepare('UPDATE products SET status = ?, updated_at = ? WHERE id = ?').bind(b.status, nowIso(), seg[1]).run();
-      return json({ ok: true });
+      const sets = [], binds = [];
+      if (b.status !== undefined) {
+        if (!['active', 'inactive'].includes(b.status)) return errorJson('status must be active or inactive');
+        sets.push('status = ?'); binds.push(b.status);
+      }
+      // Partner Offers controls: categories, approved tags, regions, promotion window and flags.
+      const csv = (v) => (v == null || v === '' ? null : String(v).split(',').map((x) => x.trim()).filter(Boolean).join(',').slice(0, 500) || null);
+      const day = (v) => (v == null || v === '' ? null : /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? String(v) : undefined);
+      for (const k of ['tags', 'extra_sections']) if (b[k] !== undefined) { sets.push(`${k} = ?`); binds.push(csv(b[k]) && csv(b[k]).toLowerCase()); }
+      if (b.regions !== undefined) { sets.push('regions = ?'); binds.push(csv(b.regions) && csv(b.regions).toUpperCase()); }
+      for (const k of ['section_slug', 'category', 'promo_label']) if (b[k] !== undefined) { sets.push(`${k} = ?`); binds.push(b[k] ? String(b[k]).slice(0, 120) : null); }
+      for (const k of ['promo_start', 'promo_end']) if (b[k] !== undefined) { const v = day(b[k]); if (v === undefined) return errorJson(`${k} must be YYYY-MM-DD`); sets.push(`${k} = ?`); binds.push(v); }
+      for (const k of ['featured', 'sponsored', 'sensitive_ok']) if (b[k] !== undefined) { sets.push(`${k} = ?`); binds.push(b[k] ? 1 : 0); }
+      if (b.availability !== undefined) { sets.push('availability = ?'); binds.push(b.availability ? String(b.availability).slice(0, 40) : null); }
+      if (!sets.length) return errorJson('Nothing to change');
+      await db.prepare(`UPDATE products SET ${sets.join(', ')}, updated_at = ? WHERE id = ?`).bind(...binds, nowIso(), seg[1]).run();
+      clearOfferCache();
+      return json({ ok: true, product: await db.prepare('SELECT * FROM products WHERE id = ?').bind(seg[1]).first() });
+    }
+
+    // ── Partner Offers ──
+    if (seg[0] === 'offers') {
+      // Category switch and keywords.
+      if (seg[1] === 'sections' && seg[2] && method === 'PATCH') {
+        const b = (await readJson(request)) || {};
+        if (b.partner_offers !== undefined) await db.prepare('UPDATE sections SET partner_offers = ? WHERE slug = ?').bind(b.partner_offers ? 1 : 0, seg[2]).run();
+        if (b.offer_tags !== undefined) await db.prepare('UPDATE sections SET offer_tags = ? WHERE slug = ?').bind(b.offer_tags ? String(b.offer_tags).toLowerCase().slice(0, 500) : null, seg[2]).run();
+        return json({ ok: true, section: await db.prepare('SELECT slug, name, commerce_allowed, partner_offers, offer_tags FROM sections WHERE slug = ?').bind(seg[2]).first() });
+      }
+      // Article switch and hand-picked products. Doesn't touch the story's text or status.
+      if (seg[1] === 'stories' && seg[2] && method === 'PATCH') {
+        const b = (await readJson(request)) || {};
+        if (b.partner_offers !== undefined) await db.prepare('UPDATE stories SET partner_offers = ? WHERE id = ?').bind(b.partner_offers ? 1 : 0, seg[2]).run();
+        if (b.partner_offer_ids !== undefined) await db.prepare('UPDATE stories SET partner_offer_ids = ? WHERE id = ?').bind(b.partner_offer_ids ? String(b.partner_offer_ids).split(',').map((x) => x.trim()).filter(Boolean).slice(0, 8).join(',') : null, seg[2]).run();
+        return json({ ok: true, story: await db.prepare('SELECT id, slug, partner_offers, partner_offer_ids FROM stories WHERE id = ?').bind(seg[2]).first() });
+      }
+      // Preview what a page would show, with scores (before publication too).
+      if (seg[1] === 'preview' && method === 'GET') {
+        const sid = url.searchParams.get('story'), slug = url.searchParams.get('section');
+        const story = sid ? await db.prepare('SELECT * FROM stories WHERE id = ? OR slug = ?').bind(sid, sid).first() : null;
+        const sec = story?.section_slug || slug;
+        const row = sec ? await db.prepare('SELECT * FROM sections WHERE slug = ?').bind(sec).first() : null;
+        if (!row) return errorJson('Choose a story or section', 404);
+        const parent = row.parent_slug ? await db.prepare('SELECT * FROM sections WHERE slug = ?').bind(row.parent_slug).first() : null;
+        const ctx = pageContext({ ...row, parent }, story);
+        clearOfferCache();
+        const offers = selectOffers(await cachedCandidates(db), ctx);
+        return json({ ok: true, page: { section: sec, story: story?.slug || null, sensitive: ctx.sensitive, disabled: ctx.disabled, region: ctx.region, tags: [...ctx.tags] },
+          offers: offers.map((p) => ({ id: p.id, name: p.name, merchant: p.merchant_name, score: p._score, relevance: p._relevance, sponsored: Boolean(p.sponsored), featured: Boolean(p.featured) })) });
+      }
+      // Impressions and clicks by category and product.
+      if (seg[1] === 'stats' && method === 'GET') {
+        const days = Math.max(1, Math.min(365, Number(url.searchParams.get('days')) || 30));
+        const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+        const { results } = await db.prepare(`SELECT s.page_section, s.product_id, p.name, m.name AS merchant, p.section_slug AS product_section, SUM(s.impressions) AS impressions, SUM(s.clicks) AS clicks
+          FROM offer_stats s LEFT JOIN products p ON p.id = s.product_id LEFT JOIN merchants m ON m.id = p.merchant_id
+          WHERE s.day >= ? GROUP BY s.page_section, s.product_id ORDER BY impressions DESC LIMIT 500`).bind(since).all();
+        return json({ ok: true, days, rows: results });
+      }
     }
 
     // ── Businesses ──
