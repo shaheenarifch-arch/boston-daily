@@ -18,7 +18,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "boston_daily"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "d12b6e52-961d-4aeb-9c9e-72601d4a4125"
 migrations_dir = "migrations"
 
 # Authorized publication assets (licensed images, archives). Create with: wrangler r2 bucket create boston-daily-assets
