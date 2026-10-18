@@ -10,7 +10,7 @@ import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
-  advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
+  advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
 } from './reader/pages.js';
 
 const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
@@ -90,6 +90,7 @@ const worker = {
       if (pathname === '/courses') return await coursesPage(env, url);
       if (pathname === '/advertise') return await advertisePage(env, url);
       if (pathname === '/standards') return await standardsPage(env);
+      if (pathname === '/editor') return await editorPage(env);
       if (pathname === '/newsletters' || pathname === '/subscribe') return await newslettersPage(env, url);
       if (pathname === '/unsubscribe') return await unsubscribe(env, url);
       if (pathname === '/corrections') return await correctionsPage(env);

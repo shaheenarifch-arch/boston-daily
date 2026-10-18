@@ -79,6 +79,7 @@ ${body}
     <div>
       <p class="footer-brand">${esc(site.name)}</p>
       <p class="footer-tag">${esc(site.tagline)}</p>
+      <p><a href="/editor">About the editor</a></p>
       <p><a href="/standards">Editorial standards</a></p>
       <p><a href="/corrections">Corrections</a></p>
       <p><a href="/editions">Past editions</a></p>

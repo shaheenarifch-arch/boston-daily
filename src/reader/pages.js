@@ -580,6 +580,34 @@ export async function standardsPage(env) {
   return html(layout(env, chrome, { title: 'Editorial standards', description: 'How Boston Daily sources, approves, corrects and labels content.', canonical: '/standards', body }));
 }
 
+export async function editorPage(env) {
+  const site = SITE(env);
+  const chrome = await loadChrome(env);
+  const interests = ['Politics &amp; Public Affairs', 'Massachusetts &amp; Boston', 'Breaking News &amp; Current Affairs', 'Technology &amp; AI',
+    'Healthcare &amp; Innovation', 'Business &amp; Economic Trends', 'Culture &amp; Lifestyle', 'Global Affairs', 'Community Stories'];
+  const body = `<article class="prose standards editor-profile">
+    <p class="editor-kicker">About the editor</p>
+    <h1>Shaheen Arif</h1>
+    <p class="editor-role">Editor, BostonDaily.us</p>
+    <p>Shaheen Arif is the Editor of BostonDaily.us, with a passion for reporting, journalism, public affairs, politics, emerging trends, and the changing lifestyles that shape communities.</p>
+    <p>With a Master’s degree in Mass Communication and broad international experience, Shaheen brings a global perspective to local and national issues, with a particular interest in how politics, technology, culture, business, and social change affect everyday life.</p>
+    <p>Alongside journalism, Shaheen works in the technology sector, serving as a first responder for mission-critical applications supporting Mass General Brigham operations. This experience brings an additional perspective to his editorial work, particularly around technology, healthcare systems, resilience, innovation, and the human impact of critical digital infrastructure.</p>
+    <p>At BostonDaily.us, Shaheen’s goal is to build a modern digital publication that combines timely reporting with thoughtful analysis, diverse perspectives, community relevance, and responsible journalism.</p>
+    <h2>Areas of interest</h2>
+    <ul class="editor-interests">${interests.map((i) => `<li>${i}</li>`).join('')}</ul>
+    <h2>Editorial mission</h2>
+    <blockquote class="editor-mission">Report what matters. Understand what is changing. Give readers the context to form their own views.</blockquote>
+    <p>Story tip or correction? Email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>. Read our <a href="/standards">editorial standards</a>.</p>
+  </article>`;
+  return html(layout(env, chrome, {
+    title: 'Shaheen Arif, Editor', description: 'Shaheen Arif is the Editor of BostonDaily.us, covering politics, public affairs, technology, healthcare and the trends shaping Boston and the nation.',
+    canonical: '/editor', ogType: 'profile', body,
+    jsonLd: { '@context': 'https://schema.org', '@type': 'ProfilePage', mainEntity: { '@type': 'Person', name: 'Shaheen Arif', jobTitle: 'Editor',
+      worksFor: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined }, url: site.url ? `${site.url}/editor` : undefined,
+      knowsAbout: ['Politics', 'Public affairs', 'Massachusetts', 'Technology', 'Artificial intelligence', 'Healthcare innovation', 'Business', 'Global affairs'] } },
+  }));
+}
+
 export async function correctionsPage(env) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
@@ -645,7 +673,7 @@ ${results.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc><ne
     env.DB.prepare('SELECT slug FROM sections WHERE active = 1').all(),
     env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active'").all(),
   ]);
-  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/corrections',
+  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections',
     ...sections.map((s) => `/section/${s.slug}`), ...biz.map((b) => `/businesses/${b.slug}`)];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
