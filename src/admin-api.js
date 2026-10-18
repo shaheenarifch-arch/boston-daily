@@ -9,6 +9,7 @@ import {
 } from './lifecycle.js';
 import { buildEdition, curateEdition } from './editions.js';
 import { visitorStats } from './analytics.js';
+import { searchConsoleReport } from './gsc.js';
 import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
@@ -32,6 +33,10 @@ export async function handleAdmin(request, env, url, editor) {
 
     if (path === '/overview' && method === 'GET') return json(await overview(env));
 
+    if (path === '/search-console' && method === 'GET') {
+      try { return json({ ok: true, ...(await searchConsoleReport(env, { refresh: url.searchParams.get('refresh') === '1' })) }); }
+      catch (e) { return json({ ok: false, configured: true, error: e.message }); }
+    }
     if (path === '/visitors' && method === 'GET') return json({ ok: true, ...(await visitorStats(db, env.TIMEZONE || 'America/New_York')) });
 
     // ── Newsletter subscribers ──

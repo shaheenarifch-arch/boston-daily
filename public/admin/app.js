@@ -119,10 +119,37 @@ document.addEventListener('click', async (e) => {
   }
 });
 
+function gscPanel(g) {
+  if (!g) return '';
+  const head = '<h2 class="panel-title">Google Search</h2>';
+  if (!g.configured) return `<section class="panel">${head}<p class="sub">Not connected yet. Add the GSC_SERVICE_ACCOUNT secret and GSC_SITE in Cloudflare (see README) to see clicks, impressions and top searches here.</p></section>`;
+  if (!g.ok) return `<section class="panel">${head}<p class="sub">Could not load Search Console: ${esc(g.error)}</p></section>`;
+  const n = (v) => Number(v || 0).toLocaleString();
+  const pct = (v) => `${(Number(v || 0) * 100).toFixed(1)}%`;
+  const chg = (a, b) => (b ? ` <span class="sub">(${a >= b ? '+' : ''}${Math.round(((a - b) / b) * 100)}%)</span>` : '');
+  const t = g.totals, p = g.previous;
+  const table = (rows, label, link) => rows.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>${label}</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${link ? `<a href="${esc(r.key)}" target="_blank" rel="noopener">${esc(r.key.replace(/^https?:\/\/[^/]+/, '') || '/')}</a>` : esc(r.key)}</td><td>${n(r.clicks)}</td><td>${n(r.impressions)}</td><td>${pct(r.ctr)}</td><td>${Number(r.position || 0).toFixed(1)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="sub">No data yet.</p>';
+  return `<section class="panel">${head}
+    <p class="sub">${esc(g.range.startDate)} to ${esc(g.range.endDate)} (Google reports with a 2–3 day delay). Updated ${esc(when(g.fetched_at))}. <a href="#" id="gsc-refresh">Refresh</a></p>
+    <div class="grid-3">
+      <div><p class="stat-n">${n(t.clicks)}</p><p class="stat-l">Clicks from Google${chg(t.clicks, p.clicks)}</p></div>
+      <div><p class="stat-n">${n(t.impressions)}</p><p class="stat-l">Impressions${chg(t.impressions, p.impressions)}</p></div>
+      <div><p class="stat-n">${pct(t.ctr)}</p><p class="stat-l">Click-through rate · avg position ${Number(t.position || 0).toFixed(1)}</p></div>
+    </div>
+    <h3>Top searches</h3>${table(g.queries, 'Search query')}
+    <h3>Top pages</h3>${table(g.pages, 'Page', true)}
+    <h3>Countries and devices</h3>${table([...g.countries, ...g.devices], 'Country / device')}
+  </section>`;
+}
+document.addEventListener('click', async (e) => {
+  if (e.target && e.target.id === 'gsc-refresh') { e.preventDefault(); await api('GET', '/search-console?refresh=1').catch(() => {}); renderLive(); }
+});
+
 async function renderLive() {
   const o = await api('GET', '/overview');
   const nl = await api('GET', '/subscribers').catch(() => null);
   const vs = await api('GET', '/visitors').catch(() => null);
+  const gsc = await api('GET', '/search-console').catch(() => null);
   const tile = (s) => `<a class="stage" href="#/stories?status=${s}" data-status="${s}">
       <span class="stage-n">${o.newsroom[s] || 0}</span><span class="stage-l">${esc(STAGE_LABEL[s])}</span></a>`;
   const ed = o.edition;
@@ -137,6 +164,7 @@ async function renderLive() {
       </div>
       ${vs.days.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Day</th><th>Unique visitors</th><th>Page views</th></tr></thead><tbody>${vs.days.slice(0, 14).map((d) => `<tr><td>${esc(d.day)}</td><td>${esc(d.visitors)}</td><td>${esc(d.pageviews)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="sub">No visits counted yet.</p>'}
       <p class="sub">Unique visitors are counted per day without cookies; bots and admin pages are excluded.</p></section>` : ''}
+    ${gscPanel(gsc)}
     ${nl ? `<section class="panel"><h2 class="panel-title">Newsletter subscribers</h2>
       <p>Daily: <strong>${esc(nl.counts?.daily || 0)}</strong> · Weekly: <strong>${esc(nl.counts?.weekly || 0)}</strong> · Unsubscribed: ${esc(nl.counts?.unsubscribed || 0)}
       · <a href="#" id="nl-csv">Download CSV</a></p>

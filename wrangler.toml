@@ -50,3 +50,5 @@ AUTO_PUBLISH_COMMERCE = "true"
 #   INGEST_SECRET — shared HMAC secret used by seo-controller and the merchant sync job
 #   RESEND_API_KEY — Resend API key for sending the daily and weekly newsletters (optional; sign-ups work without it)
 #   NEWSLETTER_FROM — sender, e.g. "Boston Daily <news@bostondaily.us>" (domain must be verified in Resend)
+#   GSC_SERVICE_ACCOUNT — Google service account JSON key with access to the Search Console property (optional)
+#   GSC_SITE — Search Console property, e.g. "sc-domain:bostondaily.us" (optional)

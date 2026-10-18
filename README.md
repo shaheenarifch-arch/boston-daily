@@ -70,3 +70,15 @@ Sections are rows in the `sections` table (add a niche by inserting a row). The 
 ## Phase 2 (not in this release)
 
 Subscriber accounts, saved stories, newsletters and paywall; RealSkillSet checkout and My Courses; ad server and campaign scheduling; licensed wire, sports data and photo adapters; the Newsroom AI pod's automated discovery/research feeding DISCOVERED stories through the admin API.
+
+## Admin analytics
+
+The admin Live page shows unique visitors and page views (counted without cookies; bots excluded), newsletter subscribers, and Google Search Console data.
+
+**Connect Google Search Console**
+
+1. In Google Cloud Console, create a project, enable the **Google Search Console API**, and create a **service account**. Create a JSON key for it and download the file.
+2. In Search Console (bostondaily.us property) go to **Settings → Users and permissions → Add user**, paste the service account's email (`...@...iam.gserviceaccount.com`) and give it **Restricted** access.
+3. In Cloudflare, add to the Worker: secret `GSC_SERVICE_ACCOUNT` = the whole JSON key file contents, and `GSC_SITE` = `sc-domain:bostondaily.us` for a Domain property (or `https://bostondaily.us/` for a URL-prefix property).
+
+Reports are cached for 6 hours; use Refresh on the Live page to update sooner.
