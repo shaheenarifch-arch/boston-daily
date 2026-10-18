@@ -32,7 +32,7 @@ export const PRODUCT_ADS = [
     advertiser: 'EasyPass',
     domain: 'ezpass.uk',
     title: 'City sightseeing passes',
-    placements: ['uk'],
+    placements: ['uk', 'travel', 'home'],
     active: true,
     items: [
       { name: 'London City Pass', note: 'From €129', image: 'https://ezpass.uk/london-480.webp', url: `https://ezpass.uk/?${UTM('city-passes')}` },
@@ -45,7 +45,7 @@ export const PRODUCT_ADS = [
     advertiser: 'BuyBestStores',
     domain: 'buybeststores.uk',
     title: 'Tech and home fitness',
-    placements: ['uk'],
+    placements: ['uk', 'technology', 'health-wellness', 'home'],
     active: true,
     items: [
       { name: 'X20 Auto Incline Treadmill', note: '', image: 'https://cdn.shopify.com/s/files/1/0867/7274/4478/files/1-ap01-main-image-1027.jpg?v=1761546416', url: `https://buybeststores.uk/?${UTM('home-fitness')}` },

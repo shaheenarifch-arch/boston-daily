@@ -4,7 +4,7 @@ import { getEditionWithItems } from '../editions.js';
 import { layout, loadChrome } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, paidProductAds, courseModule, courseItem, houseAd, productCard,
+  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, paidProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
   sourcesBlock, noticesBlock, emptyState, storyStamp,
 } from './components.js';
 
@@ -205,6 +205,7 @@ export async function homePage(env, editionDate = null) {
     <aside class="fg-c">${colC}</aside>
   </section>
   ${mainCommercial}
+  ${hasNews ? premiumAds('home') : ''}
   ${sectionRows}
   ${selection.length ? `<section class="section-row selection">
     <h2 class="row-title">Editor’s selection</h2>

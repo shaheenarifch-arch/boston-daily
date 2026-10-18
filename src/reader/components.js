@@ -105,6 +105,24 @@ export function shopBand(products, { title = 'Shop the day' } = {}) {
   </section>`;
 }
 
+/** Front-page premium showcase: large product images from paid campaigns, magazine-style. */
+export function premiumAds(placement = 'home') {
+  const items = productAdsFor(placement).flatMap((ad) => ad.items.filter((it) => it.image).slice(0, 2).map((it) => ({ ...it, ad })));
+  if (items.length < 2) return '';
+  return `<section class="premium" aria-label="Paid advertisement">
+    <header class="premium-head"><span class="label label-ad">Paid advertisement</span><h2 class="premium-title">Premium partners</h2></header>
+    <ul class="premium-grid">${items.slice(0, 4).map((it) => `<li class="premium-item">
+      <a href="${esc(it.url)}" rel="sponsored noopener" target="_blank">
+        <span class="premium-img"><img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy" decoding="async"></span>
+        <span class="premium-brand">${esc(it.ad.advertiser)}</span>
+        <span class="premium-name">${esc(it.name)}</span>
+        ${it.note ? `<span class="premium-note">${esc(it.note)}</span>` : ''}
+        <span class="premium-cta">${esc(it.cta || `Shop at ${it.ad.domain}`)} →</span>
+      </a></li>`).join('')}</ul>
+    <p class="premium-disclosure">Advertisements from partners. Advertisers do not influence Boston Daily's news coverage.</p>
+  </section>`;
+}
+
 /** Paid product advertisements for a section (see src/ads.js). Same print look as the Shop band. */
 export function paidProductAds(placement) {
   return productAdsFor(placement).map((ad) => `<section class="shop-band paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
