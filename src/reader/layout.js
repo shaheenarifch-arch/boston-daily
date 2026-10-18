@@ -44,7 +44,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&family=Public+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/css/reader.css?v=1">
+<link rel="stylesheet" href="/css/reader.css?v=2">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
