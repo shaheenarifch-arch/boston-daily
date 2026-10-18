@@ -39,8 +39,11 @@ export function storyCard(s, { size = 'm', tz, showSection = true, showDek = tru
     ? `<span class="label label-commerce">${esc(s.disclosure_label || 'Partner Content')}</span>`
     : TYPE_LABEL[s.type] ? `<span class="label label-type">${TYPE_LABEL[s.type]}</span>` : '';
   const section = showSection && s.section_name ? `<a class="card-section" href="/section/${esc(s.section_slug)}">${esc(s.section_name)}</a>` : '';
-  const img = size === 'lead' && s.hero_image_url && s.hero_image_rights
-    ? `<figure class="card-figure"><img src="${esc(s.hero_image_url)}" alt="" loading="eager" decoding="async"></figure>` : '';
+  // Every story card carries its image when the story has one with recorded rights.
+  const hasImg = s.hero_image_url && s.hero_image_rights;
+  const img = !hasImg ? ''
+    : size === 's' ? `<a class="card-thumb" href="/story/${esc(s.slug)}" tabindex="-1" aria-hidden="true"><img src="${esc(s.hero_image_url)}" alt="" loading="lazy" decoding="async"></a>`
+    : `<figure class="card-figure"><img src="${esc(s.hero_image_url)}" alt="" loading="${size === 'lead' ? 'eager' : 'lazy'}" decoding="async"></figure>`;
   const dek = showDek && (s.dek || s.body) ? `<p class="card-dek">${esc(s.dek || excerpt(s.body, size === 'lead' ? 260 : 150))}</p>` : '';
   return `<article class="card card-${size}${commercial ? ' card-commercial' : ''}">
     ${img}

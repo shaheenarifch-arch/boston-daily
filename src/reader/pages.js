@@ -9,9 +9,18 @@ import {
 
 const PUBLIC = "('PUBLISHED','UPDATED','CORRECTED')";
 const STORY_COLS = `s.id, s.slug, s.lane, s.type, s.section_slug, s.status, s.sensitive, s.headline, s.dek, substr(s.body, 1, 600) AS body,
-  s.hero_image_url, s.hero_image_rights, s.disclosure_label, s.published_at, s.last_updated_at, s.corrected_at, sec.name AS section_name`;
+  s.hero_image_url, s.hero_image_rights, s.disclosure_label, s.published_at, s.last_updated_at, s.corrected_at, s.priority, s.is_lead_candidate, sec.name AS section_name`;
 const PRODUCT_COLS = 'p.*, m.name AS merchant_name, m.display_name_allowed';
 const COURSE_SECTIONS = ['education-careers', 'business', 'technology', 'ai'];
+
+/**
+ * Commercial share of a page stays around 10-15%: one commercial module per ~7 content blocks,
+ * minimum one. Modules are passed in priority order; empty ones are skipped.
+ */
+function commercialBudget(contentBlocks, modules) {
+  const allowed = Math.max(1, Math.round(contentBlocks * 0.15));
+  return modules.filter(Boolean).slice(0, allowed);
+}
 
 function sectionTree(chrome, slug) {
   const section = chrome.sections.find((s) => s.slug === slug);
@@ -79,7 +88,9 @@ export async function homePage(env, editionDate = null) {
   const items = (data?.items || []).map((s) => ({ ...s, section_name: nameOf[s.section_slug] }));
   if (!editionDate) {
     const placed = new Set(items.map((i) => i.id));
-    const extra = latest.filter((s) => !placed.has(s.id));
+    // Newest first, but a flagged lead candidate or higher-priority story leads.
+    const extra = latest.filter((s) => !placed.has(s.id))
+      .sort((a, b) => (b.is_lead_candidate - a.is_lead_candidate) || (b.priority - a.priority) || String(b.published_at).localeCompare(String(a.published_at)));
     if (!items.some((i) => i.slot === 'lead') && extra.length) items.unshift({ ...extra.shift(), slot: 'lead' });
     while (items.filter((i) => i.slot === 'top').length < 6 && extra.length) items.push({ ...extra.shift(), slot: 'top' });
   }
@@ -90,8 +101,9 @@ export async function homePage(env, editionDate = null) {
   const rest = items.filter((i) => i.slot === 'section');
 
   // Section rows: group edition + rest by top-level section.
+  const onFront = new Set([lead?.id, ...top.slice(0, 8).map((t) => t.id)]);
   const bySection = new Map();
-  for (const s of [...top, ...rest]) {
+  for (const s of [...top, ...rest].filter((x) => !onFront.has(x.id))) {
     const sec = sectionTree(chrome, s.section_slug);
     const key = sec?.parent?.slug || s.section_slug;
     if (!bySection.has(key)) bySection.set(key, []);
@@ -129,10 +141,27 @@ export async function homePage(env, editionDate = null) {
   const sectionIndex = `<ul class="section-index">${newsSections.map((x) => `<li><a href="/section/${esc(x.slug)}"><strong>${esc(x.name)}</strong>${descOf[x.slug] ? `<span>${esc(descOf[x.slug])}</span>` : ''}</a></li>`).join('')}</ul>`;
   const moreStories = latest.filter((s) => s.id !== lead?.id).slice(0, 6);
   const colB = top.length
-    ? `<h2 class="col-label">Top stories</h2>${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz })).join('')}`
+    ? `<h2 class="col-label">Top stories</h2>${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz, showDek: false })).join('')}`
     : moreStories.length
-      ? `<h2 class="col-label">More stories</h2>${moreStories.map((s) => storyCard(s, { size: 's', tz: site.tz })).join('')}`
+      ? `<h2 class="col-label">More stories</h2>${moreStories.map((s) => storyCard(s, { size: 's', tz: site.tz, showDek: false })).join('')}`
       : `<h2 class="col-label">Sections</h2>${sectionIndex}`;
+
+  // Commercial budget: ~15% of the content blocks on the page.
+  const contentBlocks = hasNews ? (1 + top.length + rest.length + selection.length + latest.length) : 8;
+  const picked = commercialBudget(contentBlocks, [
+    houseAd(site, 'FRONT PAGE'),
+    partnerPicks(picks, { title: 'Today’s deals' }),
+    networkModule(network, site.network),
+    partnerGuides.length ? `<section class="section-row partner-row">
+    <h2 class="row-title">Guides from our partners</h2>
+    <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
+    <div class="row-cards">${partnerGuides.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
+  </section>` : '',
+    courseModule(cotd, site.network, { title: 'RealSkillSet course of the day' }),
+  ]);
+  const isMain = (m) => m.includes('partner-row') || m.includes('product-grid');
+  const railCommercial = picked.filter((m) => !isMain(m)).join('');
+  const mainCommercial = picked.filter(isMain).join('');
 
   // Column C: the rail.
   const colC = `
@@ -140,9 +169,7 @@ export async function homePage(env, editionDate = null) {
         <ol class="latest">${latest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol></section>` : ''}
       ${mostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
         <ol class="most-read">${mostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
-      ${networkModule(network, site.network)}
-      ${courseModule(cotd, site.network, { title: 'RealSkillSet course of the day' })}
-      ${houseAd(site, 'FRONT PAGE')}`;
+      ${railCommercial}`;
 
   const sectionRows = [...bySection.entries()].map(([slug, list]) => {
     const sec = chrome.sections.find((x) => x.slug === slug);
@@ -164,12 +191,7 @@ export async function homePage(env, editionDate = null) {
     <h2 class="row-title">Editor’s selection</h2>
     <div class="row-cards">${selection.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
   </section>` : ''}
-  ${partnerGuides.length ? `<section class="section-row partner-row">
-    <h2 class="row-title">Guides from our partners</h2>
-    <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
-    <div class="row-cards">${partnerGuides.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
-  </section>` : ''}
-  ${partnerPicks(picks, { title: 'Today’s deals' })}
+  ${mainCommercial}
   <section class="section-row">
     <h2 class="row-title">Guides and shopping</h2>
     <ul class="section-grid">${nicheSections.map((x) => `<li><a href="/section/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}
@@ -232,6 +254,22 @@ export async function sectionPage(env, slug) {
   ]);
 
   const [first, ...others] = news;
+  const sectionMods = [
+    showCommerce ? houseAd(site, 'SPONSORED') : '',
+    partnerPicks(products, { title: `${section.name} picks`, more: `/shop?section=${encodeURIComponent(slug)}` }),
+    commercial.length ? `<section class="section-row partner-row">
+          <h2 class="row-title">Guides from our partners</h2>
+          <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
+          <div class="row-cards">${commercial.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
+        </section>` : '',
+    networkModule(network, site.network),
+    courseModule(courses, site.network),
+  ];
+  // News sections keep commercial content to ~15% of the page; guide/shopping sections are partner-led.
+  const pickedMods = section.kind === 'news' || section.parent?.kind === 'news' ? commercialBudget(Math.max(news.length, 4), sectionMods) : sectionMods.filter(Boolean);
+  const isMainMod = (m) => m.includes('partner-row') || m.includes('product-grid');
+  const mainMods = pickedMods.filter(isMainMod).join('');
+  const railMods = pickedMods.filter((m) => !isMainMod(m)).join('');
   const body = `<div class="page-head">
       ${section.parent ? `<p class="crumb"><a href="/section/${esc(section.parent.slug)}">${esc(section.parent.name)}</a></p>` : ''}
       <h1>${esc(section.name)}</h1>
@@ -242,17 +280,10 @@ export async function sectionPage(env, slug) {
       <div class="col-main">
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: !!children.length })).join('')}</div>` : ''}
-        ${commercial.length ? `<section class="section-row partner-row">
-          <h2 class="row-title">Guides from our partners</h2>
-          <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
-          <div class="row-cards">${commercial.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
-        </section>` : ''}
-        ${partnerPicks(products, { title: `${section.name} picks`, more: `/shop?section=${encodeURIComponent(slug)}` })}
+        ${mainMods}
       </div>
       <aside class="col-rail">
-        ${networkModule(network, site.network)}
-        ${courseModule(courses, site.network)}
-        ${showCommerce ? houseAd(site, 'SPONSORED') : ''}
+        ${railMods}
       </aside>
     </div>`;
   return html(layout(env, chrome, { title: section.name, description: section.description || `${section.name} news from Boston Daily.`, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body }));
@@ -260,7 +291,7 @@ export async function sectionPage(env, slug) {
 
 // ───────────────────────────── Story ─────────────────────────────
 
-export async function storyPage(env, slug, ctx) {
+export async function storyPage(env, slug, ctx, reqUrl = null) {
   const db = env.DB;
   const site = SITE(env);
   const chrome = await loadChrome(env);
@@ -274,6 +305,8 @@ export async function storyPage(env, slug, ctx) {
       WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} AND s.section_slug = ? AND s.id != ? ORDER BY s.published_at DESC LIMIT 4`).bind(story.section_slug, story.id).all(),
   ]);
   ctx?.waitUntil?.(db.prepare('UPDATE stories SET view_count = view_count + 1 WHERE id = ?').bind(story.id).run().catch(() => {}));
+  const { results: comments } = await db.prepare("SELECT name, body, created_at FROM comments WHERE story_id = ? AND status = 'approved' ORDER BY created_at ASC LIMIT 200").bind(story.id).all();
+  const commentNote = reqUrl?.searchParams.get('comment');
 
   const commercial = story.lane === 'partner_commerce';
   const showCommerce = commerceAllowed(section, story);
@@ -307,6 +340,8 @@ export async function storyPage(env, slug, ctx) {
     <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial })}</div>
     ${noticesBlock(notices.filter((n) => n.kind === 'update'), site.tz)}
     ${sourcesBlock(sources)}
+    ${shareBar(story)}
+    ${commentsBlock(story, comments, commentNote, site.tz)}
     <p class="story-standards"><a href="/standards">Our editorial standards</a>${commercial ? ' explain how partner content is labeled.' : '. Spotted an error? Email <a href="mailto:' + esc(site.email) + '?subject=' + encodeURIComponent('Correction request: ' + story.headline) + '">' + esc(site.email) + '</a>.'}</p>
   </article>
   ${related.length ? `<section class="section-row related"><h2 class="row-title">More in ${esc(section?.name || '')}</h2>
@@ -608,4 +643,75 @@ export async function outbound(env, kind, id, ctx) {
   const table = { p: 'products', b: 'businesses', c: 'courses' }[kind];
   ctx?.waitUntil?.(db.prepare(`UPDATE ${table} SET clicks = clicks + 1 WHERE id = ?`).bind(row.id).run().catch(() => {}));
   return new Response(null, { status: 302, headers: { location: row.url, 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer-when-downgrade' } });
+}
+
+
+// ───────────────────────────── Sharing and comments ─────────────────────────────
+
+const SHARE_TARGETS = {
+  x: (u, t) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(u)}&text=${encodeURIComponent(t)}`,
+  facebook: (u) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}`,
+  linkedin: (u) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(u)}`,
+  whatsapp: (u, t) => `https://wa.me/?text=${encodeURIComponent(`${t} ${u}`)}`,
+  email: (u, t) => `mailto:?subject=${encodeURIComponent(t)}&body=${encodeURIComponent(u)}`,
+};
+
+function shareBar(story) {
+  const label = { x: 'X', facebook: 'Facebook', linkedin: 'LinkedIn', whatsapp: 'WhatsApp', email: 'Email' };
+  return `<nav class="share" aria-label="Share this story"><span class="share-label">Share</span>
+    ${Object.keys(SHARE_TARGETS).map((k) => `<a href="/share/${esc(story.slug)}/${k}" rel="nofollow noopener" target="_blank">${label[k]}</a>`).join('')}
+  </nav>`;
+}
+
+function commentsBlock(story, comments, note, tz) {
+  const flash = note === 'sent' ? '<p class="flash flash-ok">Thanks. Your comment will appear once an editor approves it.</p>'
+    : note === 'error' ? '<p class="flash flash-err">Add your name and a comment of at least 10 characters.</p>'
+    : note === 'slow' ? '<p class="flash flash-err">You have posted several comments recently. Please try again in a few minutes.</p>' : '';
+  return `<section class="comments" id="comments" aria-labelledby="comments-h">
+    <h2 id="comments-h">Comments${comments.length ? ` (${comments.length})` : ''}</h2>
+    ${flash}
+    ${comments.length ? `<ol class="comment-list">${comments.map((c) => `<li><p class="comment-meta"><strong>${esc(c.name)}</strong> <span>${esc(formatDateTime(c.created_at, tz))}</span></p><p>${esc(c.body)}</p></li>`).join('')}</ol>`
+      : '<p class="muted">No comments yet. Start the conversation.</p>'}
+    <form class="comment-form" method="post" action="/story/${esc(story.slug)}/comment">
+      <label>Name<input name="name" required maxlength="60" autocomplete="name"></label>
+      <label>Comment<textarea name="body" required minlength="10" maxlength="1500" rows="4"></textarea></label>
+      <label class="hp" aria-hidden="true">Leave empty<input name="website" tabindex="-1" autocomplete="off"></label>
+      <p class="comment-rules">Comments are reviewed by an editor before they appear. Be civil and stay on topic.</p>
+      <button class="button" type="submit">Post comment</button>
+    </form>
+  </section>`;
+}
+
+async function ipHash(request, env) {
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const data = new TextEncoder().encode(`${ip}|${env.INGEST_SECRET || env.SITE_NAME || 'bd'}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function submitComment(env, request, slug) {
+  const back = (n) => Response.redirect(new URL(`/story/${slug}?comment=${n}#comments`, request.url), 303);
+  const story = await env.DB.prepare(`SELECT id FROM stories WHERE slug = ? AND status IN ${PUBLIC}`).bind(slug).first();
+  if (!story) return new Response('Story not found', { status: 404 });
+  const form = await request.formData();
+  if (String(form.get('website') || '').trim()) return back('sent'); // honeypot
+  const name = String(form.get('name') || '').trim().slice(0, 60);
+  const body = String(form.get('body') || '').trim().slice(0, 1500);
+  if (!name || body.length < 10) return back('error');
+  const hash = await ipHash(request, env);
+  const recent = await env.DB.prepare('SELECT COUNT(*) AS n FROM comments WHERE ip_hash = ? AND created_at >= ?')
+    .bind(hash, new Date(Date.now() - 10 * 60000).toISOString()).first();
+  if ((recent?.n || 0) >= 3) return back('slow');
+  await env.DB.prepare('INSERT INTO comments (id, story_id, name, body, status, ip_hash, created_at) VALUES (?,?,?,?,?,?,?)')
+    .bind(uid(), story.id, name, body, 'pending', hash, nowIso()).run();
+  return back('sent');
+}
+
+export async function shareRedirect(env, slug, network, ctx) {
+  const make = SHARE_TARGETS[network];
+  const story = make ? await env.DB.prepare(`SELECT id, slug, headline FROM stories WHERE slug = ? AND status IN ${PUBLIC}`).bind(slug).first() : null;
+  if (!story) return new Response('Not found', { status: 404 });
+  ctx?.waitUntil?.(env.DB.prepare('UPDATE stories SET share_count = share_count + 1 WHERE id = ?').bind(story.id).run().catch(() => {}));
+  const base = (env.SITE_URL || '').replace(/\/$/, '');
+  return new Response(null, { status: 302, headers: { location: make(`${base}/story/${story.slug}`, story.headline), 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
 }

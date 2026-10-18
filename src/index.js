@@ -8,7 +8,7 @@ import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
 import { ensureDatabase } from './bootstrap.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
-  advertisePage, submitInquiry, standardsPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
+  advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
 } from './reader/pages.js';
 
 export default {
@@ -49,6 +49,8 @@ export default {
       }
 
       if (pathname === '/api/inquiry' && method === 'POST') return await submitInquiry(env, request);
+      let cm;
+      if ((cm = pathname.match(/^\/story\/([a-z0-9-]+)\/comment$/)) && method === 'POST') return await submitComment(env, request, cm[1]);
       if (pathname === '/api/health') return json({ ok: true, service: 'boston-daily' });
 
       if (method !== 'GET' && method !== 'HEAD') return errorJson('Method not allowed', 405);
@@ -59,7 +61,8 @@ export default {
       let m;
       if ((m = pathname.match(/^\/edition\/(\d{4}-\d{2}-\d{2})\/?$/))) return await homePage(env, m[1]);
       if ((m = pathname.match(/^\/section\/([a-z0-9-]+)\/?$/))) return await sectionPage(env, m[1]);
-      if ((m = pathname.match(/^\/story\/([a-z0-9-]+)\/?$/))) return await storyPage(env, m[1], ctx);
+      if ((m = pathname.match(/^\/story\/([a-z0-9-]+)\/?$/))) return await storyPage(env, m[1], ctx, url);
+      if ((m = pathname.match(/^\/share\/([a-z0-9-]+)\/([a-z]+)$/))) return await shareRedirect(env, m[1], m[2], ctx);
       if (pathname === '/shop') return await shopPage(env, url);
       if (pathname === '/businesses') return await businessesPage(env);
       if ((m = pathname.match(/^\/businesses\/([a-z0-9-]+)\/?$/))) return await businessProfile(env, m[1]);

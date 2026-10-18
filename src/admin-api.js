@@ -12,7 +12,7 @@ import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
   'hero_image_rights', 'disclosure_label', 'disclosure_text', 'sponsor_name', 'sensitive', 'priority', 'is_lead_candidate', 'slug'];
-const RIGHTS = ['LICENSED_REPUBLISH', 'PERMITTED_RELEASE', 'PUBLIC_DOMAIN', 'PRIMARY_SOURCE', 'DISCOVERY_ONLY', 'ORIGINAL'];
+const RIGHTS = ['LICENSED_REPUBLISH', 'PERMITTED_RELEASE', 'PUBLIC_DOMAIN', 'PRIMARY_SOURCE', 'ATTRIBUTED_REPORT', 'DISCOVERY_ONLY', 'ORIGINAL'];
 
 function lifecycleResponse(err) {
   if (err instanceof LifecycleError) return errorJson(err.message, err.status, { problems: err.problems });
@@ -139,6 +139,22 @@ export async function handleAdmin(request, env, url, editor) {
       }
     }
 
+    // ── Comments (pre-moderated) ──
+    if (seg[0] === 'comments') {
+      if (seg.length === 1 && method === 'GET') {
+        const status = ['pending', 'approved', 'rejected'].includes(url.searchParams.get('status')) ? url.searchParams.get('status') : 'pending';
+        const { results } = await db.prepare(`SELECT c.id, c.name, c.body, c.status, c.created_at, c.moderated_by, s.headline, s.slug, s.id AS story_id
+          FROM comments c JOIN stories s ON s.id = c.story_id WHERE c.status = ? ORDER BY c.created_at DESC LIMIT 200`).bind(status).all();
+        return json({ ok: true, comments: results });
+      }
+      if (seg[1] && method === 'PATCH') {
+        const b = (await readJson(request)) || {};
+        if (!['approved', 'rejected'].includes(b.status)) return errorJson('status must be approved or rejected');
+        await db.prepare('UPDATE comments SET status = ?, moderated_by = ?, moderated_at = ? WHERE id = ?').bind(b.status, editor.name, nowIso(), seg[1]).run();
+        return json({ ok: true });
+      }
+    }
+
     if (path === '/courses' && method === 'GET') {
       const { results } = await db.prepare('SELECT * FROM courses ORDER BY status, title').all();
       return json({ ok: true, courses: results });
@@ -195,7 +211,8 @@ async function overview(env) {
       (SELECT COUNT(*) FROM businesses WHERE status = 'active') AS businesses,
       (SELECT COALESCE(SUM(clicks),0) FROM businesses) AS business_clicks,
       (SELECT COUNT(*) FROM courses WHERE status = 'active') AS courses,
-      (SELECT COUNT(*) FROM inquiries WHERE status = 'new') AS new_inquiries`).first();
+      (SELECT COUNT(*) FROM inquiries WHERE status = 'new') AS new_inquiries,
+      (SELECT COUNT(*) FROM comments WHERE status = 'pending') AS pending_comments`).first();
   const today = localDate(new Date(), env.TIMEZONE);
   const edition = await db.prepare('SELECT e.*, (SELECT COUNT(*) FROM edition_items i WHERE i.edition_id = e.id) AS items FROM editions e WHERE edition_date = ?').bind(today).first();
   return {

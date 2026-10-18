@@ -302,3 +302,31 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
 @media print { .masthead .nav, .module, .col-rail, .footer, .search { display: none !important; } }
+
+/* ── Share and comments ── */
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 2rem 0 0; padding: 1rem 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); font-family: var(--sans); }
+.share-label { font: 700 .8rem var(--sans); margin-right: .25rem; }
+.share a { font: 500 .8rem/1 var(--sans); padding: .5rem .75rem; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink); text-decoration: none; }
+.share a:hover { border-color: var(--ink); }
+.comments { margin-top: 2.25rem; font-family: var(--sans); }
+.comments h2 { font: 650 1.35rem var(--serif); margin: 0 0 1rem; }
+.comment-list { list-style: none; margin: 0 0 1.5rem; padding: 0; }
+.comment-list li { padding: .9rem 0; border-top: 1px solid var(--rule); }
+.comment-list p { margin: 0; font-size: .95rem; line-height: 1.55; }
+.comment-meta { margin-bottom: .3rem !important; font-size: .82rem !important; }
+.comment-meta span { color: var(--granite); margin-left: .4rem; }
+.comment-form { display: grid; gap: .75rem; padding: 1.25rem; background: var(--wash); border-radius: 6px; }
+.comment-form label { display: grid; gap: .3rem; font-size: .82rem; font-weight: 600; }
+.comment-form input, .comment-form textarea { font: 400 .95rem var(--sans); padding: .6rem .7rem; border: 1px solid #c9cfd5; border-radius: 4px; background: #fff; color: var(--ink); }
+.comment-rules { margin: 0; font-size: .8rem; color: var(--granite); }
+.comment-form .button { justify-self: start; }
+.story-figure figcaption { line-height: 1.4; }
+
+/* ── Story images on every card ── */
+.card-figure img { object-position: center 25%; }
+.card-m .card-figure { margin-bottom: .75rem; }
+.card-s { display: grid; grid-template-columns: minmax(0, 1fr) 4.75rem; column-gap: .85rem; }
+.card-s > *:not(.card-thumb) { grid-column: 1; }
+.card-thumb { grid-column: 2; grid-row: 1 / span 4; align-self: start; }
+.card-thumb img { width: 4.75rem; aspect-ratio: 1; object-fit: cover; object-position: center 25%; border-radius: 3px; }
+.story-figure img { max-height: 36rem; width: 100%; object-fit: cover; object-position: center 20%; }

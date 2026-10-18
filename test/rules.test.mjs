@@ -51,3 +51,15 @@ test('markdown is safe', () => {
   assert.ok(out.includes('rel="sponsored nofollow noopener"'));
   assert.ok(!htmlToMarkdown('<p onclick="x">hi</p><iframe src="e"></iframe>').includes('iframe'));
 });
+
+test('attributed reporting needs two publishers or a primary source', () => {
+  const story = { lane: 'newsroom', type: 'news_story', headline: 'H', body: 'A body that is long enough to pass the minimum length check for publishing.', section_slug: 'travel' };
+  const travel = { slug: 'travel', name: 'Travel', active: 1, commerce_allowed: 1, always_human: 0 };
+  const ed = { name: 'Shaheen', kind: 'human' };
+  const one = [{ rights_type: 'ATTRIBUTED_REPORT', verified: 1, publisher: 'AP' }];
+  assert.ok(approvalProblems(story, travel, one, ed).some((p) => /two verified reports/.test(p)));
+  const two = [...one, { rights_type: 'ATTRIBUTED_REPORT', verified: 1, publisher: 'Maine Morning Star' }];
+  assert.deepEqual(approvalProblems(story, travel, two, ed), []);
+  const withPrimary = [...one, { rights_type: 'PRIMARY_SOURCE', verified: 1 }];
+  assert.deepEqual(approvalProblems(story, travel, withPrimary, ed), []);
+});

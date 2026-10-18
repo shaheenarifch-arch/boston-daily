@@ -92,6 +92,13 @@ export function sourceProblems(sources, type) {
   else if (!usable.length) problems.push('Only DISCOVERY_ONLY sources: report from primary, licensed or original sources before publishing.');
   const unverified = usable.filter((s) => !s.verified);
   if (unverified.length) problems.push(`${unverified.length} source(s) not yet verified.`);
+  // Attributed reporting needs corroboration: with no primary, licensed or original source,
+  // at least two verified reports from different publishers are required.
+  const strong = usable.filter((s) => s.rights_type !== 'ATTRIBUTED_REPORT' && s.verified);
+  if (usable.length && !strong.length) {
+    const publishers = new Set(usable.filter((s) => s.rights_type === 'ATTRIBUTED_REPORT' && s.verified).map((s) => (s.publisher || s.url || s.title).toLowerCase()));
+    if (publishers.size < 2) problems.push('Attributed reporting needs two verified reports from different publishers, or a primary source.');
+  }
   return problems;
 }
 

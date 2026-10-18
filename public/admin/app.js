@@ -82,7 +82,7 @@ async function start(name) {
 // ── Router ──
 const routes = {
   live: renderLive, queue: renderQueue, stories: renderStories, story: renderStory, new: renderNewStory,
-  editions: renderEditions, commerce: renderCommerce, businesses: renderBusinesses, inquiries: renderInquiries,
+  editions: renderEditions, commerce: renderCommerce, businesses: renderBusinesses, inquiries: renderInquiries, comments: renderComments,
 };
 window.addEventListener('hashchange', route);
 async function route() {
@@ -104,6 +104,7 @@ async function refreshBadges() {
     const q = (o.newsroom.EDITORIAL_REVIEW || 0) + (o.commerce_lane.EDITORIAL_REVIEW || 0);
     $('#queue-count').hidden = !q; $('#queue-count').textContent = q;
     $('#inq-count').hidden = !o.commerce.new_inquiries; $('#inq-count').textContent = o.commerce.new_inquiries;
+    $('#com-count').hidden = !o.commerce.pending_comments; $('#com-count').textContent = o.commerce.pending_comments;
   } catch { /* ignore */ }
 }
 
@@ -530,6 +531,24 @@ async function renderInquiries() {
     </tbody></table></div>` : '<p class="sub">No inquiries yet.</p>'}</section>`;
   view.querySelectorAll('[data-inq]').forEach((sel) => sel.addEventListener('change', async () => {
     try { await api('PATCH', `/inquiries/${sel.dataset.inq}`, { status: sel.value }); toast('Saved.'); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
+  }));
+}
+
+// ── Comments ──
+async function renderComments() {
+  const params = new URLSearchParams(location.hash.split('?')[1] || '');
+  const status = params.get('status') || 'pending';
+  const { comments } = await api('GET', `/comments?status=${status}`);
+  const tab = (st, label) => `<a class="btn ${st === status ? 'btn-primary' : ''}" href="#/comments?status=${st}">${label}</a>`;
+  view.innerHTML = `<header class="view-head"><div><h1>Reader comments</h1><p class="sub">Comments appear on the site only after an editor approves them.</p></div>
+      <div class="actions">${tab('pending', 'Pending')}${tab('approved', 'Approved')}${tab('rejected', 'Rejected')}</div></header>
+    <section class="panel">${comments.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Received</th><th>Story</th><th>Name</th><th>Comment</th><th></th></tr></thead><tbody>
+    ${comments.map((c) => `<tr><td class="nowrap">${esc(when(c.created_at))}</td><td><a href="/story/${esc(c.slug)}" target="_blank" rel="noopener">${esc(c.headline)}</a></td>
+      <td>${esc(c.name)}</td><td class="detail">${esc(c.body)}</td>
+      <td class="nowrap">${c.status !== 'approved' ? `<button class="btn btn-primary" data-mod="approved" data-id="${esc(c.id)}">Approve</button>` : ''} ${c.status !== 'rejected' ? `<button class="btn btn-danger" data-mod="rejected" data-id="${esc(c.id)}">Reject</button>` : ''}</td></tr>`).join('')}
+    </tbody></table></div>` : '<p class="sub">Nothing here.</p>'}</section>`;
+  view.querySelectorAll('[data-mod]').forEach((b) => b.addEventListener('click', async () => {
+    try { await api('PATCH', `/comments/${b.dataset.id}`, { status: b.dataset.mod }); toast(b.dataset.mod === 'approved' ? 'Comment approved.' : 'Comment rejected.'); renderComments(); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
   }));
 }
 
