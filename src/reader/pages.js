@@ -149,7 +149,7 @@ export async function homePage(env, editionDate = null) {
   // Commercial budget: ~15% of the content blocks on the page.
   const contentBlocks = hasNews ? (1 + top.length + rest.length + selection.length + latest.length) : 8;
   const picked = commercialBudget(contentBlocks, [
-    houseAd(site, 'FRONT PAGE'),
+    houseAd(site, 'FRONT PAGE', 'home'),
     partnerPicks(picks, { title: 'Today’s deals' }),
     networkModule(network, site.network),
     partnerGuides.length ? `<section class="section-row partner-row">
@@ -255,7 +255,7 @@ export async function sectionPage(env, slug) {
 
   const [first, ...others] = news;
   const sectionMods = [
-    showCommerce ? houseAd(site, 'SPONSORED') : '',
+    showCommerce ? houseAd(site, 'SPONSORED', slug) : '',
     partnerPicks(products, { title: `${section.name} picks`, more: `/shop?section=${encodeURIComponent(slug)}` }),
     commercial.length ? `<section class="section-row partner-row">
           <h2 class="row-title">Guides from our partners</h2>

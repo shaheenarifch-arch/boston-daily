@@ -1,5 +1,6 @@
 import { esc, formatDateLong, formatDateTime, timeAgo, money } from '../util.js';
 import { excerpt } from '../markdown.js';
+import { campaignFor } from '../ads.js';
 
 export const SITE = (env) => ({
   name: env.SITE_NAME || 'Boston Daily',
@@ -117,7 +118,16 @@ export function courseItem(c) {
   </li>`;
 }
 
-export function houseAd(site, kind = 'ADS') {
+export function houseAd(site, kind = 'ADS', placement = null) {
+  const ad = placement ? campaignFor(placement) : null;
+  if (ad) {
+    return `<aside class="module module-ad" aria-label="Advertisement" data-campaign="${esc(ad.id)}">
+    <span class="label label-ad">Advertisement</span>
+    <p class="ad-copy"><strong>${esc(ad.headline)}</strong><br>${esc(ad.copy)}</p>
+    <a class="button" href="${esc(ad.url)}" rel="sponsored noopener" target="_blank">${esc(ad.cta)}</a>
+    <p class="ad-copy" style="margin:.5rem 0 0;font-size:.75rem">From ${esc(ad.advertiser)}</p>
+  </aside>`;
+  }
   const subject = encodeURIComponent(`[${kind}] Advertising with ${site.name}`);
   return `<aside class="module module-ad" aria-label="Advertisement">
     <span class="label label-ad">Advertisement</span>
