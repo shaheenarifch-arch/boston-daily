@@ -8,6 +8,7 @@ import {
   approvalProblems, requiresHuman, loadStoryContext, transition, approve, reject, schedule, publish, revisePublished, LifecycleError,
 } from './lifecycle.js';
 import { buildEdition, curateEdition } from './editions.js';
+import { visitorStats } from './analytics.js';
 import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
@@ -30,6 +31,8 @@ export async function handleAdmin(request, env, url, editor) {
     if (path === '/me') return json({ ok: true, editor: editor.name });
 
     if (path === '/overview' && method === 'GET') return json(await overview(env));
+
+    if (path === '/visitors' && method === 'GET') return json({ ok: true, ...(await visitorStats(db, env.TIMEZONE || 'America/New_York')) });
 
     // ── Newsletter subscribers ──
     if (path === '/subscribers' && method === 'GET') {

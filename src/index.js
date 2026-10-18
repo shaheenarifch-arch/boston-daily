@@ -6,6 +6,7 @@ import { publishDueScheduled } from './lifecycle.js';
 import { buildEdition } from './editions.js';
 import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
 import { ensureDatabase } from './bootstrap.js';
+import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
@@ -14,8 +15,14 @@ import {
 
 const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
 
-export default {
+const worker = {
   async fetch(request, env, ctx) {
+    const response = await worker.handleRequest(request, env, ctx);
+    trackVisit(request, response, env, ctx);
+    return response;
+  },
+
+  async handleRequest(request, env, ctx) {
     const url = new URL(request.url);
     const { pathname } = url;
     const method = request.method;
@@ -36,8 +43,13 @@ export default {
 
       // ── Newsroom API (human editors only) ──
       if (pathname.startsWith('/api/admin')) {
+        const ip = request.headers.get('cf-connecting-ip') || '';
+        if (await loginLocked(env.DB, ip)) return errorJson('Too many wrong passwords. Try again in 15 minutes.', 429);
         const editor = await authenticateEditor(request, env);
-        if (!editor) return errorJson('Editor sign-in required', 401);
+        if (!editor) {
+          if (request.headers.get('authorization')) ctx.waitUntil(recordLoginFailure(env.DB, ip));
+          return errorJson('Editor sign-in required', 401);
+        }
         return await handleAdmin(request, env, url, editor);
       }
 
@@ -116,3 +128,5 @@ export default {
     })());
   },
 };
+
+export default worker;

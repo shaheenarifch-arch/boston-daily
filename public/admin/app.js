@@ -37,6 +37,7 @@ async function api(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (res.status === 401) { showLogin('Your session ended. Sign in again.'); throw new Error('Signed out'); }
+  if (res.status === 429) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Too many attempts. Try again later.'); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || `Request failed (${res.status})`);
@@ -66,7 +67,7 @@ $('#login-form').addEventListener('submit', async (e) => {
     start(me.editor);
   } catch (err) {
     sessionStorage.removeItem(TOKEN_KEY);
-    $('#login-error').textContent = 'That token was not accepted.';
+    $('#login-error').textContent = err.message && err.message.startsWith('Too many') ? err.message : 'That password was not accepted.';
   }
 });
 $('#logout').addEventListener('click', () => { sessionStorage.removeItem(TOKEN_KEY); showLogin(); });
@@ -101,7 +102,6 @@ async function route() {
 async function refreshBadges() {
   try {
     const o = await api('GET', '/overview');
-  const nl = await api('GET', '/subscribers').catch(() => null);
     const q = (o.newsroom.EDITORIAL_REVIEW || 0) + (o.commerce_lane.EDITORIAL_REVIEW || 0);
     $('#queue-count').hidden = !q; $('#queue-count').textContent = q;
     $('#inq-count').hidden = !o.commerce.new_inquiries; $('#inq-count').textContent = o.commerce.new_inquiries;
@@ -121,12 +121,22 @@ document.addEventListener('click', async (e) => {
 
 async function renderLive() {
   const o = await api('GET', '/overview');
+  const nl = await api('GET', '/subscribers').catch(() => null);
+  const vs = await api('GET', '/visitors').catch(() => null);
   const tile = (s) => `<a class="stage" href="#/stories?status=${s}" data-status="${s}">
       <span class="stage-n">${o.newsroom[s] || 0}</span><span class="stage-l">${esc(STAGE_LABEL[s])}</span></a>`;
   const ed = o.edition;
   view.innerHTML = `
     <header class="view-head"><div><h1>GetServices.ai newsroom live</h1><p class="sub">Operational status for ${esc(o.today)}. Refreshes every 30 seconds.</p></div>
       <a class="btn btn-primary" href="#/new">New story</a></header>
+    ${vs ? `<section class="panel"><h2 class="panel-title">Readers</h2>
+      <div class="grid-3">
+        <div><p class="stat-n">${esc(vs.today.visitors)}</p><p class="stat-l">Unique visitors today</p><p class="stat-note">${esc(vs.today.pageviews)} page views</p></div>
+        <div><p class="stat-n">${esc(vs.last7.visitors)}</p><p class="stat-l">Visitors, last 7 days</p><p class="stat-note">${esc(vs.last7.pageviews)} page views</p></div>
+        <div><p class="stat-n">${esc(nl?.counts?.active || 0)}</p><p class="stat-l">Newsletter subscribers</p><p class="stat-note">Daily ${esc(nl?.counts?.daily || 0)} · Weekly ${esc(nl?.counts?.weekly || 0)}</p></div>
+      </div>
+      ${vs.days.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Day</th><th>Unique visitors</th><th>Page views</th></tr></thead><tbody>${vs.days.slice(0, 14).map((d) => `<tr><td>${esc(d.day)}</td><td>${esc(d.visitors)}</td><td>${esc(d.pageviews)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="sub">No visits counted yet.</p>'}
+      <p class="sub">Unique visitors are counted per day without cookies; bots and admin pages are excluded.</p></section>` : ''}
     ${nl ? `<section class="panel"><h2 class="panel-title">Newsletter subscribers</h2>
       <p>Daily: <strong>${esc(nl.counts?.daily || 0)}</strong> · Weekly: <strong>${esc(nl.counts?.weekly || 0)}</strong> · Unsubscribed: ${esc(nl.counts?.unsubscribed || 0)}
       · <a href="#" id="nl-csv">Download CSV</a></p>
