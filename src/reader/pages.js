@@ -71,12 +71,21 @@ export async function homePage(env, editionDate = null) {
     networkFor(db, null, 5),
     courseOfTheDay(db, site.tz),
   ]);
+  const { results: partnerGuides } = await db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
+    WHERE s.lane = 'partner_commerce' AND s.status IN ${PUBLIC} AND s.sensitive = 0 AND sec.commerce_allowed = 1 ORDER BY s.published_at DESC LIMIT 3`).all();
 
   // Hydrate section names for edition items.
   const nameOf = Object.fromEntries(chrome.sections.map((s) => [s.slug, s.name]));
   const items = (data?.items || []).map((s) => ({ ...s, section_name: nameOf[s.section_slug] }));
+  if (!editionDate) {
+    const placed = new Set(items.map((i) => i.id));
+    const extra = latest.filter((s) => !placed.has(s.id));
+    if (!items.some((i) => i.slot === 'lead') && extra.length) items.unshift({ ...extra.shift(), slot: 'lead' });
+    while (items.filter((i) => i.slot === 'top').length < 6 && extra.length) items.push({ ...extra.shift(), slot: 'top' });
+  }
   const lead = items.find((i) => i.slot === 'lead');
   const top = items.filter((i) => i.slot === 'top');
+  const hasNews = !!lead;
   const selection = items.filter((i) => i.slot === 'editors_selection');
   const rest = items.filter((i) => i.slot === 'section');
 
@@ -90,52 +99,83 @@ export async function homePage(env, editionDate = null) {
   }
 
   const edition = data?.edition;
-  const heading = edition
-    ? `<div class="edition-head"><h1 class="edition-title">${editionDate ? `Edition ${edition.edition_number}` : 'Today’s edition'}</h1>
-       <p class="edition-sub">${esc(formatDateLong(edition.edition_date, site.tz))}, edition ${esc(edition.edition_number)}${editionDate ? ` <a href="/">Go to today</a>` : ''}</p></div>`
-    : `<div class="edition-head"><h1 class="edition-title">Today’s edition</h1></div>`;
+  const heading = editionDate
+    ? `<div class="edition-head"><h1 class="edition-title">Edition ${esc(edition.edition_number)}</h1>
+       <p class="edition-sub">${esc(formatDateLong(edition.edition_date, site.tz))}. <a href="/">Go to today’s front page</a></p></div>`
+    : `<h1 class="sr">${esc(site.name)}: today’s edition</h1>`;
+
+  const newsSections = chrome.sections.filter((x) => x.in_nav && x.kind === 'news');
+  const nicheSections = chrome.sections.filter((x) => x.in_nav && x.kind === 'niche');
+  const fullSections = await db.prepare('SELECT slug, description FROM sections WHERE active = 1').all();
+  const descOf = Object.fromEntries(fullSections.results.map((x) => [x.slug, x.description]));
+
+  // Column A: the lead (or the welcome note before the first story).
+  const colA = hasNews
+    ? `${storyCard(lead, { size: 'lead', tz: site.tz })}
+       ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 8).map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>` : ''}`
+    : `<div class="welcome">
+        <p class="welcome-kicker">Welcome to ${esc(site.name)}</p>
+        <h2 class="welcome-title">News for Boston and the nation, with a fresh edition every morning.</h2>
+        <p class="welcome-dek">We report from primary sources and official records, and an editor reviews every story before it runs. The first stories are on the way.</p>
+        <p class="welcome-links"><a class="button" href="/standards">How we report</a> <a class="button button-quiet" href="/advertise">Advertise with us</a></p>
+        <dl class="welcome-facts">
+          <div><dt>Every morning</dt><dd>A new numbered edition, archived for good</dd></div>
+          <div><dt>Editor approved</dt><dd>No story runs without a person signing off</dd></div>
+          <div><dt>Open about changes</dt><dd>Updates and corrections are labeled on every story</dd></div>
+        </dl>
+      </div>`;
+
+  // Column B: top stories (or a section guide before the first story).
+  const sectionIndex = `<ul class="section-index">${newsSections.map((x) => `<li><a href="/section/${esc(x.slug)}"><strong>${esc(x.name)}</strong>${descOf[x.slug] ? `<span>${esc(descOf[x.slug])}</span>` : ''}</a></li>`).join('')}</ul>`;
+  const moreStories = latest.filter((s) => s.id !== lead?.id).slice(0, 6);
+  const colB = top.length
+    ? `<h2 class="col-label">Top stories</h2>${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz })).join('')}`
+    : moreStories.length
+      ? `<h2 class="col-label">More stories</h2>${moreStories.map((s) => storyCard(s, { size: 's', tz: site.tz })).join('')}`
+      : `<h2 class="col-label">Sections</h2>${sectionIndex}`;
+
+  // Column C: the rail.
+  const colC = `
+      ${latest.length ? `<section class="rail-block"><h2 class="col-label">Latest updates</h2>
+        <ol class="latest">${latest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol></section>` : ''}
+      ${mostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
+        <ol class="most-read">${mostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
+      ${networkModule(network, site.network)}
+      ${courseModule(cotd, site.network, { title: 'RealSkillSet course of the day' })}
+      ${houseAd(site, 'FRONT PAGE')}`;
+
+  const sectionRows = [...bySection.entries()].map(([slug, list]) => {
+    const sec = chrome.sections.find((x) => x.slug === slug);
+    return `<section class="section-row">
+      <h2 class="row-title"><a href="/section/${esc(slug)}">${esc(sec?.name || slug)}</a></h2>
+      <div class="row-cards">${list.slice(0, 4).map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
+    </section>`;
+  }).join('');
 
   const body = `
   ${heading}
-  ${!lead && !top.length ? emptyState('Today’s edition is being prepared by the newsroom. Latest stories appear below as they are published.') : ''}
-  ${lead || top.length ? `<section class="front">
-    <div class="front-lead">${lead ? storyCard(lead, { size: 'lead', tz: site.tz }) : ''}</div>
-    ${top.length ? `<div class="front-top">
-      <h2 class="rail-title">Top stories</h2>
-      ${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz, showDek: false })).join('')}
-    </div>` : ''}
+  <section class="front-grid">
+    <div class="fg-a">${colA}</div>
+    <div class="fg-b">${colB}</div>
+    <aside class="fg-c">${colC}</aside>
+  </section>
+  ${sectionRows}
+  ${selection.length ? `<section class="section-row selection">
+    <h2 class="row-title">Editor’s selection</h2>
+    <div class="row-cards">${selection.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
   </section>` : ''}
-
-  <div class="columns">
-    <div class="col-main">
-      ${[...bySection.entries()].map(([slug, list]) => {
-        const sec = chrome.sections.find((x) => x.slug === slug);
-        return `<section class="section-row">
-          <h2 class="row-title"><a href="/section/${esc(slug)}">${esc(sec?.name || slug)}</a></h2>
-          <div class="row-cards">${list.slice(0, 3).map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
-        </section>`;
-      }).join('')}
-      ${selection.length ? `<section class="section-row selection">
-        <h2 class="row-title">Editor’s selection</h2>
-        <div class="row-cards">${selection.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
-      </section>` : ''}
-      ${partnerPicks(picks, { title: 'Today’s deals' })}
-    </div>
-    <aside class="col-rail">
-      <section class="rail-block">
-        <h2 class="rail-title">Latest updates</h2>
-        ${latest.length ? `<ol class="latest">${latest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol>` : '<p class="muted">No stories published yet.</p>'}
-      </section>
-      ${mostRead.length ? `<section class="rail-block">
-        <h2 class="rail-title">Most read</h2>
-        <ol class="most-read">${mostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol>
-      </section>` : ''}
-      ${networkModule(network, site.network)}
-      ${courseModule(cotd, site.network, { title: 'RealSkillSet course of the day' })}
-      ${houseAd(site, 'FRONT PAGE')}
-      <p class="rail-archive"><a href="/editions">Browse past editions</a></p>
-    </aside>
-  </div>`;
+  ${partnerGuides.length ? `<section class="section-row partner-row">
+    <h2 class="row-title">Guides from our partners</h2>
+    <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
+    <div class="row-cards">${partnerGuides.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
+  </section>` : ''}
+  ${partnerPicks(picks, { title: 'Today’s deals' })}
+  <section class="section-row">
+    <h2 class="row-title">Guides and shopping</h2>
+    <ul class="section-grid">${nicheSections.map((x) => `<li><a href="/section/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}
+      <li><a href="/businesses">Recommended businesses</a></li><li><a href="/courses">RealSkillSet courses</a></li></ul>
+  </section>
+  ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}`;
 
   return html(layout(env, chrome, {
     title: editionDate ? `Edition ${edition.edition_number}, ${formatDateLong(edition.edition_date, site.tz)}` : '',
@@ -200,7 +240,7 @@ export async function sectionPage(env, slug) {
     </div>
     <div class="columns">
       <div class="col-main">
-        ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, showSection: !!children.length })}</div>` : emptyState(`No ${section.name} stories have been published yet.`)}
+        ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: !!children.length })).join('')}</div>` : ''}
         ${commercial.length ? `<section class="section-row partner-row">
           <h2 class="row-title">Guides from our partners</h2>
@@ -465,7 +505,7 @@ export async function standardsPage(env) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
   const body = `<article class="prose standards"><h1>Editorial standards</h1>
-    <p>Boston Daily is a digital newspaper published by ${esc(site.network)}. AI tools help our newsroom find, research and draft stories. Editors decide what is published.</p>
+    <p>Boston Daily is published by ${esc(site.network)}. AI tools help our newsroom find, research and draft stories. Editors decide what is published.</p>
     <h2 id="sourcing">Sourcing and copyright</h2>
     <p>We report from primary sources, official records, licensed wire services, permitted press releases and our own reporting. We do not copy or closely rewrite other publications’ articles. We use other outlets’ coverage only to discover stories, then report them from original sources. Images run only when we hold the rights to use them. Each story lists its public sources.</p>
     <h2 id="approval">Human approval</h2>

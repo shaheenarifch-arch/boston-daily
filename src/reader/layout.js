@@ -19,7 +19,7 @@ export function layout(env, chrome, { title, description = '', canonical = '', b
   const niche = chrome.sections.filter((s) => s.in_nav && s.kind === 'niche');
   const fullTitle = title ? `${title} | ${site.name}` : `${site.name}: news for Boston and the nation`;
   const editionLine = chrome.edition && chrome.edition.edition_date === today
-    ? `Edition ${chrome.edition.edition_number}` : 'Today';
+    ? `Edition ${chrome.edition.edition_number}` : 'Past editions';
   const navLink = (s) => `<a href="/section/${esc(s.slug)}"${active === s.slug ? ' aria-current="page"' : ''}>${esc(s.name)}</a>`;
   const canon = canonical && site.url ? `${site.url}${canonical}` : '';
 
@@ -38,7 +38,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:type" content="${esc(ogType)}">
 ${canon ? `<meta property="og:url" content="${esc(canon)}">` : ''}
 ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">` : '<meta name="twitter:card" content="summary">'}
-<meta name="theme-color" content="#14324a">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="${esc(site.name)}" href="/feed.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,24 +51,25 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
 <a class="skip" href="#main">Skip to content</a>
 <header class="masthead">
   <div class="masthead-top wrap">
-    <p class="masthead-date">${esc(formatDateLong(today, site.tz))}</p>
-    <p class="masthead-edition"><a href="/editions">${esc(editionLine)}</a></p>
-  </div>
-  <div class="wrap masthead-brand">
-    <a class="brand" href="/" aria-label="${esc(site.name)} home">${esc(site.name)}</a>
     <form class="search" action="/search" method="get" role="search">
       <label class="sr" for="q">Search</label>
-      <input id="q" name="q" type="search" placeholder="Search Boston Daily" autocomplete="off">
+      <input id="q" name="q" type="search" placeholder="Search" autocomplete="off">
     </form>
+    <p class="masthead-util"><a href="/advertise">Advertise</a></p>
+  </div>
+  <div class="wrap masthead-brand">
+    <p class="masthead-date">${esc(formatDateLong(today, site.tz))}<br><a href="/editions">${esc(editionLine === 'Past editions' ? "Today\u2019s edition" : editionLine)}</a></p>
+    <a class="brand" href="/" aria-label="${esc(site.name)} home">${esc(site.name)}</a>
+    <p class="masthead-tag">${esc(site.tagline)}</p>
   </div>
   <nav class="nav nav-news" aria-label="News sections"><div class="wrap nav-scroll">
-    <a href="/"${active === 'home' ? ' aria-current="page"' : ''}>Today</a>${news.map(navLink).join('')}
+    ${news.map(navLink).join('')}
   </div></nav>
   <nav class="nav nav-niche" aria-label="More sections"><div class="wrap nav-scroll">
     ${niche.map(navLink).join('')}
     <a href="/shop"${active === 'shop' ? ' aria-current="page"' : ''}>Partner picks</a>
-    <a href="/businesses"${active === 'businesses' ? ' aria-current="page"' : ''}>Recommended businesses</a>
-    <a href="/courses"${active === 'courses' ? ' aria-current="page"' : ''}>RealSkillSet courses</a>
+    <a href="/businesses"${active === 'businesses' ? ' aria-current="page"' : ''}>Businesses</a>
+    <a href="/courses"${active === 'courses' ? ' aria-current="page"' : ''}>Courses</a>
   </div></nav>
 </header>
 <main id="main" class="wrap">
