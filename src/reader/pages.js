@@ -480,19 +480,51 @@ export async function businessProfile(env, slug) {
       WHERE s.lane = 'partner_commerce' AND s.status IN ${PUBLIC} AND instr(lower(s.byline), ?) > 0 ORDER BY s.published_at DESC LIMIT 4`).bind(b.domain.toLowerCase()).all() : { results: [] },
     b.slug === 'realskillset' ? coursesFor(db, null, 6) : [],
   ]);
-  const body = `<div class="page-head"><p class="crumb"><a href="/businesses">Recommended businesses</a></p>
+  // A site the daily health check found unreachable gets no outbound link and is kept out of search (same rule as the listings).
+  const down = b.health_ok === 0;
+  const owner = b.paid_listing ? '' : site.network;
+  const what = b.short_description || '';
+  const pageUrl = site.url ? `${site.url}/businesses/${b.slug}` : '';
+  const desc = [what ? `${b.name}: ${what.replace(/\.$/, '')}.` : b.name,
+    owner ? `Part of the ${owner} network.` : 'Paid listing on Boston Daily.',
+    b.domain && !down ? `Visit ${b.domain}.` : ''].filter(Boolean).join(' ').slice(0, 158);
+  const faq = [
+    what && [`What is ${b.name}?`, `${b.name} offers ${what.charAt(0).toLowerCase()}${what.slice(1).replace(/\.$/, '')}.`],
+    b.domain && !down && [`What is the ${b.name} website?`, `The official website is ${b.domain}.`],
+    [`Who runs ${b.name}?`, owner ? `${b.name} is part of the ${owner} network, which also publishes ${site.name}.` : `${b.name} is an independent business with a paid listing on ${site.name}.`],
+  ].filter(Boolean);
+  const body = `<div class="page-head biz-head"><div>
+      <p class="crumb"><a href="/businesses">Recommended businesses</a></p>
       <h1>${esc(b.name)}</h1>
       <p class="page-sub">${b.paid_listing ? 'Paid listing.' : `Part of the ${esc(site.network)} network.`}</p></div>
+      ${b.logo_url ? `<img class="biz-logo" src="${esc(b.logo_url)}" alt="${esc(b.name)} logo" width="96" height="96" decoding="async" fetchpriority="low">` : ''}
+    </div>
     <div class="columns"><div class="col-main">
-      <div class="prose">${b.long_description ? renderMarkdown(b.long_description) : `<p>${esc(b.short_description || '')}</p>`}</div>
-      ${b.domain ? `<p><a class="button" href="/go/b/${esc(b.slug)}" rel="${b.paid_listing ? 'sponsored ' : ''}noopener" target="_blank">Visit ${esc(b.domain)}</a></p>` : ''}
+      <div class="prose">${b.long_description ? renderMarkdown(b.long_description) : `<p>${esc(what)}</p>`}</div>
+      ${b.domain && !down ? `<p><a class="button" href="/go/b/${esc(b.slug)}" rel="${b.paid_listing ? 'sponsored ' : ''}noopener" target="_blank">Visit ${esc(b.domain)}</a></p>` : ''}
+      ${down ? '<p class="muted">This website is temporarily unavailable. We will link to it again once it is back online.</p>' : ''}
+      <section class="biz-faq" aria-labelledby="biz-faq-h"><h2 class="row-title" id="biz-faq-h">${esc(b.name)} at a glance</h2>
+        <dl class="welcome-facts">${faq.map(([q, a]) => `<div><dt>${esc(q)}</dt><dd>${esc(a)}</dd></div>`).join('')}</dl></section>
       ${posts.length ? `<section class="section-row"><h2 class="row-title">Latest guides from ${esc(b.name)}</h2><div class="row-cards">${posts.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div></section>` : ''}
       ${courses.length ? `<section class="section-row"><h2 class="row-title">Featured courses</h2><ul class="course-list">${courses.map(courseItem).join('')}</ul></section>` : ''}
       ${partnerPicks(products, { title: 'Related partner picks' })}
     </div><aside class="col-rail">${houseAd(site, 'LISTING')}</aside></div>`;
   return html(layout(env, chrome, {
-    title: b.name, description: b.short_description || '', canonical: `/businesses/${b.slug}`, active: 'businesses', body,
-    jsonLd: { '@context': 'https://schema.org', '@type': 'Organization', name: b.name, url: b.domain ? `https://${b.domain}` : undefined, description: b.short_description || undefined },
+    title: `${b.name}${what ? `: ${what}` : ''}`, description: desc, canonical: `/businesses/${b.slug}`, active: 'businesses', body,
+    image: b.logo_url || '', noindex: down,
+    jsonLd: { '@context': 'https://schema.org', '@graph': [
+      { '@type': 'WebPage', '@id': pageUrl ? `${pageUrl}#page` : undefined, url: pageUrl || undefined, name: b.name, description: desc,
+        isPartOf: site.url ? { '@type': 'WebSite', name: site.name, url: site.url } : undefined,
+        about: { '@id': pageUrl ? `${pageUrl}#org` : undefined }, breadcrumb: { '@id': pageUrl ? `${pageUrl}#crumbs` : undefined } },
+      { '@type': 'BreadcrumbList', '@id': pageUrl ? `${pageUrl}#crumbs` : undefined, itemListElement: [
+        { '@type': 'ListItem', position: 1, name: site.name, item: site.url ? `${site.url}/` : undefined },
+        { '@type': 'ListItem', position: 2, name: 'Recommended businesses', item: site.url ? `${site.url}/businesses` : undefined },
+        { '@type': 'ListItem', position: 3, name: b.name, item: pageUrl || undefined }] },
+      { '@type': 'Organization', '@id': pageUrl ? `${pageUrl}#org` : undefined, name: b.name, description: what || undefined,
+        url: b.domain && !down ? `https://${b.domain}` : undefined, logo: b.logo_url || undefined,
+        parentOrganization: owner ? { '@type': 'Organization', name: owner } : undefined },
+      { '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+    ] },
   }));
 }
 
@@ -703,7 +735,7 @@ ${results.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc><ne
   const [{ results: stories }, { results: sections }, { results: biz }] = await Promise.all([
     env.DB.prepare(`SELECT slug, COALESCE(corrected_at, last_updated_at, published_at) AS mod FROM stories WHERE status IN ${PUBLIC} ORDER BY published_at DESC LIMIT 5000`).all(),
     env.DB.prepare('SELECT slug FROM sections WHERE active = 1').all(),
-    env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active'").all(),
+    env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active' AND (health_ok IS NULL OR health_ok = 1)").all(),
   ]);
   const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections',
     ...sections.map((s) => `/section/${s.slug}`), ...biz.map((b) => `/businesses/${b.slug}`)];
