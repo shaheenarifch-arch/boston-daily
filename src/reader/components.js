@@ -42,7 +42,8 @@ export function storyCard(s, { size = 'm', tz, showSection = true, showDek = tru
   const section = showSection && s.section_name ? `<a class="card-section" href="/section/${esc(s.section_slug)}">${esc(s.section_name)}</a>` : '';
   // Every story card carries its image when the story has one with recorded rights.
   const hasImg = s.hero_image_url && s.hero_image_rights;
-  const img = !hasImg ? ''
+  // Text-only medium cards get a quiet section plate so card grids stay aligned.
+  const img = !hasImg ? (size === 'm' ? `<figure class="card-figure card-figure-empty" aria-hidden="true"><span>${esc(s.section_name || 'Boston Daily')}</span></figure>` : '')
     : size === 's' ? `<a class="card-thumb" href="/story/${esc(s.slug)}" tabindex="-1" aria-hidden="true"><img src="${esc(s.hero_image_url)}" alt="" loading="lazy" decoding="async"></a>`
     : `<figure class="card-figure"><img src="${esc(s.hero_image_url)}" alt="" loading="${size === 'lead' ? 'eager' : 'lazy'}" decoding="async"></figure>`;
   const dek = showDek && (s.dek || s.body) ? `<p class="card-dek">${esc(s.dek || excerpt(s.body, size === 'lead' ? 260 : 150))}</p>` : '';

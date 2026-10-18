@@ -398,3 +398,30 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .editor-interests li { break-inside: avoid; margin-bottom: .3rem; }
 .editor-mission { font: 600 1.25rem/1.4 var(--serif); margin: .5rem 0 1.5rem; padding-left: 1rem; border-left: 3px solid var(--ink); }
 @media (max-width: 560px) { .editor-interests { columns: 1; } }
+
+/* Layout polish: aligned card grids, compact rows on phones, premium grid on phones */
+.card-figure-empty { display: none; }
+.row-cards .card-figure-empty, .front-pair .card-figure-empty { display: grid; }
+.card-figure-empty { place-items: center; aspect-ratio: 16 / 9; background: var(--wash); border-top: 3px double var(--rule); border-radius: 4px; }
+.card-figure-empty span { font: italic 600 1.15rem/1 var(--serif); color: var(--granite); letter-spacing: .01em; }
+.front-pair { row-gap: 1.75rem; }
+@media (max-width: 639px) {
+  .row-cards { gap: 0; }
+  .row-cards > .card-m + .card-m { display: grid; grid-template-columns: minmax(0, 1fr) 6.5rem; column-gap: .9rem; align-items: start; border-top: 1px solid var(--rule); padding: 1rem 0 0; margin-top: 1rem; }
+  .row-cards > .card-m + .card-m > :not(.card-figure) { grid-column: 1; }
+  .row-cards > .card-m + .card-m .card-figure { grid-column: 2; grid-row: 1 / span 4; margin: 0; }
+  .row-cards > .card-m + .card-m .card-figure img { aspect-ratio: 1; }
+  .row-cards > .card-m + .card-m .card-figure-empty { display: none; }
+  .row-cards > .card-m + .card-m:has(.card-figure-empty) { grid-template-columns: minmax(0, 1fr); }
+  .row-cards > .card-m + .card-m .card-dek { display: none; }
+  .row-cards > .card-m + .card-m .card-headline { font-size: 1.08rem; }
+  .premium-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .premium-img { aspect-ratio: 1; }
+  .premium-name { font-size: 1rem; }
+}
+.more-grid { display: grid; gap: 1.5rem 2rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .more-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .more-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.more-title { font: 700 .95rem/1.2 var(--sans); margin: 0 0 .5rem; padding-bottom: .4rem; border-bottom: 2px solid var(--ink); }
+.more-title a { color: var(--ink); text-decoration: none; }
+.more-col .card-s:first-of-type { padding-top: .2rem; }

@@ -108,7 +108,7 @@ export async function homePage(env, editionDate = null) {
       // Newest day's stories first among equals (by when the story was written, so a bulk approval doesn't reorder the front page).
       .sort((a, b) => (b.is_lead_candidate - a.is_lead_candidate) || (b.created_at ? localDate(new Date(b.created_at), site.tz) : '').localeCompare(a.created_at ? localDate(new Date(a.created_at), site.tz) : '') || (b.priority - a.priority) || String(b.published_at).localeCompare(String(a.published_at)));
     if (!items.some((i) => i.slot === 'lead') && extra.length) items.unshift({ ...extra.shift(), slot: 'lead' });
-    while (items.filter((i) => i.slot === 'top').length < 8 && extra.length) items.push({ ...extra.shift(), slot: 'top' });
+    while (items.filter((i) => i.slot === 'top').length < 10 && extra.length) items.push({ ...extra.shift(), slot: 'top' });
     // Everything else published fills the section rows below the fold (until an edition curates them).
     for (const s of extra) items.push({ ...s, slot: 'section' });
   }
@@ -119,7 +119,7 @@ export async function homePage(env, editionDate = null) {
   const rest = items.filter((i) => i.slot === 'section');
 
   // Section rows: group edition + rest by top-level section.
-  const onFront = new Set([lead?.id, ...top.slice(0, 8).map((t) => t.id)]);
+  const onFront = new Set([lead?.id, ...top.slice(0, 10).map((t) => t.id)]);
   const bySection = new Map();
   for (const s of [...top, ...rest].filter((x) => !onFront.has(x.id))) {
     const sec = sectionTree(chrome, s.section_slug);
@@ -142,7 +142,7 @@ export async function homePage(env, editionDate = null) {
   // Column A: the lead (or the welcome note before the first story).
   const colA = hasNews
     ? `${storyCard(lead, { size: 'lead', tz: site.tz })}
-       ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 8).map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>` : ''}`
+       ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 10).map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>` : ''}`
     : `<div class="welcome">
         <p class="welcome-kicker">Welcome to ${esc(site.name)}</p>
         <h2 class="welcome-title">News for Boston and the nation, with a fresh edition every morning.</h2>
@@ -189,13 +189,21 @@ export async function homePage(env, editionDate = null) {
       ${subscribeBox({ compact: true })}
       ${railCommercial}`;
 
-  const sectionRows = [...bySection.entries()].map(([slug, list]) => {
-    const sec = chrome.sections.find((x) => x.slug === slug);
-    return `<section class="section-row">
-      <h2 class="row-title"><a href="/section/${esc(slug)}">${esc(sec?.name || slug)}</a></h2>
+  // Sections with 3+ stories get a full row; thinner sections share one multi-column block so no row is half empty.
+  const entries = [...bySection.entries()];
+  const nameOfSection = (slug) => chrome.sections.find((x) => x.slug === slug)?.name || slug;
+  const fullRows = entries.filter(([, list]) => list.length >= 3).map(([slug, list]) => `<section class="section-row">
+      <h2 class="row-title"><a href="/section/${esc(slug)}">${esc(nameOfSection(slug))}</a></h2>
       <div class="row-cards">${list.slice(0, 4).map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
-    </section>`;
-  }).join('');
+    </section>`).join('');
+  const thin = entries.filter(([, list]) => list.length < 3);
+  const sectionRows = fullRows + (thin.length ? `<section class="section-row more-sections">
+      <h2 class="row-title">More from the paper</h2>
+      <div class="more-grid">${thin.map(([slug, list]) => `<div class="more-col">
+        <h3 class="more-title"><a href="/section/${esc(slug)}">${esc(nameOfSection(slug))}</a></h3>
+        ${list.map((s) => storyCard(s, { size: 's', tz: site.tz, showSection: false, showDek: false })).join('')}
+      </div>`).join('')}</div>
+    </section>` : '');
 
   const body = `
   ${heading}
