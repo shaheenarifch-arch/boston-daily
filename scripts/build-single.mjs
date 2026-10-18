@@ -25,7 +25,7 @@ if (assets['/admin/index.html']) assets['/admin/'] = assets['/admin/index.html']
 
 const result = await build({
   entryPoints: [join(root, 'src/index.js')],
-  bundle: true, format: 'esm', platform: 'neutral', target: 'es2022', write: false, minify: false,
+  bundle: true, loader: { '.sql': 'text' }, format: 'esm', platform: 'neutral', target: 'es2022', write: false, minify: false,
 });
 
 const wrapper = `

@@ -1,5 +1,8 @@
 name = "boston-daily"
 main = "src/index.js"
+
+# Schema and seed SQL are bundled as text so the Worker can initialize an empty database itself.
+rules = [{ type = "Text", globs = ["**/*.sql"], fallthrough = true }]
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 

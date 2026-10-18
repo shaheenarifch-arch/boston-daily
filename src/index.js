@@ -5,6 +5,7 @@ import { ingestBlogPost, ingestProducts, ingestBusinesses, ingestCourses } from 
 import { publishDueScheduled } from './lifecycle.js';
 import { buildEdition } from './editions.js';
 import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
+import { ensureDatabase } from './bootstrap.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
   advertisePage, submitInquiry, standardsPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
@@ -23,6 +24,8 @@ export default {
     }
 
     try {
+      await ensureDatabase(env.DB);
+
       // ── Newsroom API (human editors only) ──
       if (pathname.startsWith('/api/admin')) {
         const editor = await authenticateEditor(request, env);
@@ -82,6 +85,7 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
+    await ensureDatabase(env.DB);
     if (event.cron === '*/5 * * * *') {
       ctx.waitUntil(publishDueScheduled(env.DB));
       return;
