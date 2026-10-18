@@ -16,6 +16,12 @@ export default {
     const { pathname } = url;
     const method = request.method;
 
+    // One canonical host: www.bostondaily.us → bostondaily.us
+    if (url.hostname.startsWith('www.')) {
+      url.hostname = url.hostname.slice(4);
+      return Response.redirect(url.toString(), 301);
+    }
+
     try {
       // ── Newsroom API (human editors only) ──
       if (pathname.startsWith('/api/admin')) {

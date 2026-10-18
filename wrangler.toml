@@ -3,6 +3,13 @@ main = "src/index.js"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
+# bostondaily.us is a zone in this Cloudflare account; deploy attaches both hostnames and creates DNS + certificates.
+# www redirects to the apex in src/index.js.
+routes = [
+  { pattern = "bostondaily.us", custom_domain = true },
+  { pattern = "www.bostondaily.us", custom_domain = true },
+]
+
 # Static assets (reader CSS, newsroom console). Anything not matching a file goes to the Worker.
 [assets]
 directory = "public"
@@ -26,7 +33,7 @@ crons = ["*/5 * * * *", "50 9 * * *"]
 [vars]
 SITE_NAME = "Boston Daily"
 SITE_TAGLINE = "A GetServices.ai publication"
-SITE_URL = "https://bostondaily.example.com"
+SITE_URL = "https://bostondaily.us"
 TIMEZONE = "America/New_York"
 CONTACT_EMAIL = "agents@getservices.ai"
 CONTACT_PHONE = "313-729-1534"
