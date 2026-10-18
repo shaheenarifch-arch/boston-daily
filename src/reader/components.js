@@ -110,7 +110,8 @@ export function shopBand(products, { title = 'Shop the day' } = {}) {
 
 /** Front-page premium showcase: large product images from paid campaigns, magazine-style. */
 export function premiumAds(placement = 'home') {
-  const items = productAdsFor(placement).flatMap((ad) => ad.items.filter((it) => it.image).slice(0, 2).map((it) => ({ ...it, ad })));
+  // Awin affiliate websites run in the side panel (sidePanelProductAds), not here.
+  const items = productAdsFor(placement, { awin: false }).flatMap((ad) => ad.items.filter((it) => it.image).slice(0, 2).map((it) => ({ ...it, ad })));
   if (items.length < 2) return '';
   return `<section class="premium" aria-label="Paid advertisement">
     <header class="premium-head"><span class="label label-ad">Paid advertisement</span><h2 class="premium-title">Premium partners</h2></header>
@@ -126,9 +127,9 @@ export function premiumAds(placement = 'home') {
   </section>`;
 }
 
-/** Paid product advertisements for a section (see src/ads.js). Same print look as the Shop band. */
+/** Paid product advertisements for a section (see src/ads.js). Same print look as the Shop band. Awin sites run in the side panel instead (sidePanelProductAds). */
 export function paidProductAds(placement) {
-  return productAdsFor(placement).map((ad) => `<section class="shop-band paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
+  return productAdsFor(placement, { awin: false }).map((ad) => `<section class="shop-band paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
     <header class="shop-head"><span class="label label-ad">Paid advertisement</span><h2 class="shop-title">${esc(ad.title)}</h2>
       <p class="shop-disclosure">From ${esc(ad.advertiser)} (${esc(ad.domain)}). Advertisers do not influence Boston Daily's news coverage.</p></header>
     <ul class="shop-row ${ad.items.length === 2 ? 'shop-row-2' : 'shop-row-3'}">${ad.items.map((it) => `<li class="shop-item">
@@ -139,6 +140,21 @@ export function paidProductAds(placement) {
         <span class="shop-cta">${esc(it.cta || `Visit ${ad.domain}`)}</span>
       </a></li>`).join('')}</ul>
   </section>`).join('');
+}
+
+/** Product images from the network's Awin affiliate websites, in the side panel (see src/ads.js). */
+export function sidePanelProductAds(placement) {
+  return productAdsFor(placement, { awin: true }).map((ad) => `<aside class="module module-commerce paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
+    <header class="module-head"><h2 class="module-title">${esc(ad.title)}</h2><span class="label label-ad">Paid advertisement</span></header>
+    <p class="module-disclosure">From ${esc(ad.advertiser)} (${esc(ad.domain)}). Advertisers do not influence Boston Daily's news coverage.</p>
+    <ul class="product-grid">${ad.items.map((it) => `<li class="product">
+      <a class="product-link" href="${esc(it.url)}" rel="sponsored noopener" target="_blank">
+        ${it.image ? `<span class="product-img"><img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy" decoding="async"></span>` : ''}
+        <span class="product-name">${esc(it.name)}</span>
+        ${it.note ? `<span class="product-price">${esc(it.note)}</span>` : ''}
+        <span class="product-cta">${esc(it.cta || `Visit ${ad.domain}`)}</span>
+      </a></li>`).join('')}</ul>
+  </aside>`).join('');
 }
 
 export function networkModule(businesses, network, { title = 'From our network' } = {}) {
