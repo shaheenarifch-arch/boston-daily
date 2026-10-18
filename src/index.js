@@ -11,6 +11,8 @@ import {
   advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
 } from './reader/pages.js';
 
+const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -23,9 +25,9 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    // Google Search Console ownership file (served by the Worker so the assets layer doesn't strip .html).
-    if (pathname === '/google3a5b0bc815cd2f55.html') {
-      return new Response('google-site-verification: google3a5b0bc815cd2f55.html', { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    // Google Search Console ownership files (served by the Worker so the assets layer doesn't strip .html).
+    if (GOOGLE_VERIFICATION.has(pathname)) {
+      return new Response(`google-site-verification: ${pathname.slice(1)}`, { headers: { 'content-type': 'text/html; charset=utf-8' } });
     }
 
     try {
