@@ -10,7 +10,7 @@ import {
 
 const PUBLIC = "('PUBLISHED','UPDATED','CORRECTED')";
 const STORY_COLS = `s.id, s.slug, s.lane, s.type, s.section_slug, s.status, s.sensitive, s.headline, s.dek, substr(s.body, 1, 600) AS body,
-  s.hero_image_url, s.hero_image_rights, s.disclosure_label, s.published_at, s.last_updated_at, s.corrected_at, s.priority, s.is_lead_candidate, sec.name AS section_name`;
+  s.hero_image_url, s.hero_image_rights, s.disclosure_label, s.published_at, s.last_updated_at, s.corrected_at, s.priority, s.is_lead_candidate, s.created_at, sec.name AS section_name`;
 const PRODUCT_COLS = 'p.*, m.name AS merchant_name, m.display_name_allowed';
 const COURSE_SECTIONS = ['education-careers', 'business', 'technology', 'ai', 'science'];
 
@@ -105,7 +105,8 @@ export async function homePage(env, editionDate = null) {
     const placed = new Set(items.map((i) => i.id));
     // Newest first, but a flagged lead candidate or higher-priority story leads.
     const extra = pool.filter((s) => !placed.has(s.id))
-      .sort((a, b) => (b.is_lead_candidate - a.is_lead_candidate) || (b.priority - a.priority) || String(b.published_at).localeCompare(String(a.published_at)));
+      // Newest day's stories first among equals (by when the story was written, so a bulk approval doesn't reorder the front page).
+      .sort((a, b) => (b.is_lead_candidate - a.is_lead_candidate) || (b.created_at ? localDate(new Date(b.created_at), site.tz) : '').localeCompare(a.created_at ? localDate(new Date(a.created_at), site.tz) : '') || (b.priority - a.priority) || String(b.published_at).localeCompare(String(a.published_at)));
     if (!items.some((i) => i.slot === 'lead') && extra.length) items.unshift({ ...extra.shift(), slot: 'lead' });
     while (items.filter((i) => i.slot === 'top').length < 8 && extra.length) items.push({ ...extra.shift(), slot: 'top' });
     // Everything else published fills the section rows below the fold (until an edition curates them).
