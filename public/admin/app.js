@@ -170,10 +170,47 @@ async function renderQueue() {
   const news = stories.filter((s) => s.lane === 'newsroom' && !s.always_human);
   const partner = stories.filter((s) => s.lane === 'partner_commerce');
   const table = (list, empty) => list.length ? storyTable(list) : `<p class="sub">${empty}</p>`;
-  view.innerHTML = `<header class="view-head"><div><h1>Editorial queue</h1><p class="sub">Stories waiting for an editor. Nothing here publishes without approval.</p></div></header>
+  const newsroom = [...politics, ...news];
+  view.innerHTML = `<header class="view-head"><div><h1>Editorial queue</h1><p class="sub">Stories waiting for an editor. Nothing here publishes without approval.</p></div>
+      ${newsroom.length ? `<button class="btn btn-primary" id="approve-all">Approve &amp; publish all ready (${newsroom.length})</button>` : ''}</header>
+    <div id="bulk-result"></div>
     <section class="panel"><h2 class="panel-title">US Politics and health (human approval required)</h2>${table(politics, 'Nothing waiting.')}</section>
     <section class="panel"><h2 class="panel-title">Newsroom</h2>${table(news, 'Nothing waiting.')}</section>
     <section class="panel"><h2 class="panel-title">Partner content held by policy gates</h2>${table(partner, 'Nothing held.')}</section>`;
+  const btn = $('#approve-all');
+  if (btn) btn.addEventListener('click', () => approveAllReady(newsroom, btn));
+}
+
+// One click for the whole newsroom queue. Each story still goes through the normal approve and
+// publish endpoints, so every gate runs per story and the approval is recorded under this editor.
+// Stories that fail a check are skipped and listed with the reason. Partner content is not included.
+async function approveAllReady(list, btn) {
+  if (!confirm(`Approve and publish every newsroom story in the queue that passes all checks (${list.length} waiting)? Stories with problems are skipped.`)) return;
+  btn.disabled = true;
+  const published = [];
+  const skipped = [];
+  for (const [i, s] of list.entries()) {
+    btn.textContent = `Working… ${i + 1} of ${list.length}`;
+    try {
+      await api('POST', `/stories/${s.id}/approve`, { note: 'Approved with "Approve & publish all ready"' });
+    } catch (err) {
+      skipped.push({ s, why: err.problems?.length ? err.problems : [err.message] });
+      continue;
+    }
+    try {
+      await api('POST', `/stories/${s.id}/publish`);
+      published.push(s);
+    } catch (err) {
+      skipped.push({ s, why: [`Approved but not published: ${err.message}`, ...(err.problems || [])] });
+    }
+  }
+  await renderQueue();
+  const link = (s) => `<a href="#/story/${esc(s.id)}">${esc(s.headline)}</a>`;
+  $('#bulk-result').innerHTML = `<section class="panel"><h2 class="panel-title">Published ${published.length} of ${list.length}</h2>
+    ${published.length ? `<ul>${published.map((s) => `<li>${link(s)}</li>`).join('')}</ul>` : ''}
+    ${skipped.length ? `<h3>Skipped (${skipped.length}): fix these and approve them one by one</h3>
+      <ul>${skipped.map(({ s, why }) => `<li>${link(s)}<ul class="problems">${why.map((w) => `<li>${esc(w)}</li>`).join('')}</ul></li>`).join('')}</ul>` : ''}</section>`;
+  toast(`Published ${published.length}. Skipped ${skipped.length}.`, skipped.length ? 'err' : 'ok');
 }
 
 function storyTable(list) {
