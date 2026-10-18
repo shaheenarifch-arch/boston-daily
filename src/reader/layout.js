@@ -138,7 +138,7 @@ ${body}
   t.hidden = false;
   const close = document.createElement('button'); close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', 'Dismiss'); close.onclick = () => { t.hidden = true; }; t.append(close);
   setTimeout(() => { t.hidden = true; }, 10000);
-  const inPage = document.querySelector('.flash');
+  const inPage = document.querySelector('form .flash, #comments .flash') || document.querySelector('.flash');
   if (inPage) inPage.scrollIntoView({ block: 'center' });
   // Clean the address bar so a refresh does not repeat the message.
   ['sent', 'comment', 'unsubscribed', 'error'].forEach((k) => p.delete(k));
