@@ -21,9 +21,10 @@ export const CAMPAIGNS = [
 ];
 
 /**
- * Paid product advertisements: a strip of an advertiser's products, shown in the main column
- * of the listed sections and labeled "Paid advertisement" with the advertiser's name.
+ * Paid product advertisements, labeled "Paid advertisement" with the advertiser's name.
  * Each item links to the advertiser's own site (rel="sponsored").
+ * awin: true marks the network's Awin affiliate websites; their product images run in the
+ * page's side panel. Other advertisers run as a strip in the main column.
  */
 const UTM = (c) => `utm_source=bostondaily&utm_medium=paid_ad&utm_campaign=${c}`;
 export const PRODUCT_ADS = [
@@ -33,6 +34,7 @@ export const PRODUCT_ADS = [
     domain: 'ezpass.uk',
     title: 'City sightseeing passes',
     placements: ['uk', 'travel', 'home'],
+    awin: true,
     active: true,
     items: [
       { name: 'London City Pass', note: 'From €129', image: 'https://ezpass.uk/london-480.webp', url: `https://ezpass.uk/?${UTM('city-passes')}` },
@@ -45,7 +47,9 @@ export const PRODUCT_ADS = [
     advertiser: 'BuyBestStores',
     domain: 'buybeststores.uk',
     title: 'Tech and home fitness',
-    placements: ['uk', 'technology', 'health-wellness', 'home'],
+    // UK pages only: a UK store.
+    placements: ['uk'],
+    awin: true,
     active: true,
     items: [
       { name: 'X20 Auto Incline Treadmill', note: '', image: 'https://cdn.shopify.com/s/files/1/0867/7274/4478/files/1-ap01-main-image-1027.jpg?v=1761546416', url: `https://buybeststores.uk/?${UTM('home-fitness')}` },
@@ -67,8 +71,8 @@ export const PRODUCT_ADS = [
   },
 ];
 
-export function productAdsFor(placement) {
-  return PRODUCT_ADS.filter((a) => a.active !== false && a.placements.includes(placement));
+export function productAdsFor(placement, { awin } = {}) {
+  return PRODUCT_ADS.filter((a) => a.active !== false && a.placements.includes(placement) && (awin === undefined || Boolean(a.awin) === awin));
 }
 
 export function campaignFor(placement, now = new Date()) {

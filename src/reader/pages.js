@@ -4,7 +4,7 @@ import { getEditionWithItems } from '../editions.js';
 import { layout, loadChrome } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, paidProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
+  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
   sourcesBlock, noticesBlock, emptyState, storyStamp,
 } from './components.js';
 
@@ -188,7 +188,8 @@ export async function homePage(env, editionDate = null) {
       ${mostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
         <ol class="most-read">${mostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
       ${subscribeBox({ compact: true })}
-      ${railCommercial}`;
+      ${railCommercial}
+      ${hasNews ? sidePanelProductAds('home') : ''}`;
 
   // Sections with 3+ stories get a full row; thinner sections share one multi-column block so no row is half empty.
   const entries = [...bySection.entries()];
@@ -313,6 +314,7 @@ export async function sectionPage(env, slug) {
       </div>
       <aside class="col-rail">
         ${railMods}
+        ${showCommerce ? sidePanelProductAds(slug) : ''}
       </aside>
     </div>`;
   return html(layout(env, chrome, { title: section.name, description: section.description || `${section.name} news from Boston Daily.`, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body }));
