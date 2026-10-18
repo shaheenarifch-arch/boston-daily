@@ -81,7 +81,7 @@ const worker = {
       if (pathname === '/editions') return await editionsArchive(env);
       let m;
       if ((m = pathname.match(/^\/edition\/(\d{4}-\d{2}-\d{2})\/?$/))) return await homePage(env, m[1]);
-      if ((m = pathname.match(/^\/section\/([a-z0-9-]+)\/?$/))) return await sectionPage(env, m[1]);
+      if ((m = pathname.match(/^\/section\/([a-z0-9-]+)\/?$/))) return await sectionPage(env, m[1], ctx);
       if ((m = pathname.match(/^\/story\/([a-z0-9-]+)\/?$/))) return await storyPage(env, m[1], ctx, url);
       if ((m = pathname.match(/^\/share\/([a-z0-9-]+)\/([a-z]+)$/))) return await shareRedirect(env, m[1], m[2], ctx);
       if (pathname === '/shop') return await shopPage(env, url);
@@ -95,7 +95,7 @@ const worker = {
       if (pathname === '/unsubscribe') return await unsubscribe(env, url);
       if (pathname === '/corrections') return await correctionsPage(env);
       if (pathname === '/search') return await searchPage(env, url);
-      if ((m = pathname.match(/^\/go\/([pbc])\/([A-Za-z0-9-]+)$/))) return await outbound(env, m[1], m[2], ctx);
+      if ((m = pathname.match(/^\/go\/([pbc])\/([A-Za-z0-9-]+)$/))) return await outbound(env, m[1], m[2], ctx, url);
       if (pathname === '/feed.xml') return await rssFeed(env);
       if (pathname === '/sitemap.xml') return await sitemap(env, false);
       if (pathname === '/news-sitemap.xml') return await sitemap(env, true);

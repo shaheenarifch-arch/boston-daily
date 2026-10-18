@@ -142,6 +142,37 @@ export function paidProductAds(placement) {
   </section>`).join('');
 }
 
+/**
+ * Partner Offers (src/offers.js): category-matched products from every affiliate merchant.
+ * One disclosure above the first card; "Sponsored" only on paid placements. Each card is one
+ * link (image, name and button) through /go/p, so raw tracking URLs never show.
+ */
+export function partnerOffers(offers, ctx) {
+  if (!offers || !offers.length) return '';
+  const short = (t, n = 110) => { const x = String(t || '').replace(/\s+/g, ' ').trim(); return x.length > n ? `${x.slice(0, n - 1).replace(/\s+\S*$/, '')}…` : x; };
+  const until = (d) => { try { return new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return d; } };
+  return `<aside class="module partner-offers" aria-labelledby="po-h" data-section="${esc(ctx.slug || '')}">
+    <header class="module-head"><h2 class="module-title" id="po-h">Partner Offers</h2></header>
+    <p class="module-disclosure po-disclosure">Partner-link disclosure: This section contains partner links selected for relevance to this page. We may receive a commission if you make a purchase, at no additional cost to you.</p>
+    <ul class="po-list">${offers.map((p, i) => {
+      const merchant = p.display_name_allowed !== 0 && p.merchant_name ? p.merchant_name : '';
+      const cta = p.price != null ? 'Check price' : 'View product';
+      const label = `${p.name}${merchant ? ` at ${merchant}` : ''} (opens in a new tab)`;
+      return `<li class="po-card po-${i + 1}">
+      <a class="po-link" href="/go/p/${esc(p.id)}?po=${esc(ctx.slug || 'page')}" target="_blank" rel="sponsored nofollow noopener noreferrer" aria-label="${esc(label)}">
+        <span class="po-img"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="320" height="320" loading="lazy" decoding="async"></span>
+        ${p.sponsored ? '<span class="label label-ad po-sponsored">Sponsored</span>' : ''}
+        <span class="po-name">${esc(p.name)}</span>
+        ${p.description ? `<span class="po-desc">${esc(short(p.description))}</span>` : ''}
+        ${merchant ? `<span class="po-merchant">${esc(merchant)}</span>` : ''}
+        ${p.price != null ? `<span class="po-price">${esc(money(p.price, p.currency))}</span>` : ''}
+        ${p.promo_label ? `<span class="po-promo">${esc(p.promo_label)}${p.promo_end ? ` · until ${esc(until(p.promo_end))}` : ''}</span>` : ''}
+        <span class="po-cta">${cta}</span>
+      </a></li>`;
+    }).join('')}</ul>
+  </aside>`;
+}
+
 /** Product images from the network's Awin affiliate websites, in the side panel (see src/ads.js). */
 export function sidePanelProductAds(placement) {
   return productAdsFor(placement, { awin: true }).map((ad) => `<aside class="module module-commerce paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">

@@ -437,3 +437,32 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 /* Awin product ads in the side panel: two per row so the panel stays compact */
 .col-rail .paid-ad .product-grid, .fg-c .paid-ad .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
 .col-rail .paid-ad .product-link, .fg-c .paid-ad .product-link { padding: .5rem; }
+
+/* ── Partner Offers (src/offers.js) ── */
+.partner-offers { background: var(--common); border: 1px solid var(--rule, #d9d9d9); }
+.po-disclosure { margin-bottom: .75rem; }
+.po-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.po-link { display: flex; flex-direction: column; gap: .25rem; height: 100%; padding: .6rem; background: var(--paper); border-radius: 5px; text-decoration: none; color: var(--ink); font-family: var(--sans); }
+.po-link:hover .po-name { text-decoration: underline; }
+.po-link:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.po-img { display: block; aspect-ratio: 1; background: var(--wash); border-radius: 4px; overflow: hidden; margin-bottom: .25rem; }
+.po-img img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.po-sponsored { align-self: flex-start; }
+.po-name { font-size: .88rem; font-weight: 600; line-height: 1.3; }
+.po-desc { font-size: .78rem; line-height: 1.4; color: var(--granite); }
+.po-merchant { font-size: .74rem; color: var(--granite); }
+.po-price { font-size: .95rem; font-weight: 600; }
+.po-promo { font-size: .74rem; font-weight: 600; color: var(--common-ink); }
+.po-cta { margin-top: auto; padding-top: .35rem; font-size: .8rem; font-weight: 600; color: var(--common-ink); }
+/* 4 on desktop, 3 on tablet, 2 on mobile */
+@media (max-width: 1099px) { .po-4 { display: none; } }
+@media (max-width: 719px) { .po-3 { display: none; } }
+
+/* Story pages: article and Partner Offers side by side on desktop; offers follow the article on smaller screens. */
+.story-with-offers > .story-offers { max-width: 46rem; margin: 2rem auto 0; padding: 0 1rem; }
+@media (min-width: 1100px) {
+  .story-with-offers { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 2.5rem; align-items: start; max-width: 76rem; margin: 0 auto; padding: 0 1.5rem; }
+  .story-with-offers > .story { margin-left: 0; margin-right: 0; max-width: none; }
+  .story-with-offers > .story-offers { margin: 0; padding: 0; max-width: none; position: sticky; top: 1rem; align-self: start; }
+}
+@media (min-width: 720px) and (max-width: 1099px) { .story-with-offers > .story-offers .po-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

@@ -5,7 +5,7 @@ import { SITE } from './components.js';
 export async function loadChrome(env) {
   const db = env.DB;
   const [{ results: sections }, { results: network }, edition] = await Promise.all([
-    db.prepare('SELECT slug, name, kind, parent_slug, in_nav, commerce_allowed, always_human FROM sections WHERE active = 1 ORDER BY sort_order').all(),
+    db.prepare('SELECT slug, name, kind, parent_slug, in_nav, commerce_allowed, always_human, partner_offers, offer_tags FROM sections WHERE active = 1 ORDER BY sort_order').all(),
     db.prepare("SELECT slug, name FROM businesses WHERE status = 'active' AND owned_by_network = 1 AND (health_ok IS NULL OR health_ok = 1) ORDER BY featured DESC, sort_order LIMIT 12").all(),
     db.prepare("SELECT edition_number, edition_date FROM editions WHERE status = 'published' ORDER BY edition_date DESC LIMIT 1").first(),
   ]);
@@ -104,7 +104,7 @@ ${body}
     </div>
   </div>
   <div class="wrap footer-legal">
-    <p>Some links on Boston Daily are affiliate links: we may earn a commission at no cost to you. Advertisers and partners never buy, edit or approve our news coverage. <a href="/standards#commercial">How we label commercial content</a>.</p>
+    <p>Some links on this website are partner links. We may receive a commission from qualifying purchases. Advertisers and partners never buy, edit or approve our news coverage. <a href="/standards#commercial">How we label commercial content</a>.</p>
     <p>© ${new Date().getFullYear()} ${esc(site.name)}, ${esc(site.network)}.</p>
   </div>
 </footer>

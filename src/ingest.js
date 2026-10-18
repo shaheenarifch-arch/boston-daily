@@ -3,6 +3,7 @@
  * (X-Signature: sha256=<hmac of raw body>). They can create and update records,
  * but they can never approve newsroom content.
  */
+import { clearOfferCache } from './offers.js';
 import { uid, nowIso, slugify, isHttpUrl, json, errorJson } from './util.js';
 import { htmlToMarkdown, excerpt } from './markdown.js';
 import { approve, publish, approvalProblems, requiresHuman, loadStoryContext } from './lifecycle.js';
@@ -117,7 +118,10 @@ async function gateAndMaybePublish(env, id, source, ref, notes = []) {
  * Payload: { full_sync?: bool, merchants: [...], products: [...] }
  * merchants: { network, network_merchant_id, name, publisher_account_id?, display_name_allowed?, category?, section?, website?, status? }
  * products:  { network, network_merchant_id, external_id, name, deep_link, description?, image_url?, image_rights_ok?,
- *              price?, currency?, availability?, category?, section?, is_deal? }
+ *              price?, currency?, availability?, category?, section?, is_deal?,
+ *              tags?, sections?, regions?, promo_label?, promo_start?, promo_end?, sponsored? }
+ * Partner Offers fields are only changed when the feed sends them, so editor settings survive a sync.
+ * "featured" and "sensitive_ok" are editorial and set only in the newsroom console.
  */
 export async function ingestProducts(env, payload) {
   const db = env.DB;
@@ -177,9 +181,21 @@ export async function ingestProducts(env, payload) {
         isHttpUrl(p.image_url) ? p.image_url : null, p.image_rights_ok ? 1 : 0, p.price != null && p.price !== '' ? Number(p.price) : null,
         p.currency || 'USD', availability, p.deep_link, p.category || null, pickSection(p.section), p.is_deal ? 1 : 0,
         availability === 'out_of_stock' ? 'inactive' : 'active', ts, ts));
+    const csv = (v) => (Array.isArray(v) ? v.join(',') : v == null ? '' : String(v)).split(',').map((x) => x.trim()).filter(Boolean).join(',').slice(0, 500) || null;
+    const day = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : null);
+    const offerSets = [], offerBinds = [];
+    if (p.tags !== undefined) { offerSets.push('tags = ?'); offerBinds.push(csv(p.tags)?.toLowerCase() || null); }
+    if (p.sections !== undefined) { offerSets.push('extra_sections = ?'); offerBinds.push(csv((Array.isArray(p.sections) ? p.sections : String(p.sections || '').split(',')).map((x) => pickSection(String(x).trim())).filter(Boolean))); }
+    if (p.regions !== undefined) { offerSets.push('regions = ?'); offerBinds.push(csv(p.regions)?.toUpperCase() || null); }
+    if (p.promo_label !== undefined) { offerSets.push('promo_label = ?'); offerBinds.push(p.promo_label ? String(p.promo_label).slice(0, 120) : null); }
+    if (p.promo_start !== undefined) { offerSets.push('promo_start = ?'); offerBinds.push(day(p.promo_start)); }
+    if (p.promo_end !== undefined) { offerSets.push('promo_end = ?'); offerBinds.push(day(p.promo_end)); }
+    if (p.sponsored !== undefined) { offerSets.push('sponsored = ?'); offerBinds.push(p.sponsored ? 1 : 0); }
+    if (offerSets.length) productStmts.push(db.prepare(`UPDATE products SET ${offerSets.join(', ')} WHERE merchant_id = ? AND external_id = ?`).bind(...offerBinds, merchantId, String(p.external_id)));
     upserted++;
   }
   for (let i = 0; i < productStmts.length; i += 50) await db.batch(productStmts.slice(i, i + 50));
+  clearOfferCache();
 
   let deactivated = 0;
   if (payload.full_sync) {
