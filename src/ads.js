@@ -20,6 +20,57 @@ export const CAMPAIGNS = [
   },
 ];
 
+/**
+ * Paid product advertisements: a strip of an advertiser's products, shown in the main column
+ * of the listed sections and labeled "Paid advertisement" with the advertiser's name.
+ * Each item links to the advertiser's own site (rel="sponsored").
+ */
+const UTM = (c) => `utm_source=bostondaily&utm_medium=paid_ad&utm_campaign=${c}`;
+export const PRODUCT_ADS = [
+  {
+    id: 'ezpass-uk-city-passes',
+    advertiser: 'EasyPass',
+    domain: 'ezpass.uk',
+    title: 'City sightseeing passes',
+    placements: ['uk'],
+    active: true,
+    items: [
+      { name: 'London City Pass', note: 'From €129', image: 'https://ezpass.uk/london-480.webp', url: `https://ezpass.uk/?${UTM('city-passes')}` },
+      { name: 'Paris Flex Pass', note: 'From €130', image: 'https://ezpass.uk/paris-480.webp', url: `https://ezpass.uk/?${UTM('city-passes')}` },
+      { name: 'Rome City Pass', note: 'From €99', image: 'https://ezpass.uk/rome-480.webp', url: `https://ezpass.uk/?${UTM('city-passes')}` },
+    ],
+  },
+  {
+    id: 'buybeststores-uk-tech',
+    advertiser: 'BuyBestStores',
+    domain: 'buybeststores.uk',
+    title: 'Tech and home fitness',
+    placements: ['uk'],
+    active: true,
+    items: [
+      { name: 'X20 Auto Incline Treadmill', note: '', image: 'https://cdn.shopify.com/s/files/1/0867/7274/4478/files/1-ap01-main-image-1027.jpg?v=1761546416', url: `https://buybeststores.uk/?${UTM('home-fitness')}` },
+      { name: 'Q1 Walking Pad', note: '', image: 'https://cdn.shopify.com/s/files/1/0867/7274/4478/files/Deerrunn-under-desk-treadmill-BA10-Halloween_33_bfd4c2a0-94e4-4826-94e1-d53020276d5b.jpg?v=1756871458', url: `https://buybeststores.uk/?${UTM('home-fitness')}` },
+      { name: 'iPhone 16 Pro Max case with camera stand', note: '', image: 'https://cdn.shopify.com/s/files/1/0657/3811/3283/files/2-2_e2e2d5c3-d48e-41c2-b0e0-d1b5cca5475d.jpg?v=1788771704&width=900', url: `https://buybeststores.uk/?${UTM('accessories')}` },
+    ],
+  },
+  {
+    id: 'getservices-ai-pods-atlas',
+    advertiser: 'GetServices.ai',
+    domain: 'getservices.ai',
+    title: 'AI for your business',
+    placements: ['ai'],
+    active: true,
+    items: [
+      { name: 'AI Pods', note: 'AI services, AI pods and automation for small businesses and regulated industries.', image: '', url: `https://getservices.ai/?${UTM('ai-pods')}`, cta: 'Explore AI Pods' },
+      { name: 'ATLAS AEO engine', note: 'Answer-engine and search optimization for your website, so AI assistants and search can find you.', image: '', url: `https://app.getservices.ai/?${UTM('atlas-aeo')}`, cta: 'Try ATLAS AEO' },
+    ],
+  },
+];
+
+export function productAdsFor(placement) {
+  return PRODUCT_ADS.filter((a) => a.active !== false && a.placements.includes(placement));
+}
+
 export function campaignFor(placement, now = new Date()) {
   const today = now.toISOString().slice(0, 10);
   return CAMPAIGNS.find((c) => c.active !== false && c.placements.includes(placement) && (!c.start || c.start <= today) && (!c.end || c.end >= today)) || null;

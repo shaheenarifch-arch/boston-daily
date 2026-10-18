@@ -3,7 +3,7 @@ import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { layout, loadChrome } from './layout.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, courseModule, courseItem, houseAd, productCard,
+  SITE, commerceAllowed, storyCard, partnerPicks, shopBand, paidProductAds, courseModule, courseItem, houseAd, productCard,
   sourcesBlock, noticesBlock, emptyState, storyStamp,
 } from './components.js';
 
@@ -17,8 +17,8 @@ const COURSE_SECTIONS = ['education-careers', 'business', 'technology', 'ai'];
  * Commercial share of a page stays around 10-15%: one commercial module per ~7 content blocks,
  * minimum one. Modules are passed in priority order; empty ones are skipped.
  */
-function commercialBudget(contentBlocks, modules) {
-  const allowed = Math.max(1, Math.round(contentBlocks * 0.15));
+function commercialBudget(contentBlocks, modules, min = 1) {
+  const allowed = Math.max(min, Math.round(contentBlocks * 0.15));
   return modules.filter(Boolean).slice(0, allowed);
 }
 
@@ -29,10 +29,22 @@ function sectionTree(chrome, slug) {
   return { ...section, parent };
 }
 
+// Product categories that belong with a news section (e.g. Lifestyle shows home, style, food and beauty picks).
+const RELATED_PRODUCT_SECTIONS = {
+  lifestyle: ['lifestyle', 'home-living', 'fashion-style', 'food-culture', 'beauty-hair', 'garden', 'pets'],
+  travel: ['travel', 'outdoor'],
+  'us-sports': ['us-sports', 'outdoor'],
+};
+
 async function deals(db, { section = null, limit = 4 } = {}) {
   const where = ["p.status = 'active'", "m.status = 'active'"];
   const binds = [];
-  if (section) { where.push('(p.section_slug = ? OR (p.section_slug IS NULL AND m.section_slug = ?))'); binds.push(section, section); }
+  if (section) {
+    const list = RELATED_PRODUCT_SECTIONS[section] || [section];
+    const ph = list.map(() => '?').join(',');
+    where.push(`(p.section_slug IN (${ph}) OR (p.section_slug IS NULL AND m.section_slug IN (${ph})))`);
+    binds.push(...list, ...list);
+  }
   const { results } = await db.prepare(`SELECT ${PRODUCT_COLS} FROM products p JOIN merchants m ON m.id = p.merchant_id
     WHERE ${where.join(' AND ')} ORDER BY p.is_deal DESC, p.updated_at DESC LIMIT ?`).bind(...binds, limit).all();
   return results;
@@ -258,8 +270,8 @@ export async function sectionPage(env, slug) {
 
   const [first, ...others] = news;
   const sectionMods = [
-    showCommerce ? houseAd(site, 'SPONSORED', slug) : '',
     partnerPicks(products, { title: `${section.name} picks`, more: `/shop?section=${encodeURIComponent(slug)}` }),
+    showCommerce ? houseAd(site, 'SPONSORED', slug) : '',
     commercial.length ? `<section class="section-row partner-row">
           <h2 class="row-title">Guides from our partners</h2>
           <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
@@ -268,7 +280,7 @@ export async function sectionPage(env, slug) {
     courseModule(courses, site.network),
   ];
   // News sections keep commercial content to ~15% of the page; guide/shopping sections are partner-led.
-  const pickedMods = section.kind === 'news' || section.parent?.kind === 'news' ? commercialBudget(Math.max(news.length, 4), sectionMods) : sectionMods.filter(Boolean);
+  const pickedMods = section.kind === 'news' || section.parent?.kind === 'news' ? commercialBudget(Math.max(news.length, 4), sectionMods, 2) : sectionMods.filter(Boolean);
   const isMainMod = (m) => m.includes('partner-row') || m.includes('product-grid');
   const mainMods = pickedMods.filter(isMainMod).join('');
   const railMods = pickedMods.filter((m) => !isMainMod(m)).join('');
@@ -283,6 +295,7 @@ export async function sectionPage(env, slug) {
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: !!children.length })).join('')}</div>` : ''}
         ${mainMods}
+        ${showCommerce ? paidProductAds(slug) : ''}
       </div>
       <aside class="col-rail">
         ${railMods}

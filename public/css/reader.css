@@ -338,7 +338,7 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .shop-disclosure { flex-basis: 100%; margin: 0; font: 400 .75rem/1.4 var(--sans); color: var(--granite); }
 .shop-row { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 720px) { .shop-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .shop-row { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; } .shop-item { padding: 0 .9rem; } .shop-item:first-child { padding-left: 0; } .shop-item:last-child { padding-right: 0; } .shop-item + .shop-item { border-left: 1px solid var(--rule); } }
+@media (min-width: 1100px) { .shop-row { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; margin: 0 -.9rem; } .shop-item { padding: 0 .9rem; } .shop-item + .shop-item { border-left: 1px solid var(--rule); } }
 .shop-item a { display: flex; flex-direction: column; gap: .3rem; height: 100%; text-decoration: none; color: var(--ink); }
 .shop-img { display: grid; place-items: center; aspect-ratio: 1; background: var(--wash); overflow: hidden; }
 .shop-img img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
@@ -347,3 +347,9 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .shop-price { font: 600 .85rem/1.2 var(--sans); }
 .shop-cta { margin-top: auto; font: 600 .75rem/1.2 var(--sans); color: var(--ad-ink); text-transform: uppercase; letter-spacing: .04em; }
 .shop-more { display: inline-block; margin-top: .9rem; font: 600 .8rem var(--sans); }
+.paid-ad { margin-top: 1.5rem; }
+@media (min-width: 1100px) { .shop-row.shop-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.shop-img img[src*="ezpass.uk"] { object-fit: cover; mix-blend-mode: normal; }
+@media (min-width: 720px) { .shop-row.shop-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.shop-name-lg { font: 700 1.2rem/1.2 var(--serif); }
+.shop-note { font: 400 .95rem/1.45 var(--serif); color: var(--ink-soft); margin-bottom: .4rem; }

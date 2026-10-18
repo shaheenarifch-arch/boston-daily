@@ -1,6 +1,6 @@
 import { esc, formatDateLong, formatDateTime, timeAgo, money } from '../util.js';
 import { excerpt } from '../markdown.js';
-import { campaignFor } from '../ads.js';
+import { campaignFor, productAdsFor } from '../ads.js';
 
 export const SITE = (env) => ({
   name: env.SITE_NAME || 'Boston Daily',
@@ -103,6 +103,21 @@ export function shopBand(products, { title = 'Shop the day' } = {}) {
       </a></li>`).join('')}</ul>
     <a class="shop-more" href="/shop">More partner picks</a>
   </section>`;
+}
+
+/** Paid product advertisements for a section (see src/ads.js). Same print look as the Shop band. */
+export function paidProductAds(placement) {
+  return productAdsFor(placement).map((ad) => `<section class="shop-band paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
+    <header class="shop-head"><span class="label label-ad">Paid advertisement</span><h2 class="shop-title">${esc(ad.title)}</h2>
+      <p class="shop-disclosure">From ${esc(ad.advertiser)} (${esc(ad.domain)}). Advertisers do not influence Boston Daily's news coverage.</p></header>
+    <ul class="shop-row ${ad.items.length === 2 ? 'shop-row-2' : 'shop-row-3'}">${ad.items.map((it) => `<li class="shop-item">
+      <a href="${esc(it.url)}" rel="sponsored noopener" target="_blank">
+        ${it.image ? `<span class="shop-img"><img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy" decoding="async"></span>` : ''}
+        <span class="shop-name${it.image ? '' : ' shop-name-lg'}">${esc(it.name)}</span>
+        ${it.note ? `<span class="${it.image ? 'shop-price' : 'shop-note'}">${esc(it.note)}</span>` : ''}
+        <span class="shop-cta">${esc(it.cta || `Visit ${ad.domain}`)}</span>
+      </a></li>`).join('')}</ul>
+  </section>`).join('');
 }
 
 export function networkModule(businesses, network, { title = 'From our network' } = {}) {
