@@ -23,6 +23,11 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    // Google Search Console ownership file (served by the Worker so the assets layer doesn't strip .html).
+    if (pathname === '/google3a5b0bc815cd2f55.html') {
+      return new Response('google-site-verification: google3a5b0bc815cd2f55.html', { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+
     try {
       await ensureDatabase(env.DB);
 
