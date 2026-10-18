@@ -4,6 +4,7 @@
  * but they can never approve newsroom content.
  */
 import { uid, nowIso, slugify, isHttpUrl, json, errorJson } from './util.js';
+import { productUpsert, promotionUpsert } from './commerce/catalog.js';
 import { htmlToMarkdown, excerpt } from './markdown.js';
 import { approve, publish, approvalProblems, requiresHuman, loadStoryContext } from './lifecycle.js';
 
@@ -165,18 +166,7 @@ export async function ingestProducts(env, payload) {
     if (!isHttpUrl(p.deep_link)) { errors.push(`Product ${p.external_id}: deep_link is not a valid URL`); continue; }
     if (!seen.has(merchantId)) seen.set(merchantId, new Set());
     seen.get(merchantId).add(String(p.external_id));
-    const availability = p.availability || 'in_stock';
-    productStmts.push(db.prepare(`INSERT INTO products (id, merchant_id, external_id, name, description, image_url, image_rights_ok, price, currency, availability, deep_link, category, section_slug, is_deal, status, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(merchant_id, external_id) DO UPDATE SET name=excluded.name, description=excluded.description, image_url=excluded.image_url,
-        image_rights_ok=excluded.image_rights_ok, price=excluded.price, currency=excluded.currency, availability=excluded.availability,
-        deep_link=excluded.deep_link, category=excluded.category, section_slug=excluded.section_slug, is_deal=excluded.is_deal,
-        status=CASE WHEN excluded.status = 'inactive' THEN 'inactive' WHEN products.status = 'broken_link' AND products.deep_link = excluded.deep_link THEN 'broken_link' ELSE 'active' END,
-        updated_at=excluded.updated_at`)
-      .bind(uid(), merchantId, String(p.external_id), String(p.name).slice(0, 200), p.description ? String(p.description).slice(0, 1200) : null,
-        isHttpUrl(p.image_url) ? p.image_url : null, p.image_rights_ok ? 1 : 0, p.price != null && p.price !== '' ? Number(p.price) : null,
-        p.currency || 'USD', availability, p.deep_link, p.category || null, pickSection(p.section), p.is_deal ? 1 : 0,
-        availability === 'out_of_stock' ? 'inactive' : 'active', ts, ts));
+    productStmts.push(productUpsert(db, merchantId, p, ts, pickSection));
     upserted++;
   }
   for (let i = 0; i < productStmts.length; i += 50) await db.batch(productStmts.slice(i, i + 50));
@@ -246,5 +236,27 @@ export async function ingestCourses(env, payload) {
   }
   if (stmts.length) await db.batch(stmts);
   await log(db, 'course-sync', null, 'upserted', `${stmts.length} courses${errors.length ? `; ${errors.join(' | ')}` : ''}`);
+  return json({ ok: true, upserted: stmts.length, errors });
+}
+
+/**
+ * Partner promotions from an approved partner/affiliate source.
+ * Payload: { promotions: [{ partner, title, offer?, terms?, url, image_url?, image_rights_ok?, section?, sponsored?, starts_at?, expires_at?, source? }] }
+ */
+export async function ingestPromotions(env, payload) {
+  const db = env.DB;
+  const ts = nowIso();
+  const list = Array.isArray(payload.promotions) ? payload.promotions : [];
+  const { results: sectionRows } = await db.prepare('SELECT slug, commerce_allowed FROM sections WHERE active = 1').all();
+  const ok = new Set(sectionRows.filter((s) => s.commerce_allowed).map((s) => s.slug));
+  const pick = (x) => (x && ok.has(x) ? x : null);
+  const errors = [];
+  const stmts = [];
+  for (const pr of list) {
+    if (!pr.partner || !pr.title || !isHttpUrl(pr.url)) { errors.push(`Promotion invalid: ${pr.title || '(no title)'}`); continue; }
+    stmts.push(promotionUpsert(db, pr, ts, pick));
+  }
+  if (stmts.length) await db.batch(stmts);
+  await log(db, 'promotion-sync', null, 'upserted', `${stmts.length} promotions${errors.length ? `; ${errors.join(' | ')}` : ''}`);
   return json({ ok: true, upserted: stmts.length, errors });
 }

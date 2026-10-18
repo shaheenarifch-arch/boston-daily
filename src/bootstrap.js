@@ -12,6 +12,7 @@ import m0004 from '../migrations/0004_opinion_subsections.sql';
 import m0005 from '../migrations/0005_newsletter_subscribers.sql';
 import m0006 from '../migrations/0006_analytics_and_login_guard.sql';
 import m0007 from '../migrations/0007_search_console_cache.sql';
+import m0008 from '../migrations/0008_commerce_engine.sql';
 import seedSql from '../seed/seed.sql';
 import { CONTENT_PACKAGES } from '../content/index.js';
 
@@ -23,6 +24,7 @@ const MIGRATIONS = [
   ['0005_newsletter_subscribers.sql', m0005],
   ['0006_analytics_and_login_guard.sql', m0006],
   ['0007_search_console_cache.sql', m0007],
+  ['0008_commerce_engine.sql', m0008],
 ];
 
 let ready = null;

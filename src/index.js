@@ -1,7 +1,7 @@
 import { json, errorJson } from './util.js';
 import { authenticateEditor, verifyIngestSignature } from './auth.js';
 import { handleAdmin } from './admin-api.js';
-import { ingestBlogPost, ingestProducts, ingestBusinesses, ingestCourses } from './ingest.js';
+import { ingestBlogPost, ingestProducts, ingestBusinesses, ingestCourses, ingestPromotions } from './ingest.js';
 import { publishDueScheduled } from './lifecycle.js';
 import { buildEdition } from './editions.js';
 import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
@@ -64,6 +64,7 @@ const worker = {
           case '/api/ingest/products': return await ingestProducts(env, payload);
           case '/api/ingest/businesses': return await ingestBusinesses(env, payload);
           case '/api/ingest/courses': return await ingestCourses(env, payload);
+          case '/api/ingest/promotions': return await ingestPromotions(env, payload);
           default: return errorJson('Unknown ingest endpoint', 404);
         }
       }
