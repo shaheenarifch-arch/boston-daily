@@ -466,3 +466,8 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
   .story-with-offers > .story-offers { margin: 0; padding: 0; max-width: none; position: sticky; top: 1rem; align-self: start; }
 }
 @media (min-width: 720px) and (max-width: 1099px) { .story-with-offers > .story-offers .po-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* Business profile: logo beside the heading, facts block */
+.biz-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.25rem; }
+.biz-logo { width: 96px; height: 96px; object-fit: contain; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); flex: none; }
+.biz-faq { margin-top: 2rem; }
+@media (max-width: 600px) { .biz-logo { width: 64px; height: 64px; } }
