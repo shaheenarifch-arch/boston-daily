@@ -1,0 +1,18 @@
+-- Every story gets its own picture: replace repeated photos with unique ones, or drop the repeat (the card shows a section plate).
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/President_Donald_Trump_signs_Executive_Orders_(54325856729).jpg/1280px-President_Donald_Trump_signs_Executive_Orders_(54325856729).jpg', hero_image_credit = 'Photo: The White House / Wikimedia Commons, public domain', hero_image_rights = 'public_domain', image_checked_at = NULL WHERE id = 'bd-20261017-russia-sanctions-waiver';
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Press_Secretary_Katie_Zacharia_holds_first_press_briefing_in_the_James_S_Brady_Press_Briefing_Room,_October_13,_2026_(P20261013AH-0626).jpg/1280px-Press_Secretary_Katie_Zacharia_holds_first_press_briefing_in_the_James_S_Brady_Press_Briefing_Room,_October_13,_2026_(P20261013AH-0626).jpg', hero_image_credit = 'Photo: The White House / Wikimedia Commons, public domain', hero_image_rights = 'public_domain', image_checked_at = NULL WHERE id = 'bd-20261018-press-secretary';
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/The_White_House_-_54410784210.jpg/1280px-The_White_House_-_54410784210.jpg', hero_image_credit = 'Photo: The White House / Wikimedia Commons, public domain', hero_image_rights = 'public_domain', image_checked_at = NULL WHERE id = 'bd-20261018-trump-dividend';
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Aerial_view,_United_States_Capitol_building_04492v.jpg/1280px-Aerial_view,_United_States_Capitol_building_04492v.jpg', hero_image_credit = 'Photo: Carol M. Highsmith / Library of Congress / Wikimedia Commons, public domain', hero_image_rights = 'public_domain', image_checked_at = NULL WHERE id = 'bd-20261018-unaccompanied-children-letter';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261018-fcc-ad-rates';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-bruins';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261018-bruins-kings';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-alcs';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-patriots';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-gas-prices';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-el-nino-satellites';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-winter-dry-skin';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-dress-layers';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-textile-ban';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261018-data-breach-guide';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261017-mass-gift-card-rules';
+UPDATE stories SET hero_image_url = NULL, hero_image_credit = NULL, hero_image_rights = NULL WHERE id = 'bd-20261018-trump-dividend-x';

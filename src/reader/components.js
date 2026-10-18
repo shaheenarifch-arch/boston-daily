@@ -34,14 +34,16 @@ export function storyStamp(s, tz) {
   return '';
 }
 
-export function storyCard(s, { size = 'm', tz, showSection = true, showDek = true } = {}) {
+export function storyCard(s, { size = 'm', tz, showSection = true, showDek = true, seenImages = null } = {}) {
   const commercial = s.lane === 'partner_commerce';
   const kicker = commercial
     ? `<span class="label label-commerce">${esc(s.disclosure_label || 'Partner Content')}</span>`
     : TYPE_LABEL[s.type] ? `<span class="label label-type">${TYPE_LABEL[s.type]}</span>` : '';
   const section = showSection && s.section_name ? `<a class="card-section" href="/section/${esc(s.section_slug)}">${esc(s.section_name)}</a>` : '';
   // Every story card carries its image when the story has one with recorded rights.
-  const hasImg = s.hero_image_url && s.hero_image_rights;
+  // One picture appears at most once per page (seenImages is shared by every card on the page).
+  let hasImg = !!(s.hero_image_url && s.hero_image_rights);
+  if (hasImg && seenImages) { if (seenImages.has(s.hero_image_url)) hasImg = false; else seenImages.add(s.hero_image_url); }
   // Text-only medium cards get a quiet section plate so card grids stay aligned.
   const img = !hasImg ? (size === 'm' ? `<figure class="card-figure card-figure-empty" aria-hidden="true"><span>${esc(s.section_name || 'Boston Daily')}</span></figure>` : '')
     : size === 's' ? `<a class="card-thumb" href="/story/${esc(s.slug)}" tabindex="-1" aria-hidden="true"><img src="${esc(s.hero_image_url)}" alt="" loading="lazy" decoding="async"></a>`

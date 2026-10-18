@@ -11,6 +11,7 @@ import d20261018courses from './2026-10-18-courses.sql';
 import d20261018lead from './2026-10-18-lead.sql';
 import d20261018long from './2026-10-18-guides-long.sql';
 import d20261018opinion from './2026-10-18-opinion.sql';
+import d20261018uniq from './2026-10-18-unique-images.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -23,4 +24,5 @@ export const CONTENT_PACKAGES = [
   ['2026-10-18-lead', d20261018lead],
   ['2026-10-18-guides-long', d20261018long],
   ['2026-10-18-opinion', d20261018opinion],
+  ['2026-10-18-unique-images', d20261018uniq],
 ];

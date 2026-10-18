@@ -80,6 +80,7 @@ export async function homePage(env, editionDate = null) {
   const db = env.DB;
   const site = SITE(env);
   const chrome = await loadChrome(env);
+  const seenImages = new Set();
   const data = await getEditionWithItems(db, editionDate);
   if (editionDate && !data) return notFound(env, chrome, 'There is no edition for that date.');
 
@@ -141,8 +142,8 @@ export async function homePage(env, editionDate = null) {
 
   // Column A: the lead (or the welcome note before the first story).
   const colA = hasNews
-    ? `${storyCard(lead, { size: 'lead', tz: site.tz })}
-       ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 10).map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>` : ''}`
+    ? `${storyCard(lead, { size: 'lead', tz: site.tz, seenImages })}
+       ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 10).map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages })).join('')}</div>` : ''}`
     : `<div class="welcome">
         <p class="welcome-kicker">Welcome to ${esc(site.name)}</p>
         <h2 class="welcome-title">News for Boston and the nation, with a fresh edition every morning.</h2>
@@ -159,9 +160,9 @@ export async function homePage(env, editionDate = null) {
   const sectionIndex = `<ul class="section-index">${newsSections.map((x) => `<li><a href="/section/${esc(x.slug)}"><strong>${esc(x.name)}</strong>${descOf[x.slug] ? `<span>${esc(descOf[x.slug])}</span>` : ''}</a></li>`).join('')}</ul>`;
   const moreStories = latest.filter((s) => s.id !== lead?.id).slice(0, 6);
   const colB = top.length
-    ? `<h2 class="col-label">Top stories</h2>${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz, showDek: false })).join('')}`
+    ? `<h2 class="col-label">Top stories</h2>${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showDek: false })).join('')}`
     : moreStories.length
-      ? `<h2 class="col-label">More stories</h2>${moreStories.map((s) => storyCard(s, { size: 's', tz: site.tz, showDek: false })).join('')}`
+      ? `<h2 class="col-label">More stories</h2>${moreStories.map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showDek: false })).join('')}`
       : `<h2 class="col-label">Sections</h2>${sectionIndex}`;
 
   // Commercial budget: ~15% of the content blocks on the page.
@@ -172,7 +173,7 @@ export async function homePage(env, editionDate = null) {
     partnerGuides.length ? `<section class="section-row partner-row">
     <h2 class="row-title">Guides from our partners</h2>
     <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
-    <div class="row-cards">${partnerGuides.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
+    <div class="row-cards">${partnerGuides.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages })).join('')}</div>
   </section>` : '',
     courseModule(cotd, site.network, { title: 'Skill Center: course of the day' }),
   ]);
@@ -194,14 +195,14 @@ export async function homePage(env, editionDate = null) {
   const nameOfSection = (slug) => chrome.sections.find((x) => x.slug === slug)?.name || slug;
   const fullRows = entries.filter(([, list]) => list.length >= 3).map(([slug, list]) => `<section class="section-row">
       <h2 class="row-title"><a href="/section/${esc(slug)}">${esc(nameOfSection(slug))}</a></h2>
-      <div class="row-cards">${list.slice(0, 4).map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
+      <div class="row-cards">${list.slice(0, 4).map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages, showSection: false })).join('')}</div>
     </section>`).join('');
   const thin = entries.filter(([, list]) => list.length < 3);
   const sectionRows = fullRows + (thin.length ? `<section class="section-row more-sections">
       <h2 class="row-title">More from the paper</h2>
       <div class="more-grid">${thin.map(([slug, list]) => `<div class="more-col">
         <h3 class="more-title"><a href="/section/${esc(slug)}">${esc(nameOfSection(slug))}</a></h3>
-        ${list.map((s) => storyCard(s, { size: 's', tz: site.tz, showSection: false, showDek: false })).join('')}
+        ${list.map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showSection: false, showDek: false })).join('')}
       </div>`).join('')}</div>
     </section>` : '');
 
@@ -217,7 +218,7 @@ export async function homePage(env, editionDate = null) {
   ${sectionRows}
   ${selection.length ? `<section class="section-row selection">
     <h2 class="row-title">Editor’s selection</h2>
-    <div class="row-cards">${selection.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div>
+    <div class="row-cards">${selection.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages })).join('')}</div>
   </section>` : ''}
   <section class="section-row">
     <h2 class="row-title">Guides and shopping</h2>
@@ -263,6 +264,7 @@ export async function sectionPage(env, slug) {
   const db = env.DB;
   const site = SITE(env);
   const chrome = await loadChrome(env);
+  const seenImages = new Set();
   const section = sectionTree(chrome, slug);
   if (!section) return notFound(env, chrome);
   const children = chrome.sections.filter((s) => s.parent_slug === slug);
@@ -287,7 +289,7 @@ export async function sectionPage(env, slug) {
     commercial.length ? `<section class="section-row partner-row">
           <h2 class="row-title">Guides from our partners</h2>
           <p class="module-disclosure">Partner content with affiliate links. Not produced by the Boston Daily newsroom.</p>
-          <div class="row-cards">${commercial.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div>
+          <div class="row-cards">${commercial.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages, showSection: false })).join('')}</div>
         </section>` : '',
     courseModule(courses, site.network),
   ];
@@ -304,8 +306,8 @@ export async function sectionPage(env, slug) {
     </div>
     <div class="columns">
       <div class="col-main">
-        ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
-        ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: !!children.length })).join('')}</div>` : ''}
+        ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, seenImages, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
+        ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages, showSection: !!children.length })).join('')}</div>` : ''}
         ${mainMods}
         ${showCommerce ? paidProductAds(slug) : ''}
       </div>
