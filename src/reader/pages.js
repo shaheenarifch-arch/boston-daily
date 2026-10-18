@@ -2,6 +2,7 @@ import { esc, html, formatDateLong, formatDateTime, localDate, slugify, isHttpUr
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { layout, loadChrome } from './layout.js';
+import { subscribeBox } from '../newsletter.js';
 import {
   SITE, commerceAllowed, storyCard, partnerPicks, shopBand, paidProductAds, courseModule, courseItem, houseAd, productCard,
   sourcesBlock, noticesBlock, emptyState, storyStamp,
@@ -184,6 +185,7 @@ export async function homePage(env, editionDate = null) {
         <ol class="latest">${latest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol></section>` : ''}
       ${mostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
         <ol class="most-read">${mostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
+      ${subscribeBox({ compact: true })}
       ${railCommercial}`;
 
   const sectionRows = [...bySection.entries()].map(([slug, list]) => {
@@ -355,6 +357,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial })}</div>
     ${noticesBlock(notices.filter((n) => n.kind === 'update'), site.tz)}
     ${sourcesBlock(sources)}
+    ${commercial ? '' : subscribeBox()}
     ${shareBar(story)}
     ${commentsBlock(story, comments, commentNote, site.tz)}
     <p class="story-standards"><a href="/standards">Our editorial standards</a>${commercial ? ' explain how partner content is labeled.' : '. Spotted an error? Email <a href="mailto:' + esc(site.email) + '?subject=' + encodeURIComponent('Correction request: ' + story.headline) + '">' + esc(site.email) + '</a>.'}</p>

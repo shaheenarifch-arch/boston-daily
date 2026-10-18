@@ -6,6 +6,7 @@ import { publishDueScheduled } from './lifecycle.js';
 import { buildEdition } from './editions.js';
 import { checkProductLinks, checkBusinessHealth } from './maintenance.js';
 import { ensureDatabase } from './bootstrap.js';
+import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
   advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
@@ -56,6 +57,7 @@ export default {
       }
 
       if (pathname === '/api/inquiry' && method === 'POST') return await submitInquiry(env, request);
+      if (pathname === '/subscribe' && method === 'POST') return await subscribe(env, request);
       let cm;
       if ((cm = pathname.match(/^\/story\/([a-z0-9-]+)\/comment$/)) && method === 'POST') return await submitComment(env, request, cm[1]);
       if (pathname === '/api/health') return json({ ok: true, service: 'boston-daily' });
@@ -76,6 +78,8 @@ export default {
       if (pathname === '/courses') return await coursesPage(env, url);
       if (pathname === '/advertise') return await advertisePage(env, url);
       if (pathname === '/standards') return await standardsPage(env);
+      if (pathname === '/newsletters' || pathname === '/subscribe') return await newslettersPage(env, url);
+      if (pathname === '/unsubscribe') return await unsubscribe(env, url);
       if (pathname === '/corrections') return await correctionsPage(env);
       if (pathname === '/search') return await searchPage(env, url);
       if ((m = pathname.match(/^\/go\/([pbc])\/([A-Za-z0-9-]+)$/))) return await outbound(env, m[1], m[2], ctx);
@@ -104,6 +108,9 @@ export default {
     ctx.waitUntil((async () => {
       await publishDueScheduled(env.DB);
       await buildEdition(env.DB, env, { actor: 'system:edition-builder' });
+      // Newsletters go out right after the edition: daily every morning, weekly on Sundays.
+      console.log(await sendNewsletter(env, 'daily'));
+      if (new Date().getUTCDay() === 0) console.log(await sendNewsletter(env, 'weekly'));
       await checkProductLinks(env.DB, 30);
       await checkBusinessHealth(env.DB, 15);
     })());

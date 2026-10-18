@@ -353,3 +353,14 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 @media (min-width: 720px) { .shop-row.shop-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .shop-name-lg { font: 700 1.2rem/1.2 var(--serif); }
 .shop-note { font: 400 .95rem/1.45 var(--serif); color: var(--ink-soft); margin-bottom: .4rem; }
+
+/* Newsletter sign-up */
+.module-newsletter { background: var(--wash); border-top: 3px double var(--ink); padding: 1rem; margin: 1.5rem 0; }
+.module-newsletter .module-title { font: 700 1.1rem/1.2 var(--serif); margin: 0 0 .35rem; }
+.nl-copy { font: 400 .9rem/1.45 var(--sans); color: var(--ink-soft); margin: 0 0 .7rem; }
+.nl-form { display: grid; gap: .5rem; font-family: var(--sans); font-size: .88rem; }
+.nl-form input[type=email] { font: inherit; padding: .55rem .65rem; border: 1px solid var(--granite); border-radius: 3px; width: 100%; }
+.nl-tag { font-size: .7rem; font-weight: 700; color: var(--common-ink); background: var(--common); padding: .05rem .35rem; border-radius: 3px; }
+.nl-form .button { justify-self: start; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.nl-form .check { display: flex; gap: .45rem; align-items: center; }

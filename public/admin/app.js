@@ -101,6 +101,7 @@ async function route() {
 async function refreshBadges() {
   try {
     const o = await api('GET', '/overview');
+  const nl = await api('GET', '/subscribers').catch(() => null);
     const q = (o.newsroom.EDITORIAL_REVIEW || 0) + (o.commerce_lane.EDITORIAL_REVIEW || 0);
     $('#queue-count').hidden = !q; $('#queue-count').textContent = q;
     $('#inq-count').hidden = !o.commerce.new_inquiries; $('#inq-count').textContent = o.commerce.new_inquiries;
@@ -109,6 +110,15 @@ async function refreshBadges() {
 }
 
 // ── Live newsroom ──
+document.addEventListener('click', async (e) => {
+  if (e.target && e.target.id === 'nl-csv') {
+    e.preventDefault();
+    const res = await fetch('/api/admin/subscribers.csv', { headers: { authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY) || ''}` } });
+    const url = URL.createObjectURL(await res.blob());
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'subscribers.csv' }); a.click(); URL.revokeObjectURL(url);
+  }
+});
+
 async function renderLive() {
   const o = await api('GET', '/overview');
   const tile = (s) => `<a class="stage" href="#/stories?status=${s}" data-status="${s}">
@@ -117,6 +127,10 @@ async function renderLive() {
   view.innerHTML = `
     <header class="view-head"><div><h1>GetServices.ai newsroom live</h1><p class="sub">Operational status for ${esc(o.today)}. Refreshes every 30 seconds.</p></div>
       <a class="btn btn-primary" href="#/new">New story</a></header>
+    ${nl ? `<section class="panel"><h2 class="panel-title">Newsletter subscribers</h2>
+      <p>Daily: <strong>${esc(nl.counts?.daily || 0)}</strong> · Weekly: <strong>${esc(nl.counts?.weekly || 0)}</strong> · Unsubscribed: ${esc(nl.counts?.unsubscribed || 0)}
+      · <a href="#" id="nl-csv">Download CSV</a></p>
+      <p class="sub">${nl.email_configured ? 'Sending is on: daily after the morning edition, weekly on Sundays.' : 'Sending is off until RESEND_API_KEY and NEWSLETTER_FROM are set in Cloudflare. Sign-ups are being saved.'}</p></section>` : ''}
     <section class="panel">
       <h2 class="panel-title">Newsroom pipeline</h2>
       <div class="pipeline">${STAGES.map(tile).join('')}</div>

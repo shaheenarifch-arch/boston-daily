@@ -44,7 +44,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&family=Public+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/css/reader.css?v=6">
+<link rel="stylesheet" href="/css/reader.css?v=7">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
@@ -94,6 +94,7 @@ ${body}
     </div>
     <div>
       <p class="footer-h">Work with us</p>
+      <p><a href="/newsletters">Free newsletters</a></p>
       <p><a href="/advertise">Advertise with us</a></p>
       <p><a href="mailto:${esc(site.email)}?subject=${encodeURIComponent('[LISTING] Business listing')}">Get your business listed</a></p>
       <p><a href="mailto:${esc(site.email)}?subject=${encodeURIComponent('[SPONSORED] Sponsored content')}">Sponsored content</a></p>

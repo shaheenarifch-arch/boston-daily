@@ -31,6 +31,19 @@ export async function handleAdmin(request, env, url, editor) {
 
     if (path === '/overview' && method === 'GET') return json(await overview(env));
 
+    // ── Newsletter subscribers ──
+    if (path === '/subscribers' && method === 'GET') {
+      const counts = await db.prepare(`SELECT SUM(status = 'active' AND daily = 1) AS daily, SUM(status = 'active' AND weekly = 1) AS weekly,
+        SUM(status = 'active') AS active, SUM(status = 'unsubscribed') AS unsubscribed FROM subscribers`).first();
+      const { results: sends } = await db.prepare('SELECT kind, send_date, recipients, status, note FROM newsletter_sends ORDER BY created_at DESC LIMIT 20').all();
+      return json({ ok: true, counts, sends, email_configured: !!(env.RESEND_API_KEY && env.NEWSLETTER_FROM) });
+    }
+    if (path === '/subscribers.csv' && method === 'GET') {
+      const { results } = await db.prepare('SELECT email, daily, weekly, status, created_at FROM subscribers ORDER BY created_at').all();
+      const csv = ['email,daily,weekly,status,created_at', ...results.map((r) => [r.email, r.daily, r.weekly, r.status, r.created_at].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+      return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="subscribers.csv"' } });
+    }
+
     if (path === '/meta' && method === 'GET') {
       const { results: sections } = await db.prepare('SELECT * FROM sections ORDER BY sort_order').all();
       return json({ ok: true, states: STATES, transitions: TRANSITIONS, newsroom_types: NEWSROOM_TYPES, commerce_types: COMMERCE_TYPES,
