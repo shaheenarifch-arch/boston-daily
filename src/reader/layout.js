@@ -17,7 +17,7 @@ export function layout(env, chrome, { title, description = '', canonical = '', b
   const today = localDate(new Date(), site.tz);
   const news = chrome.sections.filter((s) => s.in_nav && s.kind === 'news');
   const niche = chrome.sections.filter((s) => s.in_nav && s.kind === 'niche');
-  const fullTitle = title ? `${title} | ${site.name}` : `${site.name}: news for Boston and the nation`;
+  const fullTitle = title ? `${title} | ${site.name}` : `${site.name}: Boston News, Politics, Sports & Business`;
   const editionLine = chrome.edition && chrome.edition.edition_date === today
     ? `Edition ${chrome.edition.edition_number}` : 'Past editions';
   const navLink = (s) => `<a href="/section/${esc(s.slug)}"${active === s.slug ? ' aria-current="page"' : ''}>${esc(s.name)}</a>`;
@@ -37,7 +37,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:type" content="${esc(ogType)}">
 ${canon ? `<meta property="og:url" content="${esc(canon)}">` : ''}
-${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `<meta property="og:image" content="${esc(ogImage)}"><meta name="twitter:card" content="summary_large_image">`; })()}
+${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `<meta property="og:image" content="${esc(ogImage)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title || site.name)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(ogImage)}">`; })()}
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="${esc(site.name)}" href="/feed.xml">

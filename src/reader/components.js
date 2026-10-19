@@ -46,8 +46,8 @@ export function storyCard(s, { size = 'm', tz, showSection = true, showDek = tru
   if (hasImg && seenImages) { if (seenImages.has(s.hero_image_url)) hasImg = false; else seenImages.add(s.hero_image_url); }
   // Text-only medium cards get a quiet section plate so card grids stay aligned.
   const img = !hasImg ? (size === 'm' ? `<figure class="card-figure card-figure-empty" aria-hidden="true"><span>${esc(s.section_name || 'Boston Daily')}</span></figure>` : '')
-    : size === 's' ? `<a class="card-thumb" href="/story/${esc(s.slug)}" tabindex="-1" aria-hidden="true"><img src="${esc(s.hero_image_url)}" alt="" loading="lazy" decoding="async"></a>`
-    : `<figure class="card-figure"><img src="${esc(s.hero_image_url)}" alt="" loading="${size === 'lead' ? 'eager' : 'lazy'}" decoding="async"></figure>`;
+    : size === 's' ? `<a class="card-thumb" href="/story/${esc(s.slug)}" tabindex="-1" aria-hidden="true"><img src="${esc(s.hero_image_url)}" alt="${esc(s.headline)}" loading="lazy" decoding="async"></a>`
+    : `<figure class="card-figure"><img src="${esc(s.hero_image_url)}" alt="${esc(s.headline)}" loading="${size === 'lead' ? 'eager' : 'lazy'}" decoding="async"></figure>`;
   const dek = showDek && (s.dek || s.body) ? `<p class="card-dek">${esc(s.dek || excerpt(s.body, size === 'lead' ? 260 : 150))}</p>` : '';
   return `<article class="card card-${size}${commercial ? ' card-commercial' : ''}">
     ${img}
