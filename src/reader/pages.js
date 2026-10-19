@@ -184,7 +184,7 @@ export async function homePage(env, editionDate = null) {
 
   // Column A: the lead (or the welcome note before the first story).
   const colA = hasNews
-    ? `${storyCard(lead, { size: 'lead', tz: site.tz, seenImages })}
+    ? `<h2 class="sr">Lead story</h2>${storyCard(lead, { size: 'lead', tz: site.tz, seenImages })}
        ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 10).map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages })).join('')}</div>` : ''}`
     : `<div class="welcome">
         <p class="welcome-kicker">Welcome to ${esc(site.name)}</p>
@@ -276,11 +276,16 @@ export async function homePage(env, editionDate = null) {
 
   return html(layout(env, chrome, {
     title: editionDate ? `Edition ${edition.edition_number}, ${formatDateLong(edition.edition_date, site.tz)}` : '',
-    description: 'Boston Daily: a fresh edition every morning, with stories updated through the day.',
+    description: editionDate ? 'Boston Daily: a fresh edition every morning, with stories updated through the day.'
+      : 'Boston news every morning: Massachusetts politics, Patriots and Celtics, business, tech and local guides, updated all day. Read today\u2019s free edition now.',
     canonical: editionDate ? `/edition/${editionDate}` : '/',
     active: editionDate ? '' : 'home',
     body,
-    jsonLd: { '@context': 'https://schema.org', '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined, publishingPrinciples: site.url ? `${site.url}/standards` : undefined, correctionsPolicy: site.url ? `${site.url}/standards#corrections` : undefined },
+    jsonLd: { '@context': 'https://schema.org', '@graph': [
+      { '@type': 'NewsMediaOrganization', '@id': site.url ? `${site.url}/#org` : undefined, name: site.name, url: site.url || undefined, logo: site.url ? `${site.url}/og-default.png` : undefined, publishingPrinciples: site.url ? `${site.url}/standards` : undefined, correctionsPolicy: site.url ? `${site.url}/standards#corrections` : undefined },
+      { '@type': 'WebSite', name: site.name, url: site.url || undefined, publisher: site.url ? { '@id': `${site.url}/#org` } : undefined,
+        potentialAction: site.url ? { '@type': 'SearchAction', target: `${site.url}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' } : undefined },
+    ] },
   }));
 }
 
@@ -438,7 +443,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
       <p class="story-byline">${story.byline ? `By ${esc(story.byline)}` : ''}${story.credited_reviewer ? `<span class="reviewer">Reviewed by ${esc(story.credited_reviewer)}</span>` : ''}</p>
       <p class="story-times">${times}</p>
     </header>
-    ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="" decoding="async">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
+    ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="${esc(story.headline)}" decoding="async">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'correction'), site.tz)}
     <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial })}</div>
     ${noticesBlock(notices.filter((n) => n.kind === 'update'), site.tz)}
