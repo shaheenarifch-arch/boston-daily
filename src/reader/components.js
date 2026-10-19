@@ -151,9 +151,8 @@ export function partnerOffers(offers, ctx) {
   if (!offers || !offers.length) return '';
   const short = (t, n = 110) => { const x = String(t || '').replace(/\s+/g, ' ').trim(); return x.length > n ? `${x.slice(0, n - 1).replace(/\s+\S*$/, '')}…` : x; };
   const until = (d) => { try { return new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return d; } };
-  return `<aside class="module partner-offers" aria-labelledby="po-h" data-section="${esc(ctx.slug || '')}">
-    <header class="module-head"><h2 class="module-title" id="po-h">Partner Offers</h2></header>
-    <p class="module-disclosure po-disclosure">Partner-link disclosure: This section contains partner links selected for relevance to this page. We may receive a commission if you make a purchase, at no additional cost to you.</p>
+  return `<aside class="module partner-offers" aria-label="Products" data-section="${esc(ctx.slug || '')}">
+    <p class="module-disclosure po-disclosure">We may earn a commission from these links.</p>
     <ul class="po-list">${offers.map((p, i) => {
       const merchant = p.display_name_allowed !== 0 && p.merchant_name ? p.merchant_name : '';
       const cta = p.price != null ? 'Check price' : 'View product';
