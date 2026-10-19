@@ -464,7 +464,7 @@ export async function shopPage(env, url) {
   const merchant = url.searchParams.get('merchant');
   const where = ["p.status = 'active'", "m.status = 'active'", regionClause(section === 'uk' ? 'UK' : 'US')];
   const binds = [];
-  if (section) { where.push('(p.section_slug = ? OR (p.section_slug IS NULL AND m.section_slug = ?))'); binds.push(section, section); }
+  if (section) { where.push("(p.section_slug = ? OR instr(',' || COALESCE(p.extra_sections, '') || ',', ',' || ? || ',') > 0 OR (p.section_slug IS NULL AND m.section_slug = ?))"); binds.push(section, section, section); }
   if (merchant) { where.push('m.id = ?'); binds.push(merchant); }
   const [{ results: products }, { results: merchants }] = await Promise.all([
     db.prepare(`SELECT ${PRODUCT_COLS} FROM products p JOIN merchants m ON m.id = p.merchant_id WHERE ${where.join(' AND ')} ORDER BY p.is_deal DESC, p.updated_at DESC LIMIT 120`).bind(...binds).all(),
