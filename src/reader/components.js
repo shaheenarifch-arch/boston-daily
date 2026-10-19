@@ -173,6 +173,40 @@ export function partnerOffers(offers, ctx) {
   </aside>`;
 }
 
+/**
+ * Homepage side panel: "The Daily Edit", a magazine-style pick of partner products.
+ * One large lead product, then numbered finds, each from a different partner and category.
+ * Always labeled Affiliate with a disclosure; links go through /go/p so tracking URLs never show.
+ * sectionName: slug -> display name for the category kicker.
+ */
+export function partnerEdit(items, sectionName = {}) {
+  if (!items || items.length < 3) return '';
+  const merchantOf = (p) => (p.display_name_allowed !== 0 && p.merchant_name ? p.merchant_name : '');
+  const link = (p, cls, inner) => {
+    const m = merchantOf(p);
+    return `<a class="${cls}" href="/go/p/${esc(p.id)}?po=home" target="_blank" rel="sponsored nofollow noopener noreferrer" aria-label="${esc(`${p.name}${m ? ` at ${m}` : ''} (opens in a new tab)`)}">${inner}</a>`;
+  };
+  const meta = (p) => `<span class="pe-cat">${esc(sectionName[p.section_slug] || '')}</span>`;
+  const [lead, ...rest] = items;
+  const leadM = merchantOf(lead);
+  return `<aside class="module partner-edit" aria-labelledby="pe-h">
+    <header class="pe-head">
+      <p class="pe-kicker"><span>Partner picks</span><span class="label label-commerce">Affiliate</span></p>
+      <h2 class="pe-title" id="pe-h">The Daily Edit</h2>
+      <p class="pe-dek">Finds from our partner shops, chosen fresh each morning.</p>
+    </header>
+    ${link(lead, 'pe-lead', `<span class="pe-frame"><img src="${esc(lead.image_url)}" alt="${esc(lead.name)}" width="480" height="360" loading="lazy" decoding="async"></span>
+      ${meta(lead)}<span class="pe-name pe-name-lead">${esc(lead.name)}</span>${leadM ? `<span class="pe-merchant">${esc(leadM)}</span>` : ''}<span class="pe-cta">View product <span aria-hidden="true">→</span></span>`)}
+    <ol class="pe-list">${rest.map((p) => {
+      const m = merchantOf(p);
+      return `<li>${link(p, 'pe-item', `<span class="pe-thumb"><img src="${esc(p.image_url)}" alt="" width="96" height="96" loading="lazy" decoding="async"></span>
+        <span class="pe-text">${meta(p)}<span class="pe-name">${esc(p.name)}</span>${m ? `<span class="pe-merchant">${esc(m)}</span>` : ''}</span>`)}</li>`;
+    }).join('')}</ol>
+    <p class="module-disclosure pe-disclosure">We may earn a commission when you buy through these links, at no extra cost to you. Partners never influence our news coverage.</p>
+    <a class="module-more" href="/shop">See all partner picks <span aria-hidden="true">→</span></a>
+  </aside>`;
+}
+
 /** Product images from the network's Awin affiliate websites, in the side panel (see src/ads.js). */
 export function sidePanelProductAds(placement) {
   return productAdsFor(placement, { awin: true }).map((ad) => `<aside class="module module-commerce paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">

@@ -5,7 +5,7 @@ import { getEditionWithItems } from '../editions.js';
 import { layout, loadChrome } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
+  SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
   sourcesBlock, noticesBlock, emptyState, storyStamp,
 } from './components.js';
 
@@ -38,8 +38,11 @@ const RELATED_PRODUCT_SECTIONS = {
   'us-sports': ['us-sports', 'outdoor'],
 };
 
+// Region-limited products (e.g. the UK store, regions = 'UK') only show in their own region's views.
+const regionClause = (region) => `(p.regions IS NULL OR p.regions = '' OR instr(',' || upper(replace(p.regions, ' ', '')) || ',', ',${region},') > 0 OR instr(',' || upper(replace(p.regions, ' ', '')) || ',', ',ALL,') > 0)`;
+
 async function deals(db, { section = null, limit = 4 } = {}) {
-  const where = ["p.status = 'active'", "m.status = 'active'"];
+  const where = ["p.status = 'active'", "m.status = 'active'", regionClause(section === 'uk' ? 'UK' : 'US')];
   const binds = [];
   if (section) {
     const list = RELATED_PRODUCT_SECTIONS[section] || [section];
@@ -50,6 +53,40 @@ async function deals(db, { section = null, limit = 4 } = {}) {
   const { results } = await db.prepare(`SELECT ${PRODUCT_COLS} FROM products p JOIN merchants m ON m.id = p.merchant_id
     WHERE ${where.join(' AND ')} ORDER BY p.is_deal DESC, p.updated_at DESC LIMIT ?`).bind(...binds, limit).all();
   return results;
+}
+
+/** Homepage partner products: editor-featured, US-eligible, with an image. */
+async function homePartnerPool(db) {
+  const { results } = await db.prepare(`SELECT ${PRODUCT_COLS} FROM products p JOIN merchants m ON m.id = p.merchant_id
+    WHERE p.status = 'active' AND m.status = 'active' AND p.featured = 1 AND p.image_url IS NOT NULL AND p.image_rights_ok = 1 AND ${regionClause('US')}
+    ORDER BY p.id LIMIT 400`).all();
+  return results || [];
+}
+
+/**
+ * The day's mix: one product per merchant, categories interleaved so neighbours differ,
+ * rotating each day (same order all day, so the page is stable between visits).
+ */
+export function dailyMix(pool, dayNumber) {
+  const byMerchant = new Map();
+  for (const p of pool) {
+    if (!byMerchant.has(p.merchant_id)) byMerchant.set(p.merchant_id, []);
+    byMerchant.get(p.merchant_id).push(p);
+  }
+  const bySection = new Map();
+  for (const [mid, list] of [...byMerchant.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const pick = list[dayNumber % list.length];
+    const key = pick.section_slug || 'other';
+    if (!bySection.has(key)) bySection.set(key, []);
+    bySection.get(key).push(pick);
+  }
+  const sections = [...bySection.keys()].sort();
+  const start = dayNumber % (sections.length || 1);
+  const order = [...sections.slice(start), ...sections.slice(0, start)];
+  const queues = order.map((k) => { const q = bySection.get(k); const s = dayNumber % q.length; return [...q.slice(s), ...q.slice(0, s)]; });
+  const out = [];
+  while (queues.some((q) => q.length)) for (const q of queues) if (q.length) out.push(q.shift());
+  return out;
 }
 
 async function networkFor(db, section = null, limit = 4) {
@@ -86,15 +123,19 @@ export async function homePage(env, editionDate = null) {
   if (editionDate && !data) return notFound(env, chrome, 'There is no edition for that date.');
 
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-  const [{ results: pool }, { results: mostRead }, picks, network, cotd] = await Promise.all([
+  const [{ results: pool }, { results: mostRead }, partnerPool, network, cotd] = await Promise.all([
     db.prepare(`SELECT ${STORY_COLS}, COALESCE(s.corrected_at, s.last_updated_at, s.published_at) AS activity FROM stories s JOIN sections sec ON sec.slug = s.section_slug
       WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} ORDER BY activity DESC LIMIT 80`).all(),
     db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
       WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} AND s.published_at >= ? AND s.view_count > 0 ORDER BY s.view_count DESC LIMIT 5`).bind(weekAgo).all(),
-    deals(db, { limit: 6 }),
+    homePartnerPool(db),
     [],
     courseOfTheDay(db, site.tz),
   ]);
+  // Partner products: the side-panel Daily Edit takes the first five of the day's mix; the Shop band the next six.
+  const mix = dailyMix(partnerPool, Number(localDate(new Date(), site.tz).replace(/-/g, '')));
+  const editItems = mix.slice(0, 5);
+  const picks = mix.slice(5, 11);
   const { results: partnerGuides } = await db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
     WHERE s.lane = 'partner_commerce' AND s.status IN ${PUBLIC} AND s.sensitive = 0 AND sec.commerce_allowed = 1 ORDER BY s.published_at DESC LIMIT 3`).all();
 
@@ -168,7 +209,9 @@ export async function homePage(env, editionDate = null) {
 
   // Commercial budget: ~15% of the content blocks on the page.
   const contentBlocks = hasNews ? (1 + top.length + rest.length + selection.length + latest.length) : 8;
+  const sectionName = Object.fromEntries(chrome.sections.map((x) => [x.slug, x.name]));
   const picked = commercialBudget(contentBlocks, [
+    partnerEdit(editItems, sectionName),
     houseAd(site, 'FRONT PAGE', 'home'),
     shopBand(picks),
     partnerGuides.length ? `<section class="section-row partner-row">
@@ -419,13 +462,13 @@ export async function shopPage(env, url) {
   const chrome = await loadChrome(env);
   const section = url.searchParams.get('section');
   const merchant = url.searchParams.get('merchant');
-  const where = ["p.status = 'active'", "m.status = 'active'"];
+  const where = ["p.status = 'active'", "m.status = 'active'", regionClause(section === 'uk' ? 'UK' : 'US')];
   const binds = [];
   if (section) { where.push('(p.section_slug = ? OR (p.section_slug IS NULL AND m.section_slug = ?))'); binds.push(section, section); }
   if (merchant) { where.push('m.id = ?'); binds.push(merchant); }
   const [{ results: products }, { results: merchants }] = await Promise.all([
     db.prepare(`SELECT ${PRODUCT_COLS} FROM products p JOIN merchants m ON m.id = p.merchant_id WHERE ${where.join(' AND ')} ORDER BY p.is_deal DESC, p.updated_at DESC LIMIT 120`).bind(...binds).all(),
-    db.prepare(`SELECT m.id, m.name, m.display_name_allowed, COUNT(p.id) AS n FROM merchants m JOIN products p ON p.merchant_id = m.id AND p.status = 'active'
+    db.prepare(`SELECT m.id, m.name, m.display_name_allowed, COUNT(p.id) AS n FROM merchants m JOIN products p ON p.merchant_id = m.id AND p.status = 'active' AND ${regionClause(section === 'uk' ? 'UK' : 'US')}
       WHERE m.status = 'active' GROUP BY m.id ORDER BY m.name`).all(),
   ]);
   const commerceSections = chrome.sections.filter((s) => s.commerce_allowed && !s.parent_slug && s.kind !== 'commerce');
