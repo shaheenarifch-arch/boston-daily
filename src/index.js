@@ -10,7 +10,7 @@ import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
-  advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, searchPage, notFound, rssFeed, sitemap, outbound,
+  advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound,
 } from './reader/pages.js';
 
 const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
@@ -94,6 +94,8 @@ const worker = {
       if (pathname === '/newsletters' || pathname === '/subscribe') return await newslettersPage(env, url);
       if (pathname === '/unsubscribe') return await unsubscribe(env, url);
       if (pathname === '/corrections') return await correctionsPage(env);
+      if (pathname === '/privacy') return await privacyPage(env);
+      if (pathname === '/contact') return await contactPage(env);
       if (pathname === '/search') return await searchPage(env, url);
       if ((m = pathname.match(/^\/go\/([pbc])\/([A-Za-z0-9-]+)$/))) return await outbound(env, m[1], m[2], ctx, url);
       if (pathname === '/feed.xml') return await rssFeed(env);
