@@ -15,6 +15,7 @@ import d20261018uniq from './2026-10-18-unique-images.sql';
 import d20261018live1 from './2026-10-18-pats-live1.sql';
 import d20261018maelection from './2026-10-18-ma-election.sql';
 import d20261018missingimg from './2026-10-18-missing-images.sql';
+import d20261018partnerproducts from './2026-10-18-partner-products.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -31,4 +32,5 @@ export const CONTENT_PACKAGES = [
   ['2026-10-18-pats-live1', d20261018live1],
   ['2026-10-18-ma-election', d20261018maelection],
   ['2026-10-18-missing-images', d20261018missingimg],
+  ['2026-10-18-partner-products', d20261018partnerproducts],
 ];
