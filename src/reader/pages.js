@@ -231,9 +231,10 @@ export async function homePage(env, editionDate = null) {
         <ol class="latest">${latest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol></section>` : ''}
       ${mostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
         <ol class="most-read">${mostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
-      ${subscribeBox({ compact: true })}
-      ${railCommercial}
-      ${hasNews ? sidePanelProductAds('home') : ''}`;
+      ${subscribeBox({ compact: true })}`;
+  // Partner and ad modules sit in a packed band under the front grid, so the rail never runs far
+  // past the lead and Top stories columns and leaves blank space beside it.
+  const extras = `${railCommercial}${hasNews ? sidePanelProductAds('home') : ''}`.trim();
 
   // Sections with 3+ stories get a full row; thinner sections share one multi-column block so no row is half empty.
   const entries = [...bySection.entries()];
@@ -258,6 +259,7 @@ export async function homePage(env, editionDate = null) {
     <div class="fg-b">${colB}</div>
     <aside class="fg-c">${colC}</aside>
   </section>
+  ${extras ? `<section class="front-extras" aria-label="From our partners">${extras}</section>` : ''}
   ${mainCommercial}
   ${hasNews ? premiumAds('home') : ''}
   ${sectionRows}

@@ -445,8 +445,8 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .inquiry .flash { margin: .5rem 0 1rem; }
 /* Awin product ads in the side panel: two per row so the panel stays compact */
-.col-rail .paid-ad .product-grid, .fg-c .paid-ad .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
-.col-rail .paid-ad .product-link, .fg-c .paid-ad .product-link { padding: .5rem; }
+.col-rail .paid-ad .product-grid, .fg-c .paid-ad .product-grid, .front-extras .paid-ad .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.col-rail .paid-ad .product-link, .fg-c .paid-ad .product-link, .front-extras .paid-ad .product-link { padding: .5rem; }
 
 /* ── Partner Offers (src/offers.js) ── */
 .partner-offers { background: var(--common); border: 1px solid var(--rule, #d9d9d9); }
@@ -523,3 +523,7 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
   .pe-list li:first-child { border-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .pe-frame img { transition: none; } .pe-lead:hover .pe-frame img { transform: none; } }
+
+/* Home: partner and ad modules packed into columns under the front grid (no blank space beside a long rail). */
+.front-extras { column-width: 19rem; column-gap: 1.5rem; margin: 0 0 2rem; }
+.front-extras > * { break-inside: avoid; display: block; width: 100%; margin: 0 0 1.5rem; }
