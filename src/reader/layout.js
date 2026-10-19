@@ -98,6 +98,7 @@ ${body}
     </div>
     <div>
       <p class="footer-h">Work with us</p>
+      <p><a href="https://getservices.ai/marketplace/listings?utm_source=bostondaily&amp;utm_medium=network&amp;utm_campaign=marketplace_footer" target="_blank" rel="noopener"><strong>AI tools &amp; agencies directory</strong></a></p>
       <p><a href="/newsletters">Free newsletters</a></p>
       <p><a href="/advertise">Advertise with us</a></p>
       <p><a href="mailto:${esc(site.email)}?subject=${encodeURIComponent('[LISTING] Business listing')}">Get your business listed</a></p>

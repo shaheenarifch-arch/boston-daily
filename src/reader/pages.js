@@ -6,7 +6,7 @@ import { layout, loadChrome } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
   SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
-  sourcesBlock, noticesBlock, emptyState, storyStamp,
+  sourcesBlock, noticesBlock, emptyState, storyStamp, marketplaceFeature,
 } from './components.js';
 
 const PUBLIC = "('PUBLISHED','UPDATED','CORRECTED')";
@@ -519,9 +519,14 @@ export async function businessesPage(env) {
   const card = (b) => `<li class="biz-card"><a href="/businesses/${esc(b.slug)}">
       <strong>${esc(b.name)}</strong>${b.domain ? `<span class="biz-domain">${esc(b.domain)}</span>` : ''}
       <span>${esc(b.short_description || '')}</span></a></li>`;
+  // AI tools are stacked together first, then agencies, then everything else in its existing order.
+  const FIRST = ['AI tools', 'Agencies & service providers'];
+  const rank = (g) => { const i = FIRST.indexOf(g); return i === -1 ? FIRST.length : i; };
+  const ordered = [...groups.entries()].map((e, i) => [e, i]).sort((a, b) => rank(a[0][0]) - rank(b[0][0]) || a[1] - b[1]).map(([e]) => e);
   const body = `<div class="page-head"><h1>Recommended businesses</h1>
       <p class="page-sub">These businesses are part of the ${esc(site.network)} network, which also publishes Boston Daily. They are not independent reviews.</p></div>
-    ${[...groups.entries()].map(([g, list]) => `<section class="biz-group"><h2 class="row-title">${esc(g)}</h2><ul class="biz-grid">${list.map(card).join('')}</ul></section>`).join('')}
+    ${marketplaceFeature(site.network)}
+    ${ordered.map(([g, list]) => `<section class="biz-group"><h2 class="row-title">${esc(g)}</h2><ul class="biz-grid">${list.map(card).join('')}</ul></section>`).join('')}
     ${paid.length ? `<section class="biz-group"><h2 class="row-title">Paid listings</h2><p class="module-disclosure">These businesses paid to be listed.</p><ul class="biz-grid">${paid.map(card).join('')}</ul></section>` : ''}
     <p class="cta-line"><a href="mailto:${esc(site.email)}?subject=${encodeURIComponent('[LISTING] Get my business listed')}">Get your business listed</a></p>`;
   return html(layout(env, chrome, {

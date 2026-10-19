@@ -57,9 +57,9 @@ INSERT OR IGNORE INTO sections (slug,name,kind,parent_slug,sort_order,in_nav,com
 
 -- ── GetServices.ai network business registry (initial seed — verify against master file) ──
 INSERT OR IGNORE INTO businesses (id,slug,name,domain,grp,section_slug,short_description,owned_by_network,featured,sort_order,status,created_at,updated_at) VALUES
-('biz-getservices','getservices-ai','GetServices.ai','getservices.ai','Company & platforms','ai','AI services, AI pods and automation for small businesses and regulated industries',1,1,1,'active',datetime('now'),datetime('now')),
-('biz-atlas','atlas-aeo','ATLAS AEO','app.getservices.ai','Company & platforms','ai','Answer-engine and search optimization app for your website',1,1,2,'active',datetime('now'),datetime('now')),
-('biz-studio','getservices-studio','GetServices AI Studio','studio.getservices.ai','Company & platforms','ai','The GetServices AI operating environment',1,0,3,'active',datetime('now'),datetime('now')),
+('biz-getservices','getservices-ai','GetServices.ai','getservices.ai','Agencies & service providers','ai','AI services, AI pods and automation for small businesses and regulated industries',1,1,1,'active',datetime('now'),datetime('now')),
+('biz-atlas','atlas-aeo','ATLAS AEO','app.getservices.ai','AI tools','ai','Answer-engine and search optimization app for your website',1,1,2,'active',datetime('now'),datetime('now')),
+('biz-studio','getservices-studio','GetServices AI Studio','studio.getservices.ai','AI tools','ai','The GetServices AI operating environment',1,0,3,'active',datetime('now'),datetime('now')),
 ('biz-fashtronix','fashtronix-hub','Fashtronix Hub','fashtronixhub.com','Company & platforms','technology','Electronics store',1,0,4,'active',datetime('now'),datetime('now')),
 ('biz-buybeststore','buybeststore','BuyBestStore','buybeststore.com','Shopping, deals & guides','technology','Shopping and buying guides',1,0,10,'active',datetime('now'),datetime('now')),
 ('biz-buybeststores-uk','buybeststores-uk','BuyBestStores UK','buybeststores.uk','Shopping, deals & guides','technology','UK electronics and fitness picks',1,0,11,'active',datetime('now'),datetime('now')),

@@ -221,12 +221,35 @@ export function sidePanelProductAds(placement) {
   </aside>`).join('');
 }
 
+/** The featured GetServices.ai marketplace: AI tools first, then agencies and service providers. */
+export const MARKETPLACE = {
+  name: 'GetServices.ai Marketplace',
+  blurb: 'AI tools and agencies in one searchable directory.',
+  url: 'https://getservices.ai/marketplace/listings?utm_source=bostondaily&utm_medium=network&utm_campaign=marketplace',
+};
+
+/** Large featured banner for the marketplace (Recommended businesses page). */
+export function marketplaceFeature(network) {
+  return `<section class="biz-featured" aria-label="Featured: ${esc(MARKETPLACE.name)}">
+    <p class="biz-featured-kicker">Featured</p>
+    <h2 class="biz-featured-title">${esc(MARKETPLACE.name)}</h2>
+    <p class="biz-featured-blurb">${esc(MARKETPLACE.blurb)}</p>
+    <ul class="biz-featured-tracks"><li><strong>AI tools</strong> Software and apps you can start using today</li><li><strong>Agencies</strong> Teams that build and run AI for you</li></ul>
+    <a class="biz-featured-cta" href="${esc(MARKETPLACE.url)}" target="_blank" rel="noopener">Browse the directory <span aria-hidden="true">→</span></a>
+    <p class="module-disclosure">Part of the ${esc(network)} network.</p>
+  </section>`;
+}
+
 export function networkModule(businesses, network, { title = 'From our network' } = {}) {
   if (!businesses || !businesses.length) return '';
   return `<aside class="module module-network" aria-label="${esc(title)}">
     <header class="module-head"><h2 class="module-title">${esc(title)}</h2></header>
     <p class="module-disclosure">These businesses are part of the ${esc(network)} network.</p>
-    <ul class="biz-list">${businesses.map((b) => `<li>
+    <ul class="biz-list"><li class="biz-list-featured">
+      <span class="label">Featured</span>
+      <a href="${esc(MARKETPLACE.url)}" target="_blank" rel="noopener"><strong>${esc(MARKETPLACE.name)}</strong></a>
+      <span>${esc(MARKETPLACE.blurb)}</span>
+    </li>${businesses.map((b) => `<li>
       <a href="/businesses/${esc(b.slug)}"><strong>${esc(b.name)}</strong></a>
       <span>${esc(b.short_description || '')}</span>
     </li>`).join('')}</ul>
