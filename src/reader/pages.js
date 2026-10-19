@@ -366,7 +366,26 @@ export async function sectionPage(env, slug, ctx = null) {
         ${showCommerce ? sidePanelProductAds(slug) : ''}
       </aside>
     </div>`;
-  return html(layout(env, chrome, { title: section.name, description: section.description || `${section.name} news from Boston Daily.`, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body }));
+  // A full description (the seed labels are short) and CollectionPage + breadcrumb schema.
+  // The chrome's section list carries no description column, so read it here.
+  const secDescription = section.description ?? (await db.prepare('SELECT description FROM sections WHERE slug = ?').bind(slug).first())?.description;
+  const base = secDescription ? `${section.name}: ${secDescription.replace(/\.$/, '')}.` : `${section.name} news and analysis.`;
+  const fullDesc = `${base} The latest ${section.name} stories and guides from ${site.name}, updated every morning.`;
+  const sectionDesc = fullDesc.length <= 160 ? fullDesc : base.length <= 160 ? base : `${base.slice(0, 157).replace(/\s+\S*$/, '')}…`;
+  const pageUrl = site.url ? `${site.url}/section/${slug}` : undefined;
+  const crumbs = [{ name: site.name, url: site.url ? `${site.url}/` : '/' }];
+  if (section.parent) crumbs.push({ name: section.parent.name, url: site.url ? `${site.url}/section/${section.parent.slug}` : `/section/${section.parent.slug}` });
+  crumbs.push({ name: section.name, url: pageUrl || `/section/${slug}` });
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'CollectionPage', '@id': pageUrl ? `${pageUrl}#page` : undefined, url: pageUrl, name: `${section.name} | ${site.name}`, description: sectionDesc,
+        isPartOf: { '@type': 'WebSite', name: site.name, url: site.url || undefined },
+        publisher: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined } },
+      { '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.url })) },
+    ],
+  };
+  return html(layout(env, chrome, { title: section.name, description: sectionDesc, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body, jsonLd }));
 }
 
 // ───────────────────────────── Story ─────────────────────────────
@@ -725,6 +744,65 @@ export async function correctionsPage(env) {
   return html(layout(env, chrome, { title: 'Corrections', description: 'Corrections issued by Boston Daily.', canonical: '/corrections', body }));
 }
 
+export async function privacyPage(env) {
+  const site = SITE(env);
+  const chrome = await loadChrome(env);
+  const updated = 'October 19, 2026';
+  const body = `<article class="prose standards"><h1>Privacy policy</h1>
+    <p class="muted">Last updated: ${updated}</p>
+    <p>${esc(site.name)} is published by ${esc(site.network)}. This page explains what information the site collects and why.</p>
+    <h2>Visitor counts, without cookies</h2>
+    <p>We count daily visitors and page views without cookies. A visit is recorded as a salted, one-way code made from the date, your IP address and your browser type; the code changes every day and cannot be turned back into your IP address. Automated traffic is ignored.</p>
+    <h2>Newsletters</h2>
+    <p>If you subscribe, we store your email address and the newsletters you chose. We send newsletters through our email provider, Resend. Every email has an unsubscribe link, and unsubscribing takes effect immediately.</p>
+    <h2>Comments</h2>
+    <p>If you comment on a story, we store the name you give, your comment and a one-way code made from your IP address, used only to limit spam. Comments appear after an editor approves them.</p>
+    <h2>Advertising and partnership inquiries</h2>
+    <p>If you send an inquiry, we store the details you enter (such as your name, company, email and message) to reply to you.</p>
+    <h2>Partner links</h2>
+    <p>Some links go to partner retailers through an affiliate network. We count clicks on these links without identifying you. After you leave our site, the partner and the network may set their own cookies under their own privacy policies.</p>
+    <h2>Hosting</h2>
+    <p>The site runs on Cloudflare, which processes requests and may keep standard logs for security and reliability.</p>
+    <h2>Your choices</h2>
+    <p>To see, correct or delete information you gave us, email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>. We do not sell personal information.</p>
+    <h2>Children</h2>
+    <p>${esc(site.name)} is not directed at children under 13, and we do not knowingly collect their information.</p>
+    <h2>Changes</h2>
+    <p>If we change this policy, we will update the date at the top of this page.</p>
+  </article>`;
+  return html(layout(env, chrome, {
+    title: 'Privacy policy', description: `What ${site.name} collects and why: cookie-free visitor counts, newsletter sign-ups, comments, inquiries and partner links.`, canonical: '/privacy', body,
+    jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', name: `Privacy policy | ${site.name}`, url: site.url ? `${site.url}/privacy` : undefined, dateModified: '2026-10-19',
+      publisher: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined } },
+  }));
+}
+
+export async function contactPage(env) {
+  const site = SITE(env);
+  const chrome = await loadChrome(env);
+  const mail = (subject, label) => `<a href="mailto:${esc(site.email)}?subject=${encodeURIComponent(subject)}">${esc(label)}</a>`;
+  const body = `<article class="prose standards"><h1>Contact us</h1>
+    <p>We read every message. The fastest way to reach the newsroom is email.</p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:${esc(site.email)}">${esc(site.email)}</a></li>
+      ${site.phone ? `<li><strong>Phone:</strong> <a href="tel:${esc(site.phone.replace(/[^0-9+]/g, ''))}">${esc(site.phone)}</a></li>` : ''}
+    </ul>
+    <h2>Story tips</h2>
+    <p>Send tips, documents or leads to ${mail('[TIP] Story tip', site.email)}.</p>
+    <h2>Corrections</h2>
+    <p>If we got something wrong, ${mail('[CORRECTION] Correction request', 'tell us')} with the story link. See our <a href="/corrections">corrections</a> and <a href="/standards">editorial standards</a>.</p>
+    <h2>Advertising and partnerships</h2>
+    <p>See <a href="/advertise">advertise with us</a>, or email about ${mail('[LISTING] Business listing', 'business listings')} and ${mail('[SPONSORED] Sponsored content', 'sponsored content')}.</p>
+    <h2>Newsletters</h2>
+    <p>Manage your subscription on the <a href="/newsletters">newsletters page</a> or with the link in any email.</p>
+  </article>`;
+  return html(layout(env, chrome, {
+    title: 'Contact us', description: `Contact ${site.name}: story tips, corrections, advertising and newsletters. Email ${site.email}.`, canonical: '/contact', body,
+    jsonLd: { '@context': 'https://schema.org', '@type': 'ContactPage', name: `Contact | ${site.name}`, url: site.url ? `${site.url}/contact` : undefined,
+      mainEntity: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined, email: site.email, telephone: site.phone || undefined } },
+  }));
+}
+
 export async function searchPage(env, url) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
@@ -780,7 +858,7 @@ ${results.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc><ne
     env.DB.prepare('SELECT slug FROM sections WHERE active = 1').all(),
     env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active' AND (health_ok IS NULL OR health_ok = 1)").all(),
   ]);
-  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections',
+  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections', '/privacy', '/contact',
     ...sections.map((s) => `/section/${s.slug}`), ...biz.map((b) => `/businesses/${b.slug}`)];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

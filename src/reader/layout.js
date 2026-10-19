@@ -37,7 +37,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:type" content="${esc(ogType)}">
 ${canon ? `<meta property="og:url" content="${esc(canon)}">` : ''}
-${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">` : '<meta name="twitter:card" content="summary">'}
+${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `<meta property="og:image" content="${esc(ogImage)}"><meta name="twitter:card" content="summary_large_image">`; })()}
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="${esc(site.name)}" href="/feed.xml">
@@ -83,6 +83,8 @@ ${body}
       <p><a href="/editor">About the editor</a></p>
       <p><a href="/standards">Editorial standards</a></p>
       <p><a href="/corrections">Corrections</a></p>
+      <p><a href="/contact">Contact us</a></p>
+      <p><a href="/privacy">Privacy policy</a></p>
       <p><a href="/editions">Past editions</a></p>
       <p><a href="/feed.xml">RSS</a></p>
     </div>
