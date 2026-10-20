@@ -79,6 +79,25 @@ export function timeAgo(iso) {
   return `${Math.round(s / 86400)} d ago`;
 }
 
+/** "9:14 AM" in the newsroom's time zone. */
+export function formatClock(iso, timeZone = 'America/New_York') {
+  if (!iso) return '';
+  return new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+}
+
+/**
+ * Card stamp wording: "just now", "12 min ago", "3 hr ago", then "Oct 17" after a day.
+ * The reader page script (layout.js) repeats this rule so stamps keep ticking without a reload.
+ */
+export function relativeStamp(iso, timeZone = 'America/New_York', now = Date.now()) {
+  if (!iso) return '';
+  const s = Math.max(0, (now - new Date(iso).getTime()) / 1000);
+  if (s < 90) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} hr ago`;
+  return new Intl.DateTimeFormat('en-US', { timeZone, month: 'short', day: 'numeric' }).format(new Date(iso));
+}
+
 export async function readJson(request) {
   try {
     return await request.json();
@@ -94,4 +113,12 @@ export function money(price, currency = 'USD') {
   } catch {
     return `${price} ${currency || ''}`.trim();
   }
+}
+
+/** Salted, truncated hash of the visitor's IP (never stored raw). */
+export async function ipHash(request, env) {
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const data = new TextEncoder().encode(`${ip}|${env.INGEST_SECRET || env.SITE_NAME || 'bd'}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
 }

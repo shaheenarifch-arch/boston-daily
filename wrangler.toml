@@ -52,3 +52,4 @@ AUTO_PUBLISH_COMMERCE = "true"
 #   NEWSLETTER_FROM — sender, e.g. "Boston Daily <news@bostondaily.us>" (domain must be verified in Resend)
 #   GSC_SERVICE_ACCOUNT — Google service account JSON key with access to the Search Console property (optional)
 #   GSC_SITE — Search Console property, e.g. "sc-domain:bostondaily.us" (optional)
+#   ANTHROPIC_API_KEY — Claude API key for the Advertise form's AI auto-fill and ad copy (optional; without it, or if a call fails, the form uses built-in templates)

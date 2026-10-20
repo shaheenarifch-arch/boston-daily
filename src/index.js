@@ -8,9 +8,10 @@ import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './main
 import { ensureDatabase } from './bootstrap.js';
 import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
+import { autofillEndpoint, copyEndpoint, checkEndpoint } from './advertise.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
-  advertisePage, submitInquiry, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound, llmsTxt,
+  advertisePage, submitInquiry, latestUpdate, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound, llmsTxt,
 } from './reader/pages.js';
 
 const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
@@ -69,10 +70,14 @@ const worker = {
       }
 
       if (pathname === '/api/inquiry' && method === 'POST') return await submitInquiry(env, request, ctx);
+      if (pathname === '/api/advertise/autofill' && method === 'POST') return await autofillEndpoint(env, request);
+      if (pathname === '/api/advertise/copy' && method === 'POST') return await copyEndpoint(env, request);
+      if (pathname === '/api/advertise/check' && method === 'POST') return await checkEndpoint(env, request);
       if (pathname === '/subscribe' && method === 'POST') return await subscribe(env, request);
       let cm;
       if ((cm = pathname.match(/^\/story\/([a-z0-9-]+)\/comment$/)) && method === 'POST') return await submitComment(env, request, cm[1]);
       if (pathname === '/api/health') return json({ ok: true, service: 'boston-daily' });
+      if (pathname === '/api/updated' && method === 'GET') return await latestUpdate(env);
 
       if (method !== 'GET' && method !== 'HEAD') return errorJson('Method not allowed', 405);
 

@@ -1,4 +1,4 @@
-import { esc, formatDateLong, formatDateTime, timeAgo, money } from '../util.js';
+import { esc, formatDateTime, relativeStamp, money } from '../util.js';
 import { excerpt } from '../markdown.js';
 import { campaignFor, productAdsFor } from '../ads.js';
 
@@ -23,15 +23,19 @@ export function commerceAllowed(section, story) {
 
 const TYPE_LABEL = { analysis: 'Analysis', opinion: 'Opinion', feature: 'Feature' };
 
-/** "Updated 2 hr ago" / "Corrected Oct 17" / "Oct 17, 2026" */
+/**
+ * "Updated 12 min ago" when the story was updated with new developments since publishing,
+ * "Corrected …" when its latest change was a correction, otherwise "Published …".
+ * The <time data-ago> keeps ticking in the browser (see layout.js).
+ */
 export function storyStamp(s, tz) {
-  if (s.status === 'CORRECTED' && s.corrected_at) return `<span class="stamp stamp-corrected">Corrected ${esc(timeAgo(s.corrected_at))}</span>`;
-  if (s.status === 'UPDATED' && s.last_updated_at) return `<span class="stamp stamp-updated">Updated ${esc(timeAgo(s.last_updated_at))}</span>`;
-  if (s.published_at) {
-    const age = Date.now() - new Date(s.published_at).getTime();
-    return `<span class="stamp">${esc(age < 86400000 ? timeAgo(s.published_at) : formatDateLong(s.published_at, tz).replace(/^\w+, /, ''))}</span>`;
-  }
-  return '';
+  const updated = s.last_updated_at || '';
+  const corrected = s.corrected_at || '';
+  const [label, iso, cls] = corrected && corrected > updated ? ['Corrected', corrected, ' stamp-corrected']
+    : updated ? ['Updated', updated, ' stamp-updated']
+    : ['Published', s.published_at, ''];
+  if (!iso) return '';
+  return `<span class="stamp${cls}">${label} <time datetime="${esc(iso)}" data-ago title="${esc(formatDateTime(iso, tz))}">${esc(relativeStamp(iso, tz))}</time></span>`;
 }
 
 export function storyCard(s, { size = 'm', tz, showSection = true, showDek = true, seenImages = null } = {}) {
@@ -206,19 +210,36 @@ export function partnerEdit(items, sectionName = {}) {
   </aside>`;
 }
 
-/** Product images from the network's Awin affiliate websites, in the side panel (see src/ads.js). */
-export function sidePanelProductAds(placement) {
-  return productAdsFor(placement, { awin: true }).map((ad) => `<aside class="module module-commerce paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
+/**
+ * Product images from the network's Awin affiliate websites, in the side panel (see src/ads.js).
+ * partnerRows: active product rows (any order) for ads that pull affiliate products into their block on
+ * this placement. Those cards link through /go/p and sit under their own Affiliate label.
+ */
+export function sidePanelProductAds(placement, partnerRows = []) {
+  const byId = new Map(partnerRows.map((p) => [p.id, p]));
+  return productAdsFor(placement, { awin: true }).map((ad) => {
+    const pp = ad.partnerProducts?.placements.includes(placement) ? ad.partnerProducts : null;
+    const extra = pp ? pp.ids.map((id) => byId.get(id)).filter((p) => p && p.image_url && p.image_rights_ok) : [];
+    const replaced = new Set(extra.length ? (pp.replaces || []) : []);
+    const items = ad.items.filter((it) => !replaced.has(it.name));
+    const merchant = extra.find((p) => p.display_name_allowed !== 0 && p.merchant_name)?.merchant_name || '';
+    return `<aside class="module module-commerce paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
     <header class="module-head"><h2 class="module-title">${esc(ad.title)}</h2><span class="label label-ad">Paid advertisement</span></header>
     <p class="module-disclosure">From ${esc(ad.advertiser)} (${esc(ad.domain)}). Advertisers do not influence Boston Daily's news coverage.</p>
-    <ul class="product-grid">${ad.items.map((it) => `<li class="product">
+    <ul class="product-grid">${items.map((it) => `<li class="product">
       <a class="product-link" href="${esc(it.url)}" rel="sponsored noopener" target="_blank">
         ${it.image ? `<span class="product-img"><img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy" decoding="async"></span>` : ''}
         <span class="product-name">${esc(it.name)}</span>
         ${it.note ? `<span class="product-price">${esc(it.note)}</span>` : ''}
         <span class="product-cta">${esc(it.cta || `Visit ${ad.domain}`)}</span>
       </a></li>`).join('')}</ul>
-  </aside>`).join('');
+    ${extra.length ? `<div class="ad-partner-products">
+      <p class="module-head ad-partner-head"><span class="module-subtitle">${merchant ? `${esc(merchant)} city passes` : 'City passes'}</span><span class="label label-commerce">Affiliate</span></p>
+      <p class="module-disclosure">We may earn a commission from these links.</p>
+      <ul class="product-grid">${extra.map(productCard).join('')}</ul>
+    </div>` : ''}
+  </aside>`;
+  }).join('');
 }
 
 /** The featured GetServices.ai marketplace: AI tools first, then agencies and service providers. */
@@ -288,11 +309,11 @@ export function houseAd(site, kind = 'ADS', placement = null) {
     <p class="ad-copy" style="margin:.5rem 0 0;font-size:.75rem">From ${esc(ad.advertiser)}</p>
   </aside>`;
   }
-  const subject = encodeURIComponent(`[${kind}] Advertising with ${site.name}`);
+  const pkg = { ADS: 'Display ads', SPONSORED: 'Section sponsorship', 'FRONT PAGE': 'Front page placement', LISTING: 'Business listings' }[kind] || '';
   return `<aside class="module module-ad" aria-label="Advertisement">
     <span class="label label-ad">Advertisement</span>
-    <p class="ad-copy">Reach Boston Daily readers. Display, front-page, section and newsletter sponsorships.</p>
-    <a class="button" href="mailto:${esc(site.email)}?subject=${subject}">Email us about advertising</a>
+    <p class="ad-copy">Reach ${esc(site.name)} readers. Display, front-page, section and newsletter sponsorships.</p>
+    <a class="button" href="/advertise" data-advertise${pkg ? ` data-package="${esc(pkg)}"` : ''}>Advertise with us</a>
   </aside>`;
 }
 
