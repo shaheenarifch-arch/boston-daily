@@ -22,6 +22,7 @@ import d20261019 from './2026-10-19.sql';
 import d20261019netgroups from './2026-10-19-network-groups.sql';
 import d20261020 from './2026-10-20.sql';
 import d20261019expand from './2026-10-19-expand-evergreen.sql';
+import d20261020images from './2026-10-20-missing-images.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -45,4 +46,5 @@ export const CONTENT_PACKAGES = [
   ['2026-10-19-network-groups', d20261019netgroups],
   ['2026-10-20', d20261020],
 ['2026-10-19-expand-evergreen', d20261019expand],
+  ['2026-10-20-missing-images', d20261020images],
 ];
