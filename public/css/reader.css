@@ -632,3 +632,12 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 
 .masthead-util a { background: var(--navy); box-shadow: inset 0 -2px 0 var(--gold); }
 @media (prefers-reduced-motion: reduce) { .product-link, .po-link, .course-list-wide .course { transition: none; transform: none !important; } }
+
+/* Affiliate products carried inside a paid ad block (e.g. Turbopass passes in the EasyPass block on UK pages) */
+.ad-partner-products { margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid var(--rule); }
+.ad-partner-head { margin: 0; }
+.module-subtitle { font: 600 .95rem/1.2 var(--serif); color: var(--navy); }
+.ad-partner-products .module-disclosure { margin: .3rem 0 .8rem; }
+.col-rail .ad-partner-products .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.col-rail .ad-partner-products .product-link { padding: .5rem; }
+.product-img img[src*="ezpass.uk"] { object-fit: cover; }

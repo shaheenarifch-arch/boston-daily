@@ -206,19 +206,36 @@ export function partnerEdit(items, sectionName = {}) {
   </aside>`;
 }
 
-/** Product images from the network's Awin affiliate websites, in the side panel (see src/ads.js). */
-export function sidePanelProductAds(placement) {
-  return productAdsFor(placement, { awin: true }).map((ad) => `<aside class="module module-commerce paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
+/**
+ * Product images from the network's Awin affiliate websites, in the side panel (see src/ads.js).
+ * partnerRows: active product rows (any order) for ads that pull affiliate products into their block on
+ * this placement. Those cards link through /go/p and sit under their own Affiliate label.
+ */
+export function sidePanelProductAds(placement, partnerRows = []) {
+  const byId = new Map(partnerRows.map((p) => [p.id, p]));
+  return productAdsFor(placement, { awin: true }).map((ad) => {
+    const pp = ad.partnerProducts?.placements.includes(placement) ? ad.partnerProducts : null;
+    const extra = pp ? pp.ids.map((id) => byId.get(id)).filter((p) => p && p.image_url && p.image_rights_ok) : [];
+    const replaced = new Set(extra.length ? (pp.replaces || []) : []);
+    const items = ad.items.filter((it) => !replaced.has(it.name));
+    const merchant = extra.find((p) => p.display_name_allowed !== 0 && p.merchant_name)?.merchant_name || '';
+    return `<aside class="module module-commerce paid-ad" aria-label="Paid advertisement" data-campaign="${esc(ad.id)}">
     <header class="module-head"><h2 class="module-title">${esc(ad.title)}</h2><span class="label label-ad">Paid advertisement</span></header>
     <p class="module-disclosure">From ${esc(ad.advertiser)} (${esc(ad.domain)}). Advertisers do not influence Boston Daily's news coverage.</p>
-    <ul class="product-grid">${ad.items.map((it) => `<li class="product">
+    <ul class="product-grid">${items.map((it) => `<li class="product">
       <a class="product-link" href="${esc(it.url)}" rel="sponsored noopener" target="_blank">
         ${it.image ? `<span class="product-img"><img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy" decoding="async"></span>` : ''}
         <span class="product-name">${esc(it.name)}</span>
         ${it.note ? `<span class="product-price">${esc(it.note)}</span>` : ''}
         <span class="product-cta">${esc(it.cta || `Visit ${ad.domain}`)}</span>
       </a></li>`).join('')}</ul>
-  </aside>`).join('');
+    ${extra.length ? `<div class="ad-partner-products">
+      <p class="module-head ad-partner-head"><span class="module-subtitle">${merchant ? `${esc(merchant)} city passes` : 'City passes'}</span><span class="label label-commerce">Affiliate</span></p>
+      <p class="module-disclosure">We may earn a commission from these links.</p>
+      <ul class="product-grid">${extra.map(productCard).join('')}</ul>
+    </div>` : ''}
+  </aside>`;
+  }).join('');
 }
 
 /** The featured GetServices.ai marketplace: AI tools first, then agencies and service providers. */

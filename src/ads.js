@@ -36,6 +36,14 @@ export const PRODUCT_ADS = [
     placements: ['uk', 'travel', 'home'],
     awin: true,
     active: true,
+    // On UK pages the block also carries the Turbopass city passes (Awin affiliate products, linked via /go/p).
+    // Turbopass's Rome City Pass replaces EasyPass's own Rome card there, so Rome appears once.
+    partnerProducts: {
+      placements: ['uk'],
+      ids: ['p-100613-a0b3912a4d', 'p-100613-37f09d518c', 'p-100613-e26a73850f', 'p-100613-3470056d63',
+        'p-100613-4ebecab254', 'p-100613-dbc45402e6', 'p-100613-fad28500e4', 'p-100613-6ce325e48d'],
+      replaces: ['Rome City Pass'],
+    },
     items: [
       { name: 'London City Pass', note: 'From €129', image: 'https://ezpass.uk/london-480.webp', url: `https://ezpass.uk/?${UTM('city-passes')}` },
       { name: 'Paris Flex Pass', note: 'From €130', image: 'https://ezpass.uk/paris-480.webp', url: `https://ezpass.uk/?${UTM('city-passes')}` },
@@ -73,6 +81,11 @@ export const PRODUCT_ADS = [
 
 export function productAdsFor(placement, { awin } = {}) {
   return PRODUCT_ADS.filter((a) => a.active !== false && a.placements.includes(placement) && (awin === undefined || Boolean(a.awin) === awin));
+}
+
+/** Product ids an ad pulls into its block on this placement (see partnerProducts). */
+export function adPartnerProductIds(placement) {
+  return productAdsFor(placement, { awin: true }).flatMap((a) => (a.partnerProducts?.placements.includes(placement) ? a.partnerProducts.ids : []));
 }
 
 export function campaignFor(placement, now = new Date()) {

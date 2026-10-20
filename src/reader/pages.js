@@ -2,6 +2,7 @@ import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordC
 import { esc, html, formatDateLong, formatDateTime, localDate, slugify, isHttpUrl, nowIso, uid } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
+import { adPartnerProductIds } from '../ads.js';
 import { layout, loadChrome } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
@@ -56,6 +57,15 @@ async function deals(db, { section = null, limit = 4 } = {}) {
 }
 
 /** Homepage partner products: editor-featured, US-eligible, with an image. */
+/** Active affiliate products that a paid ad pulls into its block on this placement (src/ads.js partnerProducts). */
+async function adPartnerProducts(db, placement) {
+  const ids = adPartnerProductIds(placement);
+  if (!ids.length) return [];
+  const { results } = await db.prepare(`SELECT ${PRODUCT_COLS} FROM products p JOIN merchants m ON m.id = p.merchant_id
+    WHERE p.status = 'active' AND m.status = 'active' AND p.id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all();
+  return results;
+}
+
 async function homePartnerPool(db) {
   const { results } = await db.prepare(`SELECT ${PRODUCT_COLS} FROM products p JOIN merchants m ON m.id = p.merchant_id
     WHERE p.status = 'active' AND m.status = 'active' AND p.featured = 1 AND p.image_url IS NOT NULL AND p.image_rights_ok = 1 AND ${regionClause('US')}
@@ -347,10 +357,13 @@ export async function sectionPage(env, slug, ctx = null) {
     showCommerce && COURSE_SECTIONS.includes(slug) ? coursesFor(db, slug, 3) : [],
   ]);
 
+  const adProducts = showCommerce ? await adPartnerProducts(db, slug) : [];
   const [first, ...others] = news;
   // Partner Offers: category-matched products from every affiliate merchant (src/offers.js).
   const offerCtx = pageContext(section);
-  const offers = selectOffers(products, offerCtx);
+  // Products already shown in an ad block on this page are left out of the offers (no repeated cards).
+  const inAdBlock = new Set(adProducts.map((p) => p.id));
+  const offers = selectOffers(products.filter((p) => !inAdBlock.has(p.id)), offerCtx);
   recordImpressions(db, offerCtx, offers, ctx?.waitUntil?.bind(ctx));
   const offersHtml = partnerOffers(offers, offerCtx);
   const sectionMods = [
@@ -383,7 +396,7 @@ export async function sectionPage(env, slug, ctx = null) {
       </div>
       <aside class="col-rail">
         ${railMods}
-        ${showCommerce ? sidePanelProductAds(slug) : ''}
+        ${showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>
     </div>`;
   // A full description (the seed labels are short) and CollectionPage + breadcrumb schema.
