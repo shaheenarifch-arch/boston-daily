@@ -182,6 +182,15 @@ export async function homePage(env, editionDate = null) {
   const fullSections = await db.prepare('SELECT slug, description FROM sections WHERE active = 1').all();
   const descOf = Object.fromEntries(fullSections.results.map((x) => [x.slug, x.description]));
 
+  // The four cards under the lead are picture cards: swap a picture-less story into the Top stories list.
+  const hasPic = (s) => !!(s.hero_image_url && s.hero_image_rights);
+  for (let i = 6; i < Math.min(top.length, 10); i++) {
+    if (hasPic(top[i])) continue;
+    let j = 5;
+    while (j >= 0 && !hasPic(top[j])) j--;
+    if (j >= 0) [top[i], top[j]] = [top[j], top[i]];
+  }
+
   // Column A: the lead (or the welcome note before the first story).
   const colA = hasNews
     ? `<h2 class="sr">Lead story</h2>${storyCard(lead, { size: 'lead', tz: site.tz, seenImages })}
@@ -201,8 +210,11 @@ export async function homePage(env, editionDate = null) {
   // Column B: top stories (or a section guide before the first story).
   const sectionIndex = `<ul class="section-index">${newsSections.map((x) => `<li><a href="/section/${esc(x.slug)}"><strong>${esc(x.name)}</strong>${descOf[x.slug] ? `<span>${esc(descOf[x.slug])}</span>` : ''}</a></li>`).join('')}</ul>`;
   const moreStories = latest.filter((s) => s.id !== lead?.id).slice(0, 6);
+  // Extra headlines under Top stories so that column runs as long as the lead column beside it.
+  const usedIds = new Set([lead?.id, ...top.map((t) => t.id), ...latest.map((s) => s.id)]);
+  const moreHeads = pool.filter((s) => !usedIds.has(s.id)).slice(0, 5);
   const colB = top.length
-    ? `<h2 class="col-label">Top stories</h2>${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showDek: false })).join('')}`
+    ? `<h2 class="col-label">Top stories</h2>${top.slice(0, 6).map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showDek: false })).join('')}${moreHeads.length ? `<h2 class="col-label col-label-more">More headlines</h2><ul class="more-heads">${moreHeads.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ul>` : ''}`
     : moreStories.length
       ? `<h2 class="col-label">More stories</h2>${moreStories.map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showDek: false })).join('')}`
       : `<h2 class="col-label">Sections</h2>${sectionIndex}`;
@@ -270,7 +282,8 @@ export async function homePage(env, editionDate = null) {
   <section class="section-row">
     <h2 class="row-title">Guides and shopping</h2>
     <ul class="section-grid">${nicheSections.map((x) => `<li><a href="/section/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}
-      <li><a href="/courses">Skill Center</a></li></ul>
+      <li><a href="/shop">Partner picks</a></li>
+<li><a href="/courses">Skill Center</a></li></ul>
   </section>
   ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}`;
 
@@ -307,7 +320,7 @@ export async function editionsArchive(env) {
       <ul class="archive-list">${list.map((e) => `<li><a href="/edition/${esc(e.edition_date)}"><span class="archive-date">${esc(formatDateLong(e.edition_date, site.tz))}</span>
         <span class="archive-no">Edition ${esc(e.edition_number)}</span>${e.lead ? `<span class="archive-lead">${esc(e.lead)}</span>` : ''}</a></li>`).join('')}</ul></section>`).join('')
       : emptyState('The first edition has not been published yet.')}`;
-  return html(layout(env, chrome, { title: 'Past editions', description: 'Archive of Boston Daily editions.', canonical: '/editions', body }));
+  return html(layout(env, chrome, { title: 'Past editions', description: 'Browse every past edition of Boston Daily, with the lead story of each day, archived exactly as it was published that morning.', canonical: '/editions', body }));
 }
 
 // ───────────────────────────── Section ─────────────────────────────
@@ -326,7 +339,7 @@ export async function sectionPage(env, slug, ctx = null) {
 
   const [{ results: news }, commercial, products, network, courses] = await Promise.all([
     db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
-      WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} AND s.section_slug IN (${ph}) ORDER BY s.published_at DESC LIMIT 30`).bind(...slugs).all(),
+      WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC} AND (s.section_slug IN (${ph}) OR s.type = ?) ORDER BY s.published_at DESC LIMIT 30`).bind(...slugs, slug).all(),
     showCommerce ? db.prepare(`SELECT ${STORY_COLS} FROM stories s JOIN sections sec ON sec.slug = s.section_slug
       WHERE s.lane = 'partner_commerce' AND s.status IN ${PUBLIC} AND s.section_slug IN (${ph}) ORDER BY s.published_at DESC LIMIT 6`).bind(...slugs).all().then((r) => r.results) : [],
     cachedCandidates(db),
@@ -392,7 +405,8 @@ export async function sectionPage(env, slug, ctx = null) {
       { '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.url })) },
     ],
   };
-  return html(layout(env, chrome, { title: section.name, description: sectionDesc, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body, jsonLd }));
+  // A section with no stories yet stays out of search until it has some.
+  return html(layout(env, chrome, { title: section.name, description: sectionDesc, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body, jsonLd, noindex: !news.length && !commercial.length }));
 }
 
 // ───────────────────────────── Story ─────────────────────────────
@@ -466,8 +480,15 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     description: story.dek || excerpt(story.body, 200),
     datePublished: story.published_at,
     dateModified: story.corrected_at || story.last_updated_at || story.published_at,
-    author: story.byline ? { '@type': commercial || /staff$/i.test(story.byline) ? 'Organization' : 'Person', name: story.byline } : undefined,
-    publisher: { '@type': 'NewsMediaOrganization', name: site.name },
+    author: story.byline
+      ? (commercial || /staff$/i.test(story.byline)
+        ? { '@type': 'Organization', name: story.byline, url: site.url ? `${site.url}/standards` : undefined }
+        : { '@type': 'Person', name: story.byline })
+      : { '@type': 'Organization', name: `${site.name} Staff`, url: site.url ? `${site.url}/standards` : undefined },
+    editor: story.credited_reviewer
+      ? { '@type': 'Person', name: story.credited_reviewer, url: site.url && /shaheen arif/i.test(story.credited_reviewer) ? `${site.url}/editor` : undefined }
+      : undefined,
+    publisher: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined, logo: site.url ? { '@type': 'ImageObject', url: `${site.url}/og-default.png` } : undefined },
     mainEntityOfPage: url,
     image: story.hero_image_url && story.hero_image_rights ? [story.hero_image_url] : undefined,
     articleSection: section?.name,
@@ -508,7 +529,7 @@ export async function shopPage(env, url) {
     ${merchants.filter((m) => m.display_name_allowed).length ? `<section class="merchants"><h2 class="row-title">Shop by partner</h2>
       <ul class="merchant-list">${merchants.filter((m) => m.display_name_allowed).map((m) => `<li><a href="/shop?merchant=${esc(m.id)}">${esc(m.name)}</a> <span class="muted">${m.n}</span></li>`).join('')}</ul></section>` : ''}
     <p class="cta-line"><a href="mailto:${esc(SITE(env).email)}?subject=${encodeURIComponent('[PARTNER] Feature our products')}">Feature your products on Boston Daily</a></p>`;
-  return html(layout(env, chrome, { title: 'Partner picks', description: 'Affiliate partner products, clearly labeled.', canonical: '/shop', active: 'shop', body }));
+  return html(layout(env, chrome, { title: 'Partner picks', description: 'Partner picks from Boston Daily: products from our affiliate partners across home, style, outdoor, tech and more, clearly labeled as affiliate links.', canonical: '/shop', active: 'shop', body }));
 }
 
 export async function businessesPage(env) {
@@ -537,7 +558,7 @@ export async function businessesPage(env) {
     ${paid.length ? `<section class="biz-group"><h2 class="row-title">Paid listings</h2><p class="module-disclosure">These businesses paid to be listed.</p><ul class="biz-grid">${paid.map(card).join('')}</ul></section>` : ''}
     <p class="cta-line"><a href="mailto:${esc(site.email)}?subject=${encodeURIComponent('[LISTING] Get my business listed')}">Get your business listed</a></p>`;
   return html(layout(env, chrome, {
-    title: 'Recommended businesses', description: `Businesses in the ${site.network} network.`, canonical: '/businesses', active: 'businesses', body,
+    title: 'Recommended businesses', description: `Recommended businesses in the ${site.network} network: AI tools, agencies and service providers, with profiles, websites and guides.`, canonical: '/businesses', active: 'businesses', body,
     jsonLd: { '@context': 'https://schema.org', '@type': 'ItemList', itemListElement: owned.map((b, i) => ({ '@type': 'ListItem', position: i + 1, name: b.name, url: b.domain ? `https://${b.domain}` : undefined })) },
   }));
 }
@@ -668,7 +689,7 @@ export async function advertisePage(env, url) {
       <label class="hp" aria-hidden="true">Leave empty<input name="company_site" tabindex="-1" autocomplete="off"></label>
       <button class="button" type="submit">Send inquiry</button>
     </form></aside></div>`;
-  return html(layout(env, chrome, { title: 'Advertise with us', description: 'Advertising, listings and sponsorships on Boston Daily.', canonical: '/advertise', body }));
+  return html(layout(env, chrome, { title: 'Advertise with us', description: 'Advertise with Boston Daily: display ads, front-page placements, section and newsletter sponsorships, business listings and sponsored content.', canonical: '/advertise', body }));
 }
 
 export async function submitInquiry(env, request, ctx) {
@@ -715,7 +736,7 @@ export async function standardsPage(env) {
     <h2 id="ownership">Ownership</h2>
     <p>Businesses in our Recommended Businesses section and RealSkillSet are part of the ${esc(site.network)} network, which also owns Boston Daily. We say so wherever they appear.</p>
   </article>`;
-  return html(layout(env, chrome, { title: 'Editorial standards', description: 'How Boston Daily sources, approves, corrects and labels content.', canonical: '/standards', body }));
+  return html(layout(env, chrome, { title: 'Editorial standards', description: 'Boston Daily editorial standards: how we source stories, how editors approve them, how we correct errors and how we label partner content.', canonical: '/standards', body }));
 }
 
 export async function editorPage(env) {
@@ -753,7 +774,7 @@ export async function correctionsPage(env) {
     WHERE n.kind = 'correction' AND s.status IN ${PUBLIC} ORDER BY n.created_at DESC LIMIT 200`).all();
   const body = `<div class="page-head"><h1>Corrections</h1><p class="page-sub">Every correction we have made, newest first.</p></div>
     ${results.length ? `<ul class="corrections">${results.map((c) => `<li><a href="/story/${esc(c.slug)}">${esc(c.headline)}</a><p>${esc(c.note)}</p><span class="muted">${esc(formatDateTime(c.created_at, site.tz))}</span></li>`).join('')}</ul>` : emptyState('No corrections have been issued.')}`;
-  return html(layout(env, chrome, { title: 'Corrections', description: 'Corrections issued by Boston Daily.', canonical: '/corrections', body }));
+  return html(layout(env, chrome, { title: 'Corrections', description: 'Every correction and update issued by Boston Daily, with the date and what changed. Spotted an error? Email our editors and we will review it.', canonical: '/corrections', body }));
 }
 
 export async function privacyPage(env) {
@@ -867,7 +888,9 @@ ${results.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc><ne
   }
   const [{ results: stories }, { results: sections }, { results: biz }] = await Promise.all([
     env.DB.prepare(`SELECT slug, COALESCE(corrected_at, last_updated_at, published_at) AS mod FROM stories WHERE status IN ${PUBLIC} ORDER BY published_at DESC LIMIT 5000`).all(),
-    env.DB.prepare('SELECT slug FROM sections WHERE active = 1').all(),
+    // Only sections that have published stories go in the sitemap (empty ones are noindex).
+    env.DB.prepare(`SELECT sec.slug FROM sections sec WHERE sec.active = 1 AND EXISTS (SELECT 1 FROM stories st LEFT JOIN sections ch ON ch.slug = st.section_slug
+      WHERE st.status IN ${PUBLIC} AND (st.section_slug = sec.slug OR ch.parent_slug = sec.slug OR st.type = sec.slug))`).all(),
     env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active' AND (health_ok IS NULL OR health_ok = 1)").all(),
   ]);
   const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections', '/privacy', '/contact',
@@ -977,4 +1000,34 @@ function faqFromBody(body) {
     if (q.trim() && a) pairs.push([q.trim(), a]);
   }
   return pairs.slice(0, 10);
+}
+
+/** /llms.txt: a plain-text guide to the site for AI answer engines. */
+export async function llmsTxt(env) {
+  const site = SITE(env);
+  const chrome = await loadChrome(env);
+  const base = site.url || '';
+  const { results } = await env.DB.prepare(`SELECT slug, headline, dek FROM stories WHERE lane = 'newsroom' AND status IN ${PUBLIC} ORDER BY published_at DESC LIMIT 30`).all();
+  const line = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+  const txt = `# ${site.name}
+
+> Daily digital newspaper for Boston, Massachusetts and the nation: news, politics, sports, business, technology and local guides, with a new edition every morning. ${line(site.tagline)}. Editors review stories before publication, and updates and corrections are labeled on every story.
+
+## Key pages
+- [Front page](${base}/): today's edition
+- [Past editions](${base}/editions)
+- [Editorial standards](${base}/standards)
+- [About the editor](${base}/editor)
+- [Corrections](${base}/corrections)
+- [Contact](${base}/contact)
+- [RSS feed](${base}/feed.xml)
+- [Sitemap](${base}/sitemap.xml)
+
+## Sections
+${chrome.sections.filter((s) => s.in_nav).map((s) => `- [${line(s.name)}](${base}/section/${s.slug})`).join('\n')}
+
+## Latest stories
+${results.map((s) => `- [${line(s.headline)}](${base}/story/${s.slug})${s.dek ? `: ${line(s.dek)}` : ''}`).join('\n')}
+`;
+  return new Response(txt, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=900' } });
 }
