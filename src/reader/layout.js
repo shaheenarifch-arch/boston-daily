@@ -49,7 +49,7 @@ ${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&amp;family=Public+Sans:wght@400;500;600&amp;display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&amp;family=Public+Sans:wght@400;500;600&amp;display=swap"></noscript>
-<link rel="stylesheet" href="/css/reader.css?v=15">
+<link rel="stylesheet" href="/css/reader.css?v=16">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
@@ -80,10 +80,13 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
 ${body}
 </main>
 <footer class="footer">
+  <div class="wrap footer-top">
+    <a class="footer-brand" href="/">${esc(site.name)}</a>
+    <p class="footer-tag">${esc(site.tagline)}</p>
+  </div>
   <div class="wrap footer-grid">
     <div>
-      <p class="footer-brand">${esc(site.name)}</p>
-      <p class="footer-tag">${esc(site.tagline)}</p>
+      <p class="footer-h">About</p>
       <p><a href="/editor">About the editor</a></p>
       <p><a href="/standards">Editorial standards</a></p>
       <p><a href="/corrections">Corrections</a></p>
@@ -94,11 +97,13 @@ ${body}
     </div>
     <div>
       <p class="footer-h">News</p>
-      ${news.map((s) => `<p><a href="/section/${esc(s.slug)}">${esc(s.name)}</a></p>`).join('')}
+      ${news.slice(0, 8).map((s) => `<p><a href="/section/${esc(s.slug)}">${esc(s.name)}</a></p>`).join('')}
     </div>
     <div>
       <p class="footer-h">Guides</p>
-      ${chrome.sections.filter((s) => s.in_nav && s.kind === 'niche').slice(0, 8).map((s) => `<p><a href="/section/${esc(s.slug)}">${esc(s.name)}</a></p>`).join('')}
+      ${niche.slice(0, 6).map((s) => `<p><a href="/section/${esc(s.slug)}">${esc(s.name)}</a></p>`).join('')}
+      <p><a href="/shop">Partner picks</a></p>
+      <p><a href="/courses">Skill Center</a></p>
     </div>
     <div>
       <p class="footer-h">Work with us</p>

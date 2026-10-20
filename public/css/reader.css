@@ -15,6 +15,12 @@
   --common-ink: #2c5a42;
   --ad: #f6f1e4;
   --ad-ink: #6d5a24;
+  --gold: #c9a24a;
+  --gold-soft: #f4ead2;
+  --gold-ink: #7a5c17;
+  --navy: #0f2a40;
+  --navy-deep: #0a1e2f;
+  --shadow-card: 0 1px 0 rgba(15, 42, 64, .05), 0 10px 24px -18px rgba(15, 42, 64, .45);
   --serif: 'Newsreader', 'Iowan Old Style', Georgia, serif;
   --sans: 'Public Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
   --measure: 38rem;
@@ -293,18 +299,21 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .search-page { display: flex; gap: .5rem; margin-top: 1rem; }
 .search-page input { flex: 1; max-width: 30rem; font: 400 1rem var(--sans); padding: .65rem .8rem; border: 1px solid #c9cfd5; border-radius: 5px; color: var(--ink); background: #fff; }
 
-/* ── Footer ── */
-.footer { background: var(--paper); color: var(--ink-soft); font: 400 .85rem/1.5 var(--sans); padding: 0 0 1.5rem; }
-.footer .footer-grid { border-top: 3px double var(--ink); padding-top: 2rem; }
-.footer a { color: var(--ink); text-decoration: none; }
-.footer a:hover { text-decoration: underline; }
+/* ── Footer: navy with gold accents, four even columns ── */
+.footer { background: var(--navy); color: #c8d3dd; font: 400 .85rem/1.5 var(--sans); padding: 0 0 1.5rem; border-top: 3px solid var(--gold); margin-top: 1rem; }
+.footer a { color: #eef2f6; text-decoration: none; }
+.footer a:hover { color: var(--gold); text-decoration: underline; }
 .footer p { margin: 0 0 .4rem; }
-.footer-grid { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
-.footer-brand { font: 650 1.6rem/1 var(--serif) !important; color: var(--ink); margin-bottom: .4rem !important; }
-.footer-tag { color: var(--granite); margin-bottom: 1rem !important; }
-.footer-h { font-weight: 600; color: var(--ink); margin-bottom: .7rem !important; }
-.footer-small { font-size: .78rem; color: var(--granite); margin-top: .7rem !important; }
-.footer-legal { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); font-size: .78rem; color: var(--granite); }
+.footer-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; padding-top: 2rem; padding-bottom: 1.25rem; }
+.footer-brand { font: 650 1.75rem/1 var(--serif); color: #fff !important; text-decoration: none !important; }
+.footer-tag { margin: 0 !important; color: var(--gold); font-size: .8rem; letter-spacing: .02em; }
+.footer-grid { display: grid; gap: 1.75rem 2rem; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 1.5rem; border-top: 1px solid rgba(201, 162, 74, .35); }
+@media (min-width: 900px) { .footer-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.footer-h { font: 600 .72rem/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin-bottom: .9rem !important; padding-bottom: .55rem; border-bottom: 1px solid rgba(255, 255, 255, .12); }
+.footer-small { font-size: .78rem; color: #9fb0bf; margin-top: .7rem !important; }
+.footer-legal { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid rgba(255, 255, 255, .12); font-size: .78rem; color: #9fb0bf; }
+.footer-legal a { color: var(--gold); }
+@media (max-width: 420px) { .footer-grid { grid-template-columns: minmax(0, 1fr); } }
 
 @media (max-width: 640px) {
   .search input { width: 8rem; }
@@ -582,3 +591,44 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
   .front-extras > .module-courses .course strong { font: 600 1.25rem/1.3 var(--serif); }
   .front-extras > .module-courses .module-title { font-size: 1.15rem; }
 }
+
+/* ── Premium layer: navy and gold for the ad box, Skill Center, partner picks and product cards ──
+   Labels (Affiliate, Advertisement, Sponsored) keep their own colors so commercial items stay obvious. */
+.module-ad { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%); color: #e6ecf2; border: 1px solid rgba(201, 162, 74, .5); box-shadow: var(--shadow-card); }
+.module-ad .label-ad { background: var(--gold); color: var(--navy-deep); }
+.module-ad .ad-copy { color: #e6ecf2; }
+.module-ad .ad-copy strong { color: #fff; }
+.module-ad .button { background: var(--gold); color: var(--navy-deep); }
+.module-ad .button:hover { background: #dbb65e; color: var(--navy-deep); }
+.front-extras > .module-ad .ad-copy { color: #fff; }
+
+.module-courses { background: var(--paper); border: 1px solid var(--rule); border-top: 3px solid var(--gold); box-shadow: var(--shadow-card); }
+.module-courses .module-title { color: var(--navy); font-family: var(--serif); font-size: 1.15rem; }
+.module-courses .module-more { color: var(--gold-ink); font-weight: 600; }
+.course { border-top-color: var(--rule); }
+.course-price { color: var(--navy); }
+.course-list-wide .course { background: var(--paper); border-color: var(--rule); border-top: 3px solid var(--gold); box-shadow: var(--shadow-card); transition: transform .2s ease, box-shadow .2s ease; }
+.course-list-wide .course:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -18px rgba(15, 42, 64, .55); }
+.course-list-wide .course strong { font: 600 1.05rem/1.3 var(--serif); color: var(--navy); }
+
+.module-commerce, .partner-offers { background: var(--paper); border: 1px solid var(--rule); border-top: 3px solid var(--gold); box-shadow: var(--shadow-card); }
+.module-commerce .module-title { color: var(--navy); font-family: var(--serif); font-size: 1.1rem; }
+.module-commerce .module-more { color: var(--gold-ink); font-weight: 600; }
+.partner-edit { background: var(--paper); border: 1px solid var(--rule); border-top: 3px solid var(--gold); border-radius: 4px; box-shadow: var(--shadow-card); }
+.pe-kicker { color: var(--gold-ink); }
+.pe-title { color: var(--navy); }
+.pe-cta, .partner-edit .module-more { color: var(--gold-ink); }
+.pe-item::before { color: var(--gold); }
+.pe-list li, .pe-disclosure { border-top-color: var(--rule); }
+
+.product-link, .po-link { border: 1px solid var(--rule); box-shadow: 0 1px 0 rgba(15, 42, 64, .04); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.product-link:hover, .po-link:hover { border-color: var(--gold); box-shadow: 0 12px 24px -18px rgba(15, 42, 64, .55); transform: translateY(-1px); }
+.product-img, .po-img { background: #f7f8f9; }
+.product-price, .po-price, .shop-price { color: var(--navy); }
+.product-cta, .po-cta { align-self: flex-start; margin-top: auto; padding: .4rem .65rem; border-radius: 3px; background: var(--navy); color: #fff; font-size: .74rem; letter-spacing: .02em; }
+.product-link:hover .product-cta, .po-link:hover .po-cta { background: var(--gold); color: var(--navy-deep); }
+.shop-cta { color: var(--gold-ink); }
+.shop-band { border-top-color: var(--gold); }
+
+.masthead-util a { background: var(--navy); box-shadow: inset 0 -2px 0 var(--gold); }
+@media (prefers-reduced-motion: reduce) { .product-link, .po-link, .course-list-wide .course { transition: none; transform: none !important; } }
