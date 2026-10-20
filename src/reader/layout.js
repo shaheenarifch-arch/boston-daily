@@ -17,7 +17,11 @@ export function layout(env, chrome, { title, description = '', canonical = '', b
   const today = localDate(new Date(), site.tz);
   const news = chrome.sections.filter((s) => s.in_nav && s.kind === 'news');
   const niche = chrome.sections.filter((s) => s.in_nav && s.kind === 'niche');
-  const fullTitle = title ? `${title} | ${site.name}` : `${site.name}: Boston News, Politics, Sports & Business`;
+  const suffixed = title ? `${title} | ${site.name}` : '';
+  // Keep titles within ~60 characters: long headlines drop the brand suffix.
+  const fullTitle = title ? (suffixed.length <= 60 ? suffixed : title) : `${site.name}: Boston News, Politics, Sports & Business`;
+  // Meta descriptions are capped at 160 characters on a word boundary.
+  const metaDesc = description.length > 160 ? `${description.slice(0, 157).replace(/\s+\S*$/, '')}…` : description;
   const editionLine = chrome.edition && chrome.edition.edition_date === today
     ? `Edition ${chrome.edition.edition_number}` : 'Past editions';
   const navLink = (s) => `<a href="/section/${esc(s.slug)}"${active === s.slug ? ' aria-current="page"' : ''}>${esc(s.name)}</a>`;
@@ -29,15 +33,15 @@ export function layout(env, chrome, { title, description = '', canonical = '', b
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(fullTitle)}</title>
-<meta name="description" content="${esc(description)}">
+<meta name="description" content="${esc(metaDesc)}">
 ${canon ? `<link rel="canonical" href="${esc(canon)}">` : ''}
 ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:site_name" content="${esc(site.name)}">
 <meta property="og:title" content="${esc(title || site.name)}">
-<meta property="og:description" content="${esc(description)}">
+<meta property="og:description" content="${esc(metaDesc)}">
 <meta property="og:type" content="${esc(ogType)}">
 ${canon ? `<meta property="og:url" content="${esc(canon)}">` : ''}
-${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `<meta property="og:image" content="${esc(ogImage)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title || site.name)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(ogImage)}">`; })()}
+${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `<meta property="og:image" content="${esc(ogImage)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title || site.name)}"><meta name="twitter:description" content="${esc(metaDesc)}"><meta name="twitter:image" content="${esc(ogImage)}">`; })()}
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="${esc(site.name)}" href="/feed.xml">
@@ -45,7 +49,7 @@ ${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&amp;family=Public+Sans:wght@400;500;600&amp;display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&amp;family=Public+Sans:wght@400;500;600&amp;display=swap"></noscript>
-<link rel="stylesheet" href="/css/reader.css?v=12">
+<link rel="stylesheet" href="/css/reader.css?v=13">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
