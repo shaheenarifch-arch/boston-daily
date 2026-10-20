@@ -71,6 +71,15 @@ Sections are rows in the `sections` table (add a niche by inserting a row). The 
 
 Subscriber accounts, saved stories, newsletters and paywall; RealSkillSet checkout and My Courses; ad server and campaign scheduling; licensed wire, sports data and photo adapters; the Newsroom AI pod's automated discovery/research feeding DISCOVERED stories through the admin API.
 
+## Advertise smart form
+
+Every Advertise link (masthead, footer, ad boxes, the Advertise page) opens a 5-step form (`public/js/advertise.js`, server side in `src/advertise.js`): business details with website auto-fill, package and sections, ad copy (3 suggestions plus Shorter / More premium / More urgent / Friendlier), the house-policy check, then contact and send. Without JavaScript the links go to `/advertise` and its plain form.
+
+- **AI is optional.** Set `ANTHROPIC_API_KEY` (`npx wrangler secret put ANTHROPIC_API_KEY`) to have Claude (`claude-haiku-5-5`) write the auto-fill and ad copy. Without the key, or when a call fails (no credit, rate limit, outage, refusal) or a visitor passes 20 AI calls an hour, the form uses the website's meta tags and built-in copy templates. Submitting never depends on the AI.
+- **House policy** (`policyProblems`): political ads, weapons, adult content, counterfeit goods, crypto schemes, health/financial claims and US Politics or Opinion placements are blocked; missing landing pages, shouting, news-like wording and health/finance advertisers are flagged for review. The check runs in the form and again on submit. A blocked ad can still be sent; it is saved marked BLOCKED for the team to follow up.
+- **Submissions** land in the existing `inquiries` table and the Ad inquiries console view, with the package, sections, ad copy, copy source and policy verdict in the message.
+- Website look-ups only reach public http(s) hosts (no private or local addresses), follow at most 3 safe redirects, and read at most 200 KB within 5 seconds.
+
 ## Admin analytics
 
 The admin Live page shows unique visitors and page views (counted without cookies; bots excluded), newsletter subscribers, and Google Search Console data.

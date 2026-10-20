@@ -114,3 +114,11 @@ export function money(price, currency = 'USD') {
     return `${price} ${currency || ''}`.trim();
   }
 }
+
+/** Salted, truncated hash of the visitor's IP (never stored raw). */
+export async function ipHash(request, env) {
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const data = new TextEncoder().encode(`${ip}|${env.INGEST_SECRET || env.SITE_NAME || 'bd'}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
+}

@@ -1,8 +1,9 @@
 import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
-import { esc, html, json, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid } from '../util.js';
+import { esc, html, json, errorJson, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid, ipHash } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { adPartnerProductIds } from '../ads.js';
+import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from '../advertise.js';
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
@@ -660,24 +661,14 @@ export async function advertisePage(env, url) {
   const chrome = await loadChrome(env);
   const sent = url.searchParams.get('sent') === '1';
   const err = url.searchParams.get('error');
-  const mail = (tag, label) => `<a href="mailto:${esc(site.email)}?subject=${encodeURIComponent(`[${tag}] ${label}`)}&body=${encodeURIComponent('Company:\nWebsite:\nPackage of interest:\nBudget:\nPreferred dates:\n')}">${esc(label)}</a>`;
-  const products = [
-    ['ADS', 'Display ads', 'Standard IAB sizes in labeled ad slots across sections.'],
-    ['FRONT PAGE', 'Front page placement', 'Labeled sponsor slots on the homepage and in the daily edition.'],
-    ['SPONSORED', 'Section sponsorship', '"Presented by" placement on a section, clearly labeled.'],
-    ['LISTING', 'Business listings', 'A paid listing in Recommended Businesses, marked as paid.'],
-    ['PARTNER', 'Product features', 'Sponsored product modules and partner picks.'],
-    ['SPONSORED', 'Sponsored content', 'Advertiser-paid articles, labeled Sponsored and kept out of the news.'],
-    ['NEWSLETTER', 'Newsletter sponsorship', 'A labeled block in the Boston Daily newsletter.'],
-    ['COURSES', 'Course listings', 'Sponsored courses in the RealSkillSet section.'],
-  ];
   const body = `<div class="page-head"><h1>Advertise with Boston Daily</h1>
-      <p class="page-sub">Email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>${site.phone ? ` or call ${esc(site.phone)}` : ''}. Every campaign is reviewed before it runs.</p></div>
+      <p class="page-sub">Email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>${site.phone ? ` or call ${esc(site.phone)}` : ''}. Every campaign is reviewed before it runs.</p>
+      <p><a class="button" href="#inquiry" data-advertise>Plan your ad in 5 steps</a></p></div>
     ${sent ? '<p class="flash flash-ok">Thanks. Your inquiry reached our partnerships team, and we will reply by email.</p>' : ''}
     ${err ? `<p class="flash flash-err">${err === 'email' ? 'Not sent: please enter a valid email address.' : esc(err)}</p>` : ''}
     <div class="columns"><div class="col-main">
-      <table class="ad-table"><thead><tr><th scope="col">Product</th><th scope="col">What it is</th><th scope="col">Ask about it</th></tr></thead>
-      <tbody>${products.map(([tag, name, desc]) => `<tr><td>${esc(name)}</td><td>${esc(desc)}</td><td>${mail(tag, name)}</td></tr>`).join('')}</tbody></table>
+      <table class="ad-table"><thead><tr><th scope="col">Product</th><th scope="col">What it is</th><th scope="col">Get started</th></tr></thead>
+      <tbody>${PACKAGES.map(([tag, name, desc]) => `<tr><td>${esc(name)}</td><td>${esc(desc)}</td><td><a href="#inquiry" data-advertise data-package="${esc(name)}">Plan this ad</a></td></tr>`).join('')}</tbody></table>
       <section class="prose" id="protocols"><h2>How advertising works here</h2>
         <ul>
           <li>Every paid item is labeled Advertisement, Sponsored, Paid Listing or Presented by.</li>
@@ -708,27 +699,51 @@ export async function advertisePage(env, url) {
 }
 
 export async function submitInquiry(env, request, ctx) {
-  const form = await request.formData();
-  const get = (k, max = 300) => String(form.get(k) || '').trim().slice(0, max);
-  if (get('company_site')) return Response.redirect(new URL('/advertise?sent=1#inquiry', request.url), 303); // honeypot
+  // The Advertise smart form posts JSON and gets JSON back; the plain form posts form data and is redirected.
+  const smart = (request.headers.get('content-type') || '').includes('application/json');
+  let get;
+  let body = {};
+  if (smart) {
+    try { body = (await request.json()) || {}; } catch { body = {}; }
+    get = (k, max = 300) => String(body[k] ?? '').trim().slice(0, max);
+  } else {
+    const form = await request.formData();
+    get = (k, max = 300) => String(form.get(k) || '').trim().slice(0, max);
+  }
+  const done = () => (smart ? json({ ok: true }) : Response.redirect(new URL('/advertise?sent=1#inquiry', request.url), 303));
+  if (get('company_site')) return done(); // honeypot
   const email = get('email', 200);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.redirect(new URL('/advertise?error=email#inquiry', request.url), 303);
-  const website = get('website');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return smart ? errorJson('Please enter a valid email address.', 400) : Response.redirect(new URL('/advertise?error=email#inquiry', request.url), 303);
+  const website = smart ? normalizeWebsite(get('website')) : get('website');
+  const type = get('type', 40) || 'ADS';
+  let message = get('message', 3000);
+  let pkg = type;
+  if (smart) {
+    // House-policy check runs again here, so the saved inquiry always says whether the ad can run as written.
+    // A blocked ad is still saved (marked BLOCKED) so the team can follow up; nothing runs without review.
+    const sections = Array.isArray(body.sections) ? body.sections.map((x) => String(x).slice(0, 60)).slice(0, 40) : [];
+    const biz = { company: get('company', 160), website, description: get('description', 600), category: get('category', 60), audience: get('audience', 160) };
+    const ad = adFrom(body.ad);
+    const policy = policyProblems({ ...biz, sections, ad });
+    pkg = get('package', 80) || type;
+    message = smartMessage({ note: message, phone: get('phone', 40), sections, biz, ad, copySource: get('copy_source', 20), policy, packageName: pkg, start: get('start', 20), end: get('end', 20) });
+  }
+  const dates = get('dates', 120) || [get('start', 20), get('end', 20)].filter(Boolean).join(' to ');
   await env.DB.prepare('INSERT INTO inquiries (id, type, company, name, email, website, package, budget, dates, message, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
-    .bind(uid(), get('type', 40) || 'ADS', get('company', 160), get('name', 120), email, website && isHttpUrl(website) ? website : null, get('type', 40),
-      get('budget', 80), get('dates', 120), get('message', 3000), 'new', nowIso()).run();
+    .bind(uid(), type, get('company', 160), get('name', 120), email, website && isHttpUrl(website) ? website : null, pkg,
+      get('budget', 80), dates, message, 'new', nowIso()).run();
   // Tell the team right away (when email sending is configured); the inquiry is also in /admin under Ad inquiries.
   if (env.RESEND_API_KEY && env.NEWSLETTER_FROM) {
     const site = SITE(env);
-    const lines = [['Type', get('type', 40)], ['Company', get('company', 160)], ['Name', get('name', 120)], ['Email', email], ['Website', website], ['Budget', get('budget', 80)], ['Dates', get('dates', 120)], ['Message', get('message', 3000)]];
+    const lines = [['Type', type], ['Package', pkg], ['Company', get('company', 160)], ['Name', get('name', 120)], ['Email', email], ['Website', website], ['Budget', get('budget', 80)], ['Dates', dates], ['Message', message]];
     const notify = fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
       body: JSON.stringify({ from: env.NEWSLETTER_FROM, to: [env.INQUIRY_EMAIL || site.email], reply_to: email, subject: `New ad inquiry: ${get('company', 160) || get('name', 120) || email}`,
-        html: `<p>New inquiry from the Boston Daily Advertise page.</p><table>${lines.map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td>${esc(v || '')}</td></tr>`).join('')}</table><p>Manage it in /admin under Ad inquiries.</p>` }),
+        html: `<p>New inquiry from the Boston Daily Advertise page.</p><table>${lines.map(([k, v]) => `<tr><td valign="top"><b>${esc(k)}</b></td><td style="white-space:pre-wrap">${esc(v || '')}</td></tr>`).join('')}</table><p>Manage it in /admin under Ad inquiries.</p>` }),
     }).catch((e) => console.error('inquiry notify', e));
     ctx?.waitUntil?.(notify);
   }
-  return Response.redirect(new URL('/advertise?sent=1#inquiry', request.url), 303);
+  return done();
 }
 
 /** Latest "Updated" time across the site, polled by the masthead so it stays live without a reload. */
@@ -813,6 +828,7 @@ export async function privacyPage(env) {
     <p>If you comment on a story, we store the name you give, your comment and a one-way code made from your IP address, used only to limit spam. Comments appear after an editor approves them.</p>
     <h2>Advertising and partnership inquiries</h2>
     <p>If you send an inquiry, we store the details you enter (such as your name, company, email and message) to reply to you.</p>
+    <p>The Advertise form can read the public homepage of the website you enter to fill in your business details, and can send those details to our AI provider (Anthropic) to suggest ad copy. Nothing is sent until you press Auto-fill or Suggest, and you can fill in everything yourself instead.</p>
     <h2>Partner links</h2>
     <p>Some links go to partner retailers through an affiliate network. We count clicks on these links without identifying you. After you leave our site, the partner and the network may set their own cookies under their own privacy policies.</p>
     <h2>Hosting</h2>
@@ -974,13 +990,6 @@ function commentsBlock(story, comments, note, tz) {
       <button class="button" type="submit">Post comment</button>
     </form>
   </section>`;
-}
-
-async function ipHash(request, env) {
-  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-  const data = new TextEncoder().encode(`${ip}|${env.INGEST_SECRET || env.SITE_NAME || 'bd'}`);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export async function submitComment(env, request, slug) {

@@ -1,5 +1,6 @@
 import { esc, formatDateLong, formatClock, localDate } from '../util.js';
 import { SITE } from './components.js';
+import { PACKAGES, NO_AD_SECTIONS } from '../advertise.js';
 
 /** When a live newsroom story was last updated with new developments (the masthead's "Updated" time). */
 export async function latestUpdateAt(db) {
@@ -137,6 +138,13 @@ ${body}
   </div>
 </footer>
 <div id="site-toast" class="site-toast" role="status" aria-live="polite" hidden></div>
+<script type="application/json" id="advertise-config">${JSON.stringify({
+    site: site.name,
+    email: site.email,
+    packages: [...new Map(PACKAGES.map(([type, name, desc]) => [name, { type, name, desc }])).values()],
+    sections: chrome.sections.filter((s) => s.commerce_allowed && !s.parent_slug && !NO_AD_SECTIONS.includes(s.slug)).map((s) => ({ slug: s.slug, name: s.name })),
+  }).replace(/</g, '\\u003c')}</script>
+<script src="/js/advertise.js?v=1" defer></script>
 <script>
 (() => {
   // Live timestamps: "12 min ago" stamps tick every 30 s; the masthead "Updated" time follows the newest update.

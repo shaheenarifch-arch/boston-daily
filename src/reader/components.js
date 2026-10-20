@@ -309,11 +309,11 @@ export function houseAd(site, kind = 'ADS', placement = null) {
     <p class="ad-copy" style="margin:.5rem 0 0;font-size:.75rem">From ${esc(ad.advertiser)}</p>
   </aside>`;
   }
-  const subject = encodeURIComponent(`[${kind}] Advertising with ${site.name}`);
+  const pkg = { ADS: 'Display ads', SPONSORED: 'Section sponsorship', 'FRONT PAGE': 'Front page placement', LISTING: 'Business listings' }[kind] || '';
   return `<aside class="module module-ad" aria-label="Advertisement">
     <span class="label label-ad">Advertisement</span>
-    <p class="ad-copy">Reach Boston Daily readers. Display, front-page, section and newsletter sponsorships.</p>
-    <a class="button" href="mailto:${esc(site.email)}?subject=${subject}">Email us about advertising</a>
+    <p class="ad-copy">Reach ${esc(site.name)} readers. Display, front-page, section and newsletter sponsorships.</p>
+    <a class="button" href="/advertise" data-advertise${pkg ? ` data-package="${esc(pkg)}"` : ''}>Advertise with us</a>
   </aside>`;
 }
 
