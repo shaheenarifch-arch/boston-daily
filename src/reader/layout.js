@@ -1,15 +1,30 @@
-import { esc, formatDateLong, localDate } from '../util.js';
+import { esc, formatDateLong, formatClock, localDate } from '../util.js';
 import { SITE } from './components.js';
+
+/** When a live newsroom story was last updated with new developments (the masthead's "Updated" time). */
+export async function latestUpdateAt(db) {
+  const row = await db.prepare("SELECT MAX(last_updated_at) AS at FROM stories WHERE lane = 'newsroom' AND status IN ('PUBLISHED','UPDATED','CORRECTED') AND last_updated_at IS NOT NULL").first();
+  return row?.at || null;
+}
+
+/** "Updated 9:14 AM ET" (today) or "Updated Oct 19, 9:14 AM ET". Mirrored by the page script for live refreshes. */
+export function mastheadUpdated(iso, tz) {
+  if (!iso) return '';
+  const day = localDate(new Date(iso), tz) === localDate(new Date(), tz) ? ''
+    : `${new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric' }).format(new Date(iso))}, `;
+  return `${day}${formatClock(iso, tz)} ET`;
+}
 
 /** Loads nav data once per request (sections + featured network businesses for the footer). */
 export async function loadChrome(env) {
   const db = env.DB;
-  const [{ results: sections }, { results: network }, edition] = await Promise.all([
+  const [{ results: sections }, { results: network }, edition, updatedAt] = await Promise.all([
     db.prepare('SELECT slug, name, kind, parent_slug, in_nav, commerce_allowed, always_human, partner_offers, offer_tags FROM sections WHERE active = 1 ORDER BY sort_order').all(),
     db.prepare("SELECT slug, name FROM businesses WHERE status = 'active' AND owned_by_network = 1 AND (health_ok IS NULL OR health_ok = 1) ORDER BY featured DESC, sort_order LIMIT 12").all(),
     db.prepare("SELECT edition_number, edition_date FROM editions WHERE status = 'published' ORDER BY edition_date DESC LIMIT 1").first(),
+    latestUpdateAt(db),
   ]);
-  return { sections, network, edition };
+  return { sections, network, edition, updatedAt };
 }
 
 export function layout(env, chrome, { title, description = '', canonical = '', body, jsonLd = null, ogType = 'website', image = '', active = '', noindex = false }) {
@@ -63,7 +78,7 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
     <p class="masthead-util"><a href="/advertise">Advertise</a></p>
   </div>
   <div class="wrap masthead-brand">
-    <p class="masthead-date">${esc(formatDateLong(today, site.tz))}<br><a href="/editions">${esc(editionLine === 'Past editions' ? "Today\u2019s edition" : editionLine)}</a></p>
+    <p class="masthead-date">${esc(formatDateLong(today, site.tz))}<br><a href="/editions">${esc(editionLine === 'Past editions' ? "Today\u2019s edition" : editionLine)}</a>${chrome.updatedAt ? `<br><span class="masthead-updated" data-tz="${esc(site.tz)}">Updated <time datetime="${esc(chrome.updatedAt)}">${esc(mastheadUpdated(chrome.updatedAt, site.tz))}</time></span>` : ''}</p>
     <a class="brand" href="/" aria-label="${esc(site.name)} home">${esc(site.name)}</a>
     <p class="masthead-tag">${esc(site.tagline)}</p>
   </div>
@@ -122,6 +137,38 @@ ${body}
   </div>
 </footer>
 <div id="site-toast" class="site-toast" role="status" aria-live="polite" hidden></div>
+<script>
+(() => {
+  // Live timestamps: "12 min ago" stamps tick every 30 s; the masthead "Updated" time follows the newest update.
+  const tz = ${JSON.stringify(site.tz)};
+  const day = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  const rel = (iso) => {
+    const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 90) return 'just now';
+    if (s < 3600) return Math.round(s / 60) + ' min ago';
+    if (s < 86400) return Math.round(s / 3600) + ' hr ago';
+    return new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric' }).format(new Date(iso));
+  };
+  const clock = (iso) => {
+    const d = new Date(iso);
+    const pre = day(d) === day(new Date()) ? '' : new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric' }).format(d) + ', ';
+    return pre + new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(d) + ' ET';
+  };
+  const tick = () => document.querySelectorAll('time[data-ago]').forEach((t) => { t.textContent = rel(t.dateTime); });
+  const mast = document.querySelector('.masthead-updated time');
+  const poll = () => {
+    if (document.hidden) return;
+    fetch('/api/updated').then((r) => r.ok ? r.json() : null).then((j) => {
+      if (j && j.updated_at && mast && j.updated_at > mast.dateTime) mast.dateTime = j.updated_at;
+      if (mast) mast.textContent = clock(mast.dateTime);
+    }).catch(() => {});
+  };
+  tick();
+  setInterval(tick, 30000);
+  if (mast) setInterval(poll, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); if (mast) poll(); } });
+})();
+</script>
 <script>
 (() => {
   // Every form shows it is working the moment it is submitted.

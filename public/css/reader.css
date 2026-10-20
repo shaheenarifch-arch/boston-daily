@@ -641,3 +641,7 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .col-rail .ad-partner-products .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
 .col-rail .ad-partner-products .product-link { padding: .5rem; }
 .product-img img[src*="ezpass.uk"] { object-fit: cover; }
+
+/* Live timestamps */
+.masthead-updated { font-weight: 600; color: var(--link); }
+.time-ago { color: var(--granite); }

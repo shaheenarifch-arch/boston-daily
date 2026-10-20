@@ -1,9 +1,9 @@
 import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
-import { esc, html, formatDateLong, formatDateTime, localDate, slugify, isHttpUrl, nowIso, uid } from '../util.js';
+import { esc, html, json, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { adPartnerProductIds } from '../ads.js';
-import { layout, loadChrome } from './layout.js';
+import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
   SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
@@ -451,9 +451,11 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   const products = commercial && showCommerce ? await deals(db, { section: story.section_slug, limit: 3 }) : [];
 
   const typeLabel = { analysis: 'Analysis', opinion: 'Opinion', feature: 'Feature' }[story.type];
+  const liveAgo = (iso) => ` <span class="time-ago">(<time datetime="${esc(iso)}" data-ago>${esc(relativeStamp(iso, site.tz))}</time>)</span>`;
   const times = [
-    story.published_at ? `<span>Published <time datetime="${esc(story.published_at)}">${esc(formatDateTime(story.published_at, site.tz))}</time></span>` : '',
-    story.last_updated_at ? `<span>Updated <time datetime="${esc(story.last_updated_at)}">${esc(formatDateTime(story.last_updated_at, site.tz))}</time></span>` : '',
+    // The newest of Published/Updated also carries a live "12 min ago" that ticks in the browser.
+    story.published_at ? `<span>Published <time datetime="${esc(story.published_at)}">${esc(formatDateTime(story.published_at, site.tz))}</time>${story.last_updated_at ? '' : liveAgo(story.published_at)}</span>` : '',
+    story.last_updated_at ? `<span class="stamp-updated">Updated <time datetime="${esc(story.last_updated_at)}">${esc(formatDateTime(story.last_updated_at, site.tz))}</time>${liveAgo(story.last_updated_at)}</span>` : '',
     story.corrected_at ? `<span class="stamp-corrected">Corrected <time datetime="${esc(story.corrected_at)}">${esc(formatDateTime(story.corrected_at, site.tz))}</time></span>` : '',
   ].filter(Boolean).join('');
 
@@ -727,6 +729,12 @@ export async function submitInquiry(env, request, ctx) {
     ctx?.waitUntil?.(notify);
   }
   return Response.redirect(new URL('/advertise?sent=1#inquiry', request.url), 303);
+}
+
+/** Latest "Updated" time across the site, polled by the masthead so it stays live without a reload. */
+export async function latestUpdate(env) {
+  const at = await latestUpdateAt(env.DB);
+  return json({ ok: true, updated_at: at }, 200, { 'cache-control': 'public, max-age=30' });
 }
 
 // ───────────────────────────── Trust pages, search, feeds ─────────────────────────────

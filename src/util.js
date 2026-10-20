@@ -79,6 +79,25 @@ export function timeAgo(iso) {
   return `${Math.round(s / 86400)} d ago`;
 }
 
+/** "9:14 AM" in the newsroom's time zone. */
+export function formatClock(iso, timeZone = 'America/New_York') {
+  if (!iso) return '';
+  return new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+}
+
+/**
+ * Card stamp wording: "just now", "12 min ago", "3 hr ago", then "Oct 17" after a day.
+ * The reader page script (layout.js) repeats this rule so stamps keep ticking without a reload.
+ */
+export function relativeStamp(iso, timeZone = 'America/New_York', now = Date.now()) {
+  if (!iso) return '';
+  const s = Math.max(0, (now - new Date(iso).getTime()) / 1000);
+  if (s < 90) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} hr ago`;
+  return new Intl.DateTimeFormat('en-US', { timeZone, month: 'short', day: 'numeric' }).format(new Date(iso));
+}
+
 export async function readJson(request) {
   try {
     return await request.json();

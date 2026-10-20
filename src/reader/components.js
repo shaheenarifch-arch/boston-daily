@@ -1,4 +1,4 @@
-import { esc, formatDateLong, formatDateTime, timeAgo, money } from '../util.js';
+import { esc, formatDateTime, relativeStamp, money } from '../util.js';
 import { excerpt } from '../markdown.js';
 import { campaignFor, productAdsFor } from '../ads.js';
 
@@ -23,15 +23,19 @@ export function commerceAllowed(section, story) {
 
 const TYPE_LABEL = { analysis: 'Analysis', opinion: 'Opinion', feature: 'Feature' };
 
-/** "Updated 2 hr ago" / "Corrected Oct 17" / "Oct 17, 2026" */
+/**
+ * "Updated 12 min ago" when the story was updated with new developments since publishing,
+ * "Corrected …" when its latest change was a correction, otherwise "Published …".
+ * The <time data-ago> keeps ticking in the browser (see layout.js).
+ */
 export function storyStamp(s, tz) {
-  if (s.status === 'CORRECTED' && s.corrected_at) return `<span class="stamp stamp-corrected">Corrected ${esc(timeAgo(s.corrected_at))}</span>`;
-  if (s.status === 'UPDATED' && s.last_updated_at) return `<span class="stamp stamp-updated">Updated ${esc(timeAgo(s.last_updated_at))}</span>`;
-  if (s.published_at) {
-    const age = Date.now() - new Date(s.published_at).getTime();
-    return `<span class="stamp">${esc(age < 86400000 ? timeAgo(s.published_at) : formatDateLong(s.published_at, tz).replace(/^\w+, /, ''))}</span>`;
-  }
-  return '';
+  const updated = s.last_updated_at || '';
+  const corrected = s.corrected_at || '';
+  const [label, iso, cls] = corrected && corrected > updated ? ['Corrected', corrected, ' stamp-corrected']
+    : updated ? ['Updated', updated, ' stamp-updated']
+    : ['Published', s.published_at, ''];
+  if (!iso) return '';
+  return `<span class="stamp${cls}">${label} <time datetime="${esc(iso)}" data-ago title="${esc(formatDateTime(iso, tz))}">${esc(relativeStamp(iso, tz))}</time></span>`;
 }
 
 export function storyCard(s, { size = 'm', tz, showSection = true, showDek = true, seenImages = null } = {}) {
