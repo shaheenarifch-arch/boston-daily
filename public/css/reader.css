@@ -552,3 +552,13 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
   .more-grid > .more-col:last-child:nth-child(4n+3) { grid-column: span 2; }
 }
 .rail-archive { margin: 0 0 .75rem; }
+
+/* Story rows: 2 or 3 cards stretch across the row instead of leaving an empty slot */
+@media (min-width: 640px) {
+  .row-cards { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+}
+/* "More from the paper": a lone last section spreads its 2 or 3 stories across the full width */
+@media (min-width: 1100px) {
+  .more-grid > .more-col:last-child:nth-child(4n+1):has(> article:last-of-type:nth-of-type(2)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .more-grid > .more-col:last-child:nth-child(4n+1):has(> article:last-of-type:nth-of-type(3)) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
