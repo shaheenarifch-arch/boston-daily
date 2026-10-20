@@ -527,3 +527,28 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 /* Home: partner and ad modules packed into columns under the front grid (no blank space beside a long rail). */
 .front-extras { column-width: 19rem; column-gap: 1.5rem; margin: 0 0 2rem; }
 .front-extras > * { break-inside: avoid; display: block; width: 100%; margin: 0 0 1.5rem; }
+
+/* Front page: no blank space beside short columns */
+.more-heads { list-style: none; margin: 0; padding: 0; }
+.more-heads li { padding: .6rem 0; border-top: 1px solid var(--rule); font: 500 .95rem/1.35 var(--serif); }
+.more-heads a { color: var(--ink); text-decoration: none; }
+.more-heads a:hover { text-decoration: underline; }
+.col-label-more { margin-top: 1.25rem; }
+@media (min-width: 1100px) {
+  .front-extras { columns: auto; column-width: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: row dense; gap: 1.5rem; align-items: stretch; }
+  .front-extras > * { margin: 0; }
+  .front-extras > .partner-edit { grid-column: 1; grid-row: 1 / span 2; }
+  .front-extras > .paid-ad { grid-column: 3; grid-row: 1 / span 2; }
+  .front-extras:not(:has(> .paid-ad)) > .partner-edit { grid-row: auto; }
+}
+/* "More from the paper": the last section stretches so no row is left half empty */
+@media (min-width: 640px) and (max-width: 1099px) {
+  .more-grid > .more-col:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+@media (min-width: 1100px) {
+  .more-grid > .more-col:last-child:nth-child(4n+1) { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 2rem; align-content: start; }
+  .more-grid > .more-col:last-child:nth-child(4n+1) > .more-title { grid-column: 1 / -1; }
+  .more-grid > .more-col:last-child:nth-child(4n+2) { grid-column: span 3; }
+  .more-grid > .more-col:last-child:nth-child(4n+3) { grid-column: span 2; }
+}
+.rail-archive { margin: 0 0 .75rem; }
