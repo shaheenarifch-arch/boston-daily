@@ -40,6 +40,11 @@ const UK_SECTIONS = new Set(['uk']);
 export const OFFER_LIMIT = 4; // desktop; CSS shows 3 on tablet and 2 on mobile
 
 const list = (v) => String(v || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+
+// Cannabis seeds and similar restricted products never appear in Boston Daily's news-site modules
+// (ad-network policies restrict them). They stay in the /shop catalog.
+const RESTRICTED = /\b(cannabis|marijuana|thc|cbd|autoflower(ing)?|feminized|blimburn)\b/i;
+export const restrictedProduct = (p) => RESTRICTED.test([p.name, p.description, p.tags, p.category, p.merchant_name].filter(Boolean).join(' '));
 const STOP = new Set('the a an and or of to in on for with at by from is are was were be this that these those it its as into over after before new how why what your you our we they he she his her their about more most best'.split(' '));
 export const keywordsOf = (...texts) => new Set(texts.join(' ').toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w)));
 
@@ -66,6 +71,7 @@ const promoActive = (p, now) => Boolean(p.promo_label || p.promo_end) && (!p.pro
 /** Score one product for a page; null when it must not appear. */
 export function scoreProduct(p, ctx, now = new Date()) {
   if (!p.image_url || !p.image_rights_ok || !p.deep_link) return null;
+  if (restrictedProduct(p)) return null;
   if (p.availability && /out[_\s-]?of[_\s-]?stock|unavailable|discontinued/i.test(p.availability)) return null;
   if (p.promo_end && p.promo_end < today(now)) return null;
   const regions = list(p.regions).map((r) => r.toUpperCase());
