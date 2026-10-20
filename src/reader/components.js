@@ -46,8 +46,8 @@ export function storyCard(s, { size = 'm', tz, showSection = true, showDek = tru
   if (hasImg && seenImages) { if (seenImages.has(s.hero_image_url)) hasImg = false; else seenImages.add(s.hero_image_url); }
   // Text-only medium cards get a quiet section plate so card grids stay aligned.
   const img = !hasImg ? (size === 'm' ? `<figure class="card-figure card-figure-empty" aria-hidden="true"><span>${esc(s.section_name || 'Boston Daily')}</span></figure>` : '')
-    : size === 's' ? `<a class="card-thumb" href="/story/${esc(s.slug)}" tabindex="-1" aria-hidden="true"><img src="${esc(s.hero_image_url)}" alt="${esc(s.headline)}" loading="lazy" decoding="async"></a>`
-    : `<figure class="card-figure"><img src="${esc(s.hero_image_url)}" alt="${esc(s.headline)}" loading="${size === 'lead' ? 'eager' : 'lazy'}" decoding="async"></figure>`;
+    : size === 's' ? `<a class="card-thumb" href="/story/${esc(s.slug)}" tabindex="-1" aria-hidden="true"><img src="${esc(s.hero_image_url)}" alt="${esc(s.headline)}" width="96" height="96" loading="lazy" decoding="async"></a>`
+    : `<figure class="card-figure"><img src="${esc(s.hero_image_url)}" alt="${esc(s.headline)}" width="800" height="450" loading="${size === 'lead' ? 'eager' : 'lazy'}" decoding="async"></figure>`;
   const dek = showDek && (s.dek || s.body) ? `<p class="card-dek">${esc(s.dek || excerpt(s.body, size === 'lead' ? 260 : 150))}</p>` : '';
   return `<article class="card card-${size}${commercial ? ' card-commercial' : ''}">
     ${img}
@@ -198,7 +198,7 @@ export function partnerEdit(items, sectionName = {}) {
       ${meta(lead)}<span class="pe-name pe-name-lead">${esc(lead.name)}</span>${leadM ? `<span class="pe-merchant">${esc(leadM)}</span>` : ''}<span class="pe-cta">View product <span aria-hidden="true">→</span></span>`)}
     <ol class="pe-list">${rest.map((p) => {
       const m = merchantOf(p);
-      return `<li>${link(p, 'pe-item', `<span class="pe-thumb"><img src="${esc(p.image_url)}" alt="" width="96" height="96" loading="lazy" decoding="async"></span>
+      return `<li>${link(p, 'pe-item', `<span class="pe-thumb"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="96" height="96" loading="lazy" decoding="async"></span>
         <span class="pe-text">${meta(p)}<span class="pe-name">${esc(p.name)}</span>${m ? `<span class="pe-merchant">${esc(m)}</span>` : ''}</span>`)}</li>`;
     }).join('')}</ol>
     <p class="module-disclosure pe-disclosure">We may earn a commission when you buy through these links, at no extra cost to you. Partners never influence our news coverage.</p>
