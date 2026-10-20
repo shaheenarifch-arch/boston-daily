@@ -20,6 +20,7 @@ import d20261018partnerfix from './2026-10-18-partner-products-fix.sql';
 import d20261019sectiondesc from './2026-10-19-section-descriptions.sql';
 import d20261019 from './2026-10-19.sql';
 import d20261019netgroups from './2026-10-19-network-groups.sql';
+import d20261020 from './2026-10-20.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -41,4 +42,5 @@ export const CONTENT_PACKAGES = [
   ['2026-10-19-section-descriptions', d20261019sectiondesc],
   ['2026-10-19', d20261019],
   ['2026-10-19-network-groups', d20261019netgroups],
+  ['2026-10-20', d20261020],
 ];
