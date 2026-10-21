@@ -26,6 +26,7 @@ import d20261020images from './2026-10-20-missing-images.sql';
 import d20261020commerce from './2026-10-20-commerce-sync.sql';
 import d20261020govrace from './2026-10-20-gov-race.sql';
 import d20261020photos from './2026-10-20-partner-photos.sql';
+import d20261021 from './2026-10-21.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -53,4 +54,5 @@ export const CONTENT_PACKAGES = [
   ['2026-10-20-commerce-sync', d20261020commerce],
   ['2026-10-20-gov-race', d20261020govrace],
   ['2026-10-20-partner-photos', d20261020photos],
+  ['2026-10-21', d20261021],
 ];
