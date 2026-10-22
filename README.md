@@ -49,6 +49,8 @@ npm run deploy
 
 Then add a custom domain to the Worker in the Cloudflare dashboard, and put **Cloudflare Access** in front of `/admin*` and `/api/admin*` so editors also sign in with SSO.
 
+**GitHub CI**: `.github/workflows/ci.yml` runs `npm test` and a `wrangler deploy --dry-run` bundle check on every pull request and on pushes to `main`. It needs no secrets and never deploys; deployment stays with the Cloudflare Git integration.
+
 Crons (in `wrangler.toml`): every 5 minutes publishes due scheduled stories; daily at 09:50 UTC builds the edition, checks affiliate links and business site health.
 
 ## Connecting your systems
