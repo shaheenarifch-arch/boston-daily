@@ -420,7 +420,7 @@ export async function sectionPage(env, slug, ctx = null) {
     ],
   };
   // A section with no stories yet stays out of search until it has some.
-  return html(layout(env, chrome, { title: section.name, description: sectionDesc, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body, jsonLd, noindex: !news.length && !commercial.length }));
+  return html(layout(env, chrome, { drive: showCommerce, title: section.name, description: sectionDesc, canonical: `/section/${slug}`, active: section.parent?.slug || slug, body, jsonLd, noindex: !news.length && !commercial.length }));
 }
 
 // ───────────────────────────── Story ─────────────────────────────
@@ -512,7 +512,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   // Answer-engine markup: a "Frequently asked questions" section with ### questions becomes FAQPage data.
   const faq = faqFromBody(story.body);
   const ld = faq.length >= 2 ? [jsonLd, { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : jsonLd;
-  return html(layout(env, chrome, {
+  return html(layout(env, chrome, { drive: showCommerce,
     title: story.headline, description: story.dek || excerpt(story.body, 160), canonical: `/story/${story.slug}`,
     ogType: 'article', image: story.hero_image_rights ? story.hero_image_url : '', body, jsonLd: ld, active: section?.parent?.slug || story.section_slug,
   }));

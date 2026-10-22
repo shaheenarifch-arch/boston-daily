@@ -28,7 +28,10 @@ export async function loadChrome(env) {
   return { sections, network, edition, updatedAt };
 }
 
-export function layout(env, chrome, { title, description = '', canonical = '', body, jsonLd = null, ogType = 'website', image = '', active = '', noindex = false }) {
+// Travelpayouts Drive (project 589458). Loaded only where commerce is allowed (see commerceAllowed): never on US Politics, Opinion or sensitive stories.
+const TRAVELPAYOUTS_DRIVE = "<script nowprocket data-noptimize=\"1\" data-cfasync=\"false\" data-wpfc-render=\"false\" seraph-accel-crit=\"1\" data-no-defer=\"1\" data-cmp-ab=\"2\">\n  (function () {\n      var script = document.createElement(\"script\");\n      script.async = 1;\n      script.setAttribute(\"data-cmp-ab\",\"2\");\n      script.src = 'https://emrldtp.cc/NTg5NDU4.js?t=589458';\n      document.head.appendChild(script);\n  })();\n</script>";
+
+export function layout(env, chrome, { title, description = '', canonical = '', body, jsonLd = null, ogType = 'website', image = '', active = '', noindex = false, drive = false }) {
   const site = SITE(env);
   const today = localDate(new Date(), site.tz);
   const news = chrome.sections.filter((s) => s.in_nav && s.kind === 'news');
@@ -67,6 +70,7 @@ ${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;1,6..72,400&amp;family=Public+Sans:wght@400;500;600&amp;display=swap"></noscript>
 <link rel="stylesheet" href="/css/reader.css?v=16">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
+${drive ? TRAVELPAYOUTS_DRIVE : ''}
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
