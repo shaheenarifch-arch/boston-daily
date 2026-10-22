@@ -51,6 +51,8 @@ Then add a custom domain to the Worker in the Cloudflare dashboard, and put **Cl
 
 **GitHub CI**: `.github/workflows/ci.yml` runs `npm test` and a `wrangler deploy --dry-run` bundle check on every pull request and on pushes to `main`. It needs no secrets and never deploys; deployment stays with the Cloudflare Git integration.
 
+**Claude on GitHub**: `.github/workflows/claude.yml` lets anyone with write access mention `@claude` in an issue or PR to get answers, reviews or a PR with the change. One-time setup: install the [Claude GitHub App](https://github.com/apps/claude) on this repo, then add a repo secret (Settings → Secrets and variables → Actions): `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` (Pro/Max plan) or `ANTHROPIC_API_KEY`.
+
 Crons (in `wrangler.toml`): every 5 minutes publishes due scheduled stories; daily at 09:50 UTC builds the edition, checks affiliate links and business site health.
 
 ## Connecting your systems
