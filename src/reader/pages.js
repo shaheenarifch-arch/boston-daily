@@ -298,7 +298,7 @@ export async function homePage(env, editionDate = null) {
   </section>
   ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}`;
 
-  return html(layout(env, chrome, {
+  return html(layout(env, chrome, { drive: true,
     title: editionDate ? `Edition ${edition.edition_number}, ${formatDateLong(edition.edition_date, site.tz)}` : '',
     description: editionDate ? 'Boston Daily: a fresh edition every morning, with stories updated through the day.'
       : 'Boston news every morning: Massachusetts politics, Patriots and Celtics, business, tech and local guides, updated all day. Read today\u2019s free edition now.',
