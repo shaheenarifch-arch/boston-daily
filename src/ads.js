@@ -29,6 +29,21 @@ export const CAMPAIGNS = [
 const UTM = (c) => `utm_source=bostondaily&utm_medium=paid_ad&utm_campaign=${c}`;
 export const PRODUCT_ADS = [
   {
+    id: 'getout-usa-memberships',
+    advertiser: 'GetOut',
+    domain: 'getout.com',
+    title: 'Family attraction passes in the USA',
+    // GetOut via Awin (merchant 124814): US destinations, so the front page doesn't only show European city passes.
+    placements: ['home', 'travel', 'us', 'entertainment'],
+    awin: true,
+    active: true,
+    items: [
+      { name: 'New England', note: 'Boston-area family attractions with one membership', image: 'https://media.getout.com/markets/62a1b510-4211-435f-8ff0-b1eeb9e2e99f/market-icon/RedPictograms_NewEngland_20260319162259_f9189c1a8c4c9ebd.jpg', url: 'https://www.awin1.com/cread.php?awinmid=124814&awinaffid=3067297&clickref=bostondaily&ued=https%3A%2F%2Fwww.getout.com%2Fmemberships%2Fnew-england', cta: 'View GetOut New England' },
+      { name: 'Southern California', note: 'Theme parks, museums and family days out', image: 'https://media.getout.com/markets/269c6c71-a492-4e92-81f3-5214a6ccc52a/market-icon/RedPictograms_CA_Southern_20260319161810_bfb2d3f7119996e0.jpg', url: 'https://www.awin1.com/cread.php?awinmid=124814&awinaffid=3067297&clickref=bostondaily&ued=https%3A%2F%2Fwww.getout.com%2Fmemberships%2Fcalifornia-southern', cta: 'View GetOut SoCal' },
+      { name: 'Dallas-Fort Worth', note: 'Attractions and experiences across DFW', image: 'https://media.getout.com/markets/b3f5e2a0-2f86-49e3-9428-5507f57e8e5a/market-icon/RedPictograms_TX_Dallas_20260319162640_5d28523b2c9ce3ab.jpg', url: 'https://www.awin1.com/cread.php?awinmid=124814&awinaffid=3067297&clickref=bostondaily&ued=https%3A%2F%2Fwww.getout.com%2Fmemberships%2Ftexas-dfw', cta: 'View GetOut DFW' },
+    ],
+  },
+  {
     id: 'ezpass-uk-city-passes',
     advertiser: 'EasyPass',
     domain: 'ezpass.uk',
