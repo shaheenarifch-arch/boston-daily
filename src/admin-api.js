@@ -53,6 +53,21 @@ export async function handleAdmin(request, env, url, editor) {
       return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="subscribers.csv"' } });
     }
 
+    // ── Sign-ups from Shaheen's other websites (one list, tagged by site) ──
+    if (path === '/site-subscribers' && method === 'GET') {
+      const { results } = await db.prepare(`SELECT site, SUM(status = 'active') AS active, SUM(status = 'unsubscribed') AS unsubscribed,
+        MAX(created_at) AS latest FROM site_subscribers GROUP BY site ORDER BY active DESC`).all();
+      return json({ ok: true, sites: results });
+    }
+    if (path === '/site-subscribers.csv' && method === 'GET') {
+      const site = url.searchParams.get('site');
+      const q = site ? db.prepare('SELECT site, email, status, source_page, created_at FROM site_subscribers WHERE site = ? ORDER BY created_at').bind(site)
+        : db.prepare('SELECT site, email, status, source_page, created_at FROM site_subscribers ORDER BY site, created_at');
+      const { results } = await q.all();
+      const csv = ['site,email,status,source_page,created_at', ...results.map((r) => [r.site, r.email, r.status, r.source_page, r.created_at].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+      return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="site-subscribers.csv"' } });
+    }
+
     if (path === '/meta' && method === 'GET') {
       const { results: sections } = await db.prepare('SELECT * FROM sections ORDER BY sort_order').all();
       return json({ ok: true, states: STATES, transitions: TRANSITIONS, newsroom_types: NEWSROOM_TYPES, commerce_types: COMMERCE_TYPES,

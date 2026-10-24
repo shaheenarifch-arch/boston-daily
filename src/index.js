@@ -9,6 +9,7 @@ import { ensureDatabase } from './bootstrap.js';
 import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import { autofillEndpoint, copyEndpoint, checkEndpoint } from './advertise.js';
+import { siteSubscribe, siteUnsubscribe } from './site-subscribe.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
   advertisePage, submitInquiry, latestUpdate, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound, llmsTxt,
@@ -74,6 +75,8 @@ const worker = {
       if (pathname === '/api/advertise/copy' && method === 'POST') return await copyEndpoint(env, request);
       if (pathname === '/api/advertise/check' && method === 'POST') return await checkEndpoint(env, request);
       if (pathname === '/subscribe' && method === 'POST') return await subscribe(env, request);
+      if (pathname === '/api/subscribe' && method === 'POST') return await siteSubscribe(env, request);
+      if (pathname === '/api/unsubscribe' && method === 'GET') return await siteUnsubscribe(env, url);
       let cm;
       if ((cm = pathname.match(/^\/story\/([a-z0-9-]+)\/comment$/)) && method === 'POST') return await submitComment(env, request, cm[1]);
       if (pathname === '/api/health') return json({ ok: true, service: 'boston-daily' });
