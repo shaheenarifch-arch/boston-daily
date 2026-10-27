@@ -117,6 +117,14 @@ document.addEventListener('click', async (e) => {
     const url = URL.createObjectURL(await res.blob());
     const a = Object.assign(document.createElement('a'), { href: url, download: 'subscribers.csv' }); a.click(); URL.revokeObjectURL(url);
   }
+  const sc = e.target && e.target.closest && e.target.closest('[data-site-csv]');
+  if (sc) {
+    e.preventDefault();
+    const site = sc.dataset.siteCsv;
+    const res = await fetch(`/api/admin/site-subscribers.csv${site ? `?site=${encodeURIComponent(site)}` : ''}`, { headers: { authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY) || ''}` } });
+    const url = URL.createObjectURL(await res.blob());
+    const a = Object.assign(document.createElement('a'), { href: url, download: `${site || 'all-sites'}-subscribers.csv` }); a.click(); URL.revokeObjectURL(url);
+  }
 });
 
 function gscPanel(g) {
@@ -150,6 +158,7 @@ async function renderLive() {
   const nl = await api('GET', '/subscribers').catch(() => null);
   const vs = await api('GET', '/visitors').catch(() => null);
   const gsc = await api('GET', '/search-console').catch(() => null);
+  const ss = await api('GET', '/site-subscribers').catch(() => null);
   const tile = (s) => `<a class="stage" href="#/stories?status=${s}" data-status="${s}">
       <span class="stage-n">${o.newsroom[s] || 0}</span><span class="stage-l">${esc(STAGE_LABEL[s])}</span></a>`;
   const ed = o.edition;
@@ -169,6 +178,9 @@ async function renderLive() {
       <p>Daily: <strong>${esc(nl.counts?.daily || 0)}</strong> · Weekly: <strong>${esc(nl.counts?.weekly || 0)}</strong> · Unsubscribed: ${esc(nl.counts?.unsubscribed || 0)}
       · <a href="#" id="nl-csv">Download CSV</a></p>
       <p class="sub">${nl.email_configured ? 'Sending is on: daily after the morning edition, weekly on Sundays.' : 'Sending is off until RESEND_API_KEY and NEWSLETTER_FROM are set in Cloudflare. Sign-ups are being saved.'}</p></section>` : ''}
+    ${ss ? `<section class="panel"><h2 class="panel-title">Website newsletter sign-ups</h2>
+      ${ss.sites.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Site</th><th>Active</th><th>Unsubscribed</th><th>Latest</th><th></th></tr></thead><tbody>${ss.sites.map((r) => `<tr><td>${esc(r.site)}</td><td>${esc(r.active || 0)}</td><td>${esc(r.unsubscribed || 0)}</td><td>${esc((r.latest || '').slice(0, 10))}</td><td><a href="#" data-site-csv="${esc(r.site)}">CSV</a></td></tr>`).join('')}</tbody></table></div>
+      <p><a href="#" data-site-csv="">Download all sites (CSV)</a></p>` : '<p class="sub">No sign-ups from your other websites yet.</p>'}</section>` : ''}
     <section class="panel">
       <h2 class="panel-title">Newsroom pipeline</h2>
       <div class="pipeline">${STAGES.map(tile).join('')}</div>
