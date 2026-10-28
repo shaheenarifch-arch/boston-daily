@@ -4,7 +4,8 @@ import { PACKAGES, NO_AD_SECTIONS } from '../advertise.js';
 
 /** When a live newsroom story was last updated with new developments (the masthead's "Updated" time). */
 export async function latestUpdateAt(db) {
-  const row = await db.prepare("SELECT MAX(last_updated_at) AS at FROM stories WHERE lane = 'newsroom' AND status IN ('PUBLISHED','UPDATED','CORRECTED') AND last_updated_at IS NOT NULL").first();
+  // Newest publish or update: a newly published story also moves the masthead stamp, not only an update.
+  const row = await db.prepare("SELECT MAX(COALESCE(last_updated_at, published_at)) AS at FROM stories WHERE lane = 'newsroom' AND status IN ('PUBLISHED','UPDATED','CORRECTED')").first();
   return row?.at || null;
 }
 
