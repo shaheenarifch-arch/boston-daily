@@ -38,6 +38,7 @@ import d20261028 from './2026-10-28.sql';
 import d20261028images from './2026-10-28-missing-images.sql';
 import d20261029 from './2026-10-29.sql';
 import d20261030 from './2026-10-30.sql';
+import d20261031 from './2026-10-31.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -77,4 +78,5 @@ export const CONTENT_PACKAGES = [
   ['2026-10-28-missing-images', d20261028images],
   ['2026-10-29', d20261029],
   ['2026-10-30', d20261030],
+  ['2026-10-31', d20261031],
 ];
