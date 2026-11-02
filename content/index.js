@@ -40,6 +40,7 @@ import d20261029 from './2026-10-29.sql';
 import d20261030 from './2026-10-30.sql';
 import d20261031 from './2026-10-31.sql';
 import d20261101 from './2026-11-01.sql';
+import d20261102 from './2026-11-02.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -81,4 +82,5 @@ export const CONTENT_PACKAGES = [
   ['2026-10-30', d20261030],
   ['2026-10-31', d20261031],
   ['2026-11-01', d20261101],
+  ['2026-11-02', d20261102],
 ];
