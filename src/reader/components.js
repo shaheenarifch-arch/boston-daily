@@ -299,6 +299,21 @@ export function courseItem(c) {
   </li>`;
 }
 
+/**
+ * "Paid Advertising" button: every ad and affiliate block on news pages (front page, news sections,
+ * news stories) sits inside this collapsed panel, so the page reads as journalism first and readers
+ * open the advertising only if they want it. Native <details>, so it works without JavaScript.
+ */
+export function paidAdvertising(inner, { variant = '' } = {}) {
+  if (!inner || !inner.trim()) return '';
+  return `<details class="paid-adv${variant ? ` paid-adv-${esc(variant)}` : ''}">
+    <summary class="paid-adv-toggle"><span class="paid-adv-label">Paid Advertising</span><span class="paid-adv-hint">Offers from advertisers and affiliate partners</span><span class="paid-adv-icon" aria-hidden="true"></span></summary>
+    <div class="paid-adv-body">${inner}
+      <p class="paid-adv-note">Advertisements and affiliate links. We may earn a commission; advertisers never influence our news coverage. <a href="/standards">How we label advertising</a> · <a href="/advertise">Advertise with us</a></p>
+    </div>
+  </details>`;
+}
+
 export function houseAd(site, kind = 'ADS', placement = null) {
   const ad = placement ? campaignFor(placement) : null;
   if (ad) {
