@@ -113,6 +113,7 @@ ${body}
       <p><a href="/corrections">Corrections</a></p>
       <p><a href="/contact">Contact us</a></p>
       <p><a href="/privacy">Privacy policy</a></p>
+      <p><a href="/terms">Terms of use</a></p>
       <p><a href="/editions">Past editions</a></p>
       <p><a href="/feed.xml">RSS</a></p>
     </div>

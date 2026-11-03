@@ -14,12 +14,12 @@ const PUBLIC = "('PUBLISHED','UPDATED','CORRECTED')";
 
 export function subscribeBox({ compact = false } = {}) {
   return `<aside class="module module-newsletter" aria-label="Newsletters">
-    <h2 class="module-title">Get the paper by email</h2>
+    <h2 class="module-title">Get the morning edition by email</h2>
     <p class="nl-copy">${compact ? 'Free. Unsubscribe anytime.' : 'The morning edition in your inbox every day, and the week’s best stories every Sunday. Free. Unsubscribe anytime.'}</p>
     <form class="nl-form" method="post" action="/subscribe">
       <label class="sr" for="nl-email${compact ? '-c' : ''}">Email address</label>
       <input id="nl-email${compact ? '-c' : ''}" type="email" name="email" required placeholder="you@example.com" autocomplete="email">
-      <label class="check"><input type="checkbox" name="daily" value="1" checked> ${esc(DAILY_NAME)} daily <span class="nl-tag">Free</span></label>
+      <label class="check"><input type="checkbox" name="daily" value="1" checked> The morning edition, daily <span class="nl-tag">Free</span></label>
       <label class="check"><input type="checkbox" name="weekly" value="1" checked> ${esc(WEEKLY_NAME)}, every Sunday <span class="nl-tag">Free</span></label>
       <input type="text" name="company_site" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
       <button class="button" type="submit">Subscribe</button>

@@ -39,6 +39,11 @@ SITE_TAGLINE = "A GetServices.ai publication"
 SITE_URL = "https://bostondaily.us"
 TIMEZONE = "America/New_York"
 CONTACT_EMAIL = "agents@getservices.ai"
+# Correction requests on stories go to EDITOR_EMAIL (falls back to CONTACT_EMAIL). Uncomment once the inbox exists,
+# e.g. via Cloudflare Email Routing: https://developers.cloudflare.com/email-routing/get-started/
+# EDITOR_EMAIL = "editor@bostondaily.us"
+# Reviewer line: a story approved by the console user "Shaheen" shows "Reviewed by Shaheen Arif, Editor".
+# EDITOR_NAME = "Shaheen Arif"
 CONTACT_PHONE = "313-729-1534"
 NETWORK_NAME = "GetServices.ai"
 # true = commercial (partner lane) items that pass every policy gate publish without an editor.

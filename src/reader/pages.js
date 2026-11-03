@@ -254,12 +254,16 @@ export async function homePage(env, editionDate = null) {
   const mainCommercial = picked.filter((m) => isMain(m) && m !== premiumHome).join('');
   const premiumPicked = picked.includes(premiumHome) ? premiumHome : '';
 
-  // Column C: the rail.
+  // Column C: the rail. No story repeats what the lead, Top stories or More headlines already show.
+  const shownIds = new Set([...onFront, ...moreHeads.map((s) => s.id)]);
+  const railLatest = pool.filter((s) => !shownIds.has(s.id)).slice(0, 8);
+  const railIds = new Set(railLatest.map((s) => s.id));
+  const railMostRead = mostRead.filter((s) => !shownIds.has(s.id) && !railIds.has(s.id));
   const colC = `
-      ${latest.length ? `<section class="rail-block"><h2 class="col-label">Latest updates</h2>
-        <ol class="latest">${latest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol></section>` : ''}
-      ${mostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
-        <ol class="most-read">${mostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
+      ${railLatest.length ? `<section class="rail-block"><h2 class="col-label">Latest updates</h2>
+        <ol class="latest">${railLatest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol></section>` : ''}
+      ${railMostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
+        <ol class="most-read">${railMostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
       ${subscribeBox({ compact: true })}`;
   // Partner and ad modules sit in a packed band under the front grid, so the rail never runs far
   // past the lead and Top stories columns and leaves blank space beside it.
@@ -274,7 +278,7 @@ export async function homePage(env, editionDate = null) {
     </section>`).join('');
   const thin = entries.filter(([, list]) => list.length < 3);
   const sectionRows = fullRows + (thin.length ? `<section class="section-row more-sections">
-      <h2 class="row-title">More from the paper</h2>
+      <h2 class="row-title">More from Boston Daily</h2>
       <div class="more-grid">${thin.map(([slug, list]) => `<div class="more-col">
         <h3 class="more-title"><a href="/section/${esc(slug)}">${esc(nameOfSection(slug))}</a></h3>
         ${list.map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showSection: false, showDek: false })).join('')}
@@ -305,7 +309,7 @@ export async function homePage(env, editionDate = null) {
   return html(layout(env, chrome, { drive: true,
     title: editionDate ? `Edition ${edition.edition_number}, ${formatDateLong(edition.edition_date, site.tz)}` : '',
     description: editionDate ? 'Boston Daily: a fresh edition every morning, with stories updated through the day.'
-      : 'Boston news every morning: Massachusetts politics, Patriots and Celtics, business, tech and local guides, updated all day. Read today\u2019s free edition now.',
+      : 'Boston and national news every morning: US politics and elections, Massachusetts, Patriots and Celtics, business and tech, updated all day. Free to read.',
     canonical: editionDate ? `/edition/${editionDate}` : '/',
     active: editionDate ? '' : 'home',
     body,
@@ -450,6 +454,11 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
 
   const commercial = story.lane === 'partner_commerce';
   const showCommerce = commerceAllowed(section, story);
+  // Accountability line: the credited reviewer, or the human editor who approved the story.
+  const approver = !commercial && story.approved_by && !story.approved_by.startsWith('system:') ? story.approved_by : '';
+  const reviewerName = story.credited_reviewer
+    || (approver && approver.toLowerCase() === site.editorName.split(' ')[0].toLowerCase() ? site.editorName : approver);
+  const reviewerLabel = story.credited_reviewer || (reviewerName === site.editorName ? `${site.editorName}, Editor` : reviewerName);
   // Partner Offers in the side panel: category-matched, never on sensitive pages unless an editor picked approved products.
   const offerCtx = pageContext(section, story);
   const offers = commercial ? [] : selectOffers(await cachedCandidates(db), offerCtx);
@@ -476,7 +485,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
       ${commercial ? `<p class="disclosure-banner">${esc(story.disclosure_text)}${story.sponsor_name ? ` Sponsored by ${esc(story.sponsor_name)}.` : ''} This is not Boston Daily news reporting.</p>` : ''}
       <h1 class="story-headline">${esc(story.headline)}</h1>
       ${story.dek ? `<p class="story-dek">${esc(story.dek)}</p>` : ''}
-      <p class="story-byline">${story.byline ? `By ${esc(story.byline)}` : ''}${story.credited_reviewer ? `<span class="reviewer">Reviewed by ${esc(story.credited_reviewer)}</span>` : ''}</p>
+      <p class="story-byline">${story.byline ? `By ${esc(story.byline)}` : ''}${reviewerLabel ? `<span class="reviewer">Reviewed by ${esc(reviewerLabel)}</span>` : ''}</p>
       <p class="story-times">${times}</p>
     </header>
     ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="${esc(story.headline)}" decoding="async">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
@@ -487,7 +496,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     ${commercial ? '' : subscribeBox()}
     ${shareBar(story)}
     ${commentsBlock(story, comments, commentNote, site.tz)}
-    <p class="story-standards"><a href="/standards">Our editorial standards</a>${commercial ? ' explain how partner content is labeled.' : '. Spotted an error? Email <a href="mailto:' + esc(site.email) + '?subject=' + encodeURIComponent('Correction request: ' + story.headline) + '">' + esc(site.email) + '</a>.'}</p>
+    <p class="story-standards"><a href="/standards">Our editorial standards</a>${commercial ? ' explain how partner content is labeled.' : '. Spotted an error? Email <a href="mailto:' + esc(site.editorEmail) + '?subject=' + encodeURIComponent('Correction request: ' + story.headline) + '">' + esc(site.editorEmail) + '</a>.'}</p>
   </article>${offersHtml ? `<div class="story-offers">${offersHtml}</div></div>` : ''}
   ${related.length ? `<section class="section-row related"><h2 class="row-title">More in ${esc(section?.name || '')}</h2>
     <div class="row-cards">${related.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div></section>` : ''}
@@ -507,8 +516,8 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
         ? { '@type': 'Organization', name: story.byline, url: site.url ? `${site.url}/standards` : undefined }
         : { '@type': 'Person', name: story.byline })
       : { '@type': 'Organization', name: `${site.name} Staff`, url: site.url ? `${site.url}/standards` : undefined },
-    editor: story.credited_reviewer
-      ? { '@type': 'Person', name: story.credited_reviewer, url: site.url && /shaheen arif/i.test(story.credited_reviewer) ? `${site.url}/editor` : undefined }
+    editor: reviewerName
+      ? { '@type': 'Person', name: reviewerName, url: site.url && /shaheen arif/i.test(reviewerName) ? `${site.url}/editor` : undefined }
       : undefined,
     publisher: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined, logo: site.url ? { '@type': 'ImageObject', url: `${site.url}/og-default.png` } : undefined },
     mainEntityOfPage: url,
@@ -853,6 +862,40 @@ export async function privacyPage(env) {
   }));
 }
 
+export async function termsPage(env) {
+  const site = SITE(env);
+  const chrome = await loadChrome(env);
+  const updated = 'November 2, 2026';
+  const body = `<article class="prose standards"><h1>Terms of use</h1>
+    <p class="muted">Last updated: ${updated}</p>
+    <p>These terms apply to ${esc(site.name)} (the “site”), published by ${esc(site.network)}. By using the site you agree to them. If you do not agree, please do not use the site.</p>
+    <h2>Our content</h2>
+    <p>Stories, headlines, graphics and the site design are owned by ${esc(site.name)} or used with permission. You may read, share links to and quote short excerpts from our stories with credit and a link back. Republishing whole stories, scraping the site or using our content to train commercial systems requires written permission. To ask, email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>.</p>
+    <p>Photographs carry the credits shown with them and remain the property of their owners.</p>
+    <h2>Accuracy and corrections</h2>
+    <p>We work to be accurate and fair, and every story is reviewed by an editor before it is published. News changes quickly, so stories are provided for general information and may be updated. When we make a mistake we correct it and say so on the story; see our <a href="/standards">editorial standards</a> and <a href="/corrections">corrections</a>. Nothing on the site is legal, medical, financial or investment advice.</p>
+    <h2>Comments and submissions</h2>
+    <p>Comments are reviewed by an editor before they appear. By posting, you confirm that what you write is your own and lawful, and you give us permission to publish, edit for length or clarity, or remove it. Do not post abuse, harassment, spam, personal information about others, or anything defamatory or infringing.</p>
+    <h2>Advertising and partner links</h2>
+    <p>The site carries clearly labeled advertising and affiliate (partner) links, and we may earn a commission when you buy through them. Advertisers and partners do not buy, edit or approve our news coverage. Products and services offered by advertisers and partners are their responsibility, under their own terms. See <a href="/standards#commercial">how we label commercial content</a> and <a href="/advertise">advertise with us</a>.</p>
+    <h2>Links to other websites</h2>
+    <p>We link to sources and other websites so you can check our work. We are not responsible for their content or their privacy practices.</p>
+    <h2>Privacy</h2>
+    <p>How we handle information is described in our <a href="/privacy">privacy policy</a>.</p>
+    <h2>No warranty and limits on liability</h2>
+    <p>The site is provided “as is”, without warranties of any kind. To the extent the law allows, ${esc(site.name)} and ${esc(site.network)} are not liable for losses arising from use of the site or reliance on its content.</p>
+    <h2>Changes and governing law</h2>
+    <p>We may update these terms and will change the date at the top of this page when we do. These terms are governed by the laws of the Commonwealth of Massachusetts.</p>
+    <h2>Contact</h2>
+    <p>Questions about these terms: <a href="mailto:${esc(site.email)}">${esc(site.email)}</a> or our <a href="/contact">contact page</a>.</p>
+  </article>`;
+  return html(layout(env, chrome, {
+    title: 'Terms of use', description: `The terms for using ${site.name}: our content, corrections, comments, labeled advertising and partner links, and privacy.`, canonical: '/terms', body,
+    jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', name: `Terms of use | ${site.name}`, url: site.url ? `${site.url}/terms` : undefined, dateModified: '2026-11-02',
+      publisher: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined } },
+  }));
+}
+
 export async function contactPage(env) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
@@ -936,7 +979,7 @@ ${results.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc><ne
       WHERE st.status IN ${PUBLIC} AND (st.section_slug = sec.slug OR ch.parent_slug = sec.slug OR st.type = sec.slug))`).all(),
     env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active' AND (health_ok IS NULL OR health_ok = 1)").all(),
   ]);
-  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections', '/privacy', '/contact',
+  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections', '/privacy', '/terms', '/contact',
     ...sections.map((s) => `/section/${s.slug}`), ...biz.map((b) => `/businesses/${b.slug}`)];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1047,7 +1090,7 @@ export async function llmsTxt(env) {
   const line = (t) => String(t || '').replace(/\s+/g, ' ').trim();
   const txt = `# ${site.name}
 
-> Daily digital newspaper for Boston, Massachusetts and the nation: news, politics, sports, business, technology and local guides, with a new edition every morning. ${line(site.tagline)}. Editors review stories before publication, and updates and corrections are labeled on every story.
+> Daily news publication for Boston, Massachusetts and the nation: news, politics, sports, business, technology and local guides, with a new edition every morning. ${line(site.tagline)}. Editors review stories before publication, and updates and corrections are labeled on every story.
 
 ## Key pages
 - [Front page](${base}/): today's edition

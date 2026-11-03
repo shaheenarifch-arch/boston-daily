@@ -8,6 +8,9 @@ export const SITE = (env) => ({
   url: (env.SITE_URL || '').replace(/\/$/, ''),
   tz: env.TIMEZONE || 'America/New_York',
   email: env.CONTACT_EMAIL || 'agents@getservices.ai',
+  // Correction requests on stories go here; set EDITOR_EMAIL (e.g. editor@bostondaily.us) once that inbox exists.
+  editorEmail: env.EDITOR_EMAIL || env.CONTACT_EMAIL || 'agents@getservices.ai',
+  editorName: env.EDITOR_NAME || 'Shaheen Arif',
   phone: env.CONTACT_PHONE || '',
   network: env.NETWORK_NAME || 'GetServices.ai',
 });
