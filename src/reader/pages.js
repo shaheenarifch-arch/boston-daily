@@ -7,7 +7,7 @@ import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard,
+  SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard, paidAdvertising,
   sourcesBlock, noticesBlock, emptyState, storyStamp, marketplaceFeature,
 } from './components.js';
 
@@ -21,8 +21,9 @@ const COURSE_SECTIONS = ['education-careers', 'business', 'technology', 'ai', 's
  * Commercial share of a page stays around 10-15%: one commercial module per ~7 content blocks,
  * minimum one. Modules are passed in priority order; empty ones are skipped.
  */
+// Ads and affiliate modules are capped at ~10% of the content blocks on a news page.
 function commercialBudget(contentBlocks, modules, min = 1) {
-  const allowed = Math.max(min, Math.round(contentBlocks * 0.15));
+  const allowed = Math.max(min, Math.round(contentBlocks * 0.10));
   return modules.filter(Boolean).slice(0, allowed);
 }
 
@@ -230,9 +231,11 @@ export async function homePage(env, editionDate = null) {
       ? `<h2 class="col-label">More stories</h2>${moreStories.map((s) => storyCard(s, { size: 's', tz: site.tz, seenImages, showDek: false })).join('')}`
       : `<h2 class="col-label">Sections</h2>${sectionIndex}`;
 
-  // Commercial budget: ~15% of the content blocks on the page.
+  // Commercial budget: ~10% of the content blocks on the page (side panel and premium ads included).
   const contentBlocks = hasNews ? (1 + top.length + rest.length + selection.length + latest.length) : 8;
   const sectionName = Object.fromEntries(chrome.sections.map((x) => [x.slug, x.name]));
+  const sidePanelHome = hasNews ? sidePanelProductAds('home') : '';
+  const premiumHome = hasNews ? premiumAds('home') : '';
   const picked = commercialBudget(contentBlocks, [
     partnerEdit(editItems, sectionName),
     houseAd(site, 'FRONT PAGE', 'home'),
@@ -243,10 +246,13 @@ export async function homePage(env, editionDate = null) {
     <div class="row-cards">${partnerGuides.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages })).join('')}</div>
   </section>` : '',
     courseModule(cotd, site.network, { title: 'Skill Center: course of the day' }),
+    sidePanelHome,
+    premiumHome,
   ]);
-  const isMain = (m) => m.includes('partner-row') || m.includes('product-grid') || m.includes('shop-band');
-  const railCommercial = picked.filter((m) => !isMain(m)).join('');
-  const mainCommercial = picked.filter(isMain).join('');
+  const isMain = (m) => m !== sidePanelHome && (m.includes('partner-row') || m.includes('product-grid') || m.includes('shop-band'));
+  const railCommercial = picked.filter((m) => !isMain(m) && m !== premiumHome).join('');
+  const mainCommercial = picked.filter((m) => isMain(m) && m !== premiumHome).join('');
+  const premiumPicked = picked.includes(premiumHome) ? premiumHome : '';
 
   // Column C: the rail.
   const colC = `
@@ -257,7 +263,7 @@ export async function homePage(env, editionDate = null) {
       ${subscribeBox({ compact: true })}`;
   // Partner and ad modules sit in a packed band under the front grid, so the rail never runs far
   // past the lead and Top stories columns and leaves blank space beside it.
-  const extras = `${railCommercial}${hasNews ? sidePanelProductAds('home') : ''}`.trim();
+  const extras = railCommercial.trim();
 
   // Sections with 3+ stories get a full row; thinner sections share one multi-column block so no row is half empty.
   const entries = [...bySection.entries()];
@@ -282,9 +288,7 @@ export async function homePage(env, editionDate = null) {
     <div class="fg-b">${colB}</div>
     <aside class="fg-c">${colC}</aside>
   </section>
-  ${extras ? `<section class="front-extras" aria-label="From our partners">${extras}</section>` : ''}
-  ${mainCommercial}
-  ${hasNews ? premiumAds('home') : ''}
+  ${paidAdvertising(`${extras ? `<section class="front-extras" aria-label="From our partners">${extras}</section>` : ''}${mainCommercial}${premiumPicked}`, { variant: 'wide' })}
   ${sectionRows}
   ${selection.length ? `<section class="section-row selection">
     <h2 class="row-title">Editor’s selection</h2>
@@ -377,8 +381,10 @@ export async function sectionPage(env, slug, ctx = null) {
         </section>` : '',
     courseModule(courses, site.network),
   ];
-  // News sections keep commercial content to ~15% of the page; guide/shopping sections are partner-led.
-  const pickedMods = section.kind === 'news' || section.parent?.kind === 'news' ? commercialBudget(Math.max(news.length, 4), sectionMods, 2) : sectionMods.filter(Boolean);
+  const isNewsSection = section.kind === 'news' || section.parent?.kind === 'news';
+  if (isNewsSection && showCommerce) sectionMods.push(paidProductAds(slug), sidePanelProductAds(slug, adProducts));
+  // News sections keep commercial content to ~10% of the page, behind the Paid Advertising button; guide/shopping sections are partner-led.
+  const pickedMods = isNewsSection ? commercialBudget(Math.max(news.length, 4), sectionMods, 2) : sectionMods.filter(Boolean);
   const isMainMod = (m) => m.includes('partner-row') || (m.includes('product-grid') && !m.includes('partner-offers'));
   const mainMods = pickedMods.filter(isMainMod).join('');
   const railMods = pickedMods.filter((m) => !isMainMod(m)).join('');
@@ -392,12 +398,12 @@ export async function sectionPage(env, slug, ctx = null) {
       <div class="col-main">
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, seenImages, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages, showSection: !!children.length })).join('')}</div>` : ''}
-        ${mainMods}
-        ${showCommerce ? paidProductAds(slug) : ''}
+        ${isNewsSection ? '' : mainMods}
+        ${!isNewsSection && showCommerce ? paidProductAds(slug) : ''}
       </div>
       <aside class="col-rail">
-        ${railMods}
-        ${showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
+        ${isNewsSection ? paidAdvertising(pickedMods.join('')) : railMods}
+        ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>
     </div>`;
   // A full description (the seed labels are short) and CollectionPage + breadcrumb schema.
@@ -448,7 +454,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   const offerCtx = pageContext(section, story);
   const offers = commercial ? [] : selectOffers(await cachedCandidates(db), offerCtx);
   recordImpressions(db, offerCtx, offers, ctx?.waitUntil?.bind(ctx));
-  const offersHtml = partnerOffers(offers, offerCtx);
+  const offersHtml = paidAdvertising(partnerOffers(offers, offerCtx));
   const products = commercial && showCommerce ? await deals(db, { section: story.section_slug, limit: 3 }) : [];
 
   const typeLabel = { analysis: 'Analysis', opinion: 'Opinion', feature: 'Feature' }[story.type];
