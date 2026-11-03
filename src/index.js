@@ -12,7 +12,7 @@ import { autofillEndpoint, copyEndpoint, checkEndpoint } from './advertise.js';
 import { siteSubscribe, siteUnsubscribe } from './site-subscribe.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
-  advertisePage, submitInquiry, latestUpdate, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound, llmsTxt,
+  advertisePage, submitInquiry, latestUpdate, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, termsPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound, llmsTxt,
 } from './reader/pages.js';
 
 const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
@@ -103,6 +103,7 @@ const worker = {
       if (pathname === '/unsubscribe') return await unsubscribe(env, url);
       if (pathname === '/corrections') return await correctionsPage(env);
       if (pathname === '/privacy') return await privacyPage(env);
+      if (pathname === '/terms') return await termsPage(env);
       if (pathname === '/contact') return await contactPage(env);
       if (pathname === '/search') return await searchPage(env, url);
       if ((m = pathname.match(/^\/go\/([pbc])\/([A-Za-z0-9-]+)$/))) return await outbound(env, m[1], m[2], ctx, url);

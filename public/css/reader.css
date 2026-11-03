@@ -755,3 +755,6 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .paid-adv-note a { color: var(--granite); }
 .col-rail .paid-adv-hint, .story-offers .paid-adv-hint { display: none; }
 @media (max-width: 600px) { .paid-adv-hint { display: none; } .paid-adv-toggle { justify-content: space-between; } }
+
+/* Section divider inside story bodies (markdown ---) */
+.story-body hr { border: 0; border-top: 1px solid var(--rule); width: 6rem; margin: 2rem auto; }

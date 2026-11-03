@@ -95,7 +95,10 @@ export function relativeStamp(iso, timeZone = 'America/New_York', now = Date.now
   if (s < 90) return 'just now';
   if (s < 3600) return `${Math.round(s / 60)} min ago`;
   if (s < 86400) return `${Math.round(s / 3600)} hr ago`;
-  return new Intl.DateTimeFormat('en-US', { timeZone, month: 'short', day: 'numeric' }).format(new Date(iso));
+  // Older than a day: a calendar date, with the year when it is not this year.
+  const year = (d) => new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric' }).format(d);
+  const d = new Date(iso);
+  return new Intl.DateTimeFormat('en-US', { timeZone, month: 'short', day: 'numeric', ...(year(d) !== year(new Date(now)) ? { year: 'numeric' } : {}) }).format(d);
 }
 
 export async function readJson(request) {

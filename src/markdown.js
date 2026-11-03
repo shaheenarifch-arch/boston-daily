@@ -6,8 +6,11 @@ import { esc, isHttpUrl } from './util.js';
  * Supports: ## / ### headings, paragraphs, - and 1. lists, > quotes, | pipe | tables |, **bold**, *italic*, [text](https://url).
  * Raw HTML in the source is never passed through.
  */
+// A leading YAML front-matter block (---\n…\n---) from imported posts is metadata, never shown to readers.
+const stripFrontMatter = (src) => String(src || '').replace(/\r\n?/g, '\n').replace(/^\s*---\n[\s\S]*?\n---[ \t]*(\n|$)/, '');
+
 export function renderMarkdown(src, { sponsoredLinks = false } = {}) {
-  const lines = String(src || '').replace(/\r\n?/g, '\n').split('\n');
+  const lines = stripFrontMatter(src).split('\n');
   const out = [];
   let para = [];
   let list = null; // { tag, items }
@@ -48,6 +51,8 @@ export function renderMarkdown(src, { sponsoredLinks = false } = {}) {
       continue;
     }
     flushTable();
+    // A line of three or more dashes, stars or underscores is a section divider.
+    if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { flushAll(); out.push('<hr>'); continue; }
     if ((m = line.match(/^(#{2,3})\s+(.*)$/))) {
       flushAll();
       const level = m[1].length;
@@ -118,9 +123,10 @@ export function htmlToMarkdown(input) {
 
 /** Plain-text excerpt for meta descriptions and cards. */
 export function excerpt(src, max = 180) {
-  const text = String(src || '')
+  const text = stripFrontMatter(src)
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/^\s*\|.*$/gm, '')
+    .replace(/^\s*([-*_])(\s*\1){2,}\s*$/gm, '')
     .replace(/^\s*(#{1,6}\s.*|[-*]\s+|\d+[.)]\s+)/gm, (m) => (m.trim().startsWith('#') ? '' : ''))
     .replace(/[#>*_`]/g, '')
     .replace(/\s+/g, ' ')
