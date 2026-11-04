@@ -43,6 +43,8 @@ import d20261101 from './2026-11-01.sql';
 import d20261102 from './2026-11-02.sql';
 import d20261103 from './2026-11-03.sql';
 import d20261104 from './2026-11-04.sql';
+import d20261104photos from './2026-11-04-story-photos.sql';
+import d20261104winners from './2026-11-04-front-page-winners.sql';
 import d20261104results from './2026-11-04-results.sql';
 
 export const CONTENT_PACKAGES = [
@@ -88,5 +90,7 @@ export const CONTENT_PACKAGES = [
   ['2026-11-02', d20261102],
   ['2026-11-03', d20261103],
   ['2026-11-04', d20261104],
+  ['2026-11-04-story-photos', d20261104photos],
+  ['2026-11-04-front-page-winners', d20261104winners],
   ['2026-11-04-results', d20261104results],
 ];
