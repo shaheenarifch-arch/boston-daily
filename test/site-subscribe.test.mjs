@@ -12,6 +12,13 @@ test('www and subdomains count as the site; other hosts do not', () => {
   assert.equal(hostMatchesSite('evil-desi.markets', 'desi.markets'), false);
   assert.equal(checkSignup({ site: 'desi.markets', email: 'a@b.com', origin: 'https://example.com' }).error, 'wrong_origin');
 });
+test("the site's own Cloudflare Pages previews count; other pages.dev projects do not", () => {
+  assert.equal(hostMatchesSite('hairstyle-company.pages.dev', 'hairstyle.company'), true);
+  assert.equal(hostMatchesSite('add-hairmax-section.hairstyle-company.pages.dev', 'hairstyle.company'), true);
+  assert.equal(hostMatchesSite('hairstyle-company-evil.pages.dev', 'hairstyle.company'), false);
+  assert.equal(hostMatchesSite('other.pages.dev', 'hairstyle.company'), false);
+  assert.equal(checkSignup({ site: 'hairstyle.company', email: 'a@b.com', origin: 'https://add-hairmax-section.hairstyle-company.pages.dev' }).ok, true);
+});
 test('falls back to Referer for plain form posts', () => {
   assert.equal(checkSignup({ site: 'needed.men', email: 'a@b.com', referer: 'https://www.needed.men/blog/x.html' }).ok, true);
 });

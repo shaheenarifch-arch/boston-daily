@@ -47,9 +47,21 @@ export function hostOf(value) {
   try { return new URL(value).hostname.toLowerCase().replace(/^www\./, ''); } catch { return ''; }
 }
 
-/** True when `host` is the site itself or one of its subdomains. */
+/** Cloudflare Pages project host for a site: hairstyle.company -> hairstyle-company.pages.dev */
+export function pagesHostOf(site) {
+  return `${site.replace(/\./g, '-')}.pages.dev`;
+}
+
+/**
+ * True when `host` is the site itself or one of its subdomains, or the site's own Cloudflare Pages
+ * project (production *.pages.dev host or a branch/commit preview like my-branch.hairstyle-company.pages.dev),
+ * so sign-up forms also work while a change is being previewed.
+ */
 export function hostMatchesSite(host, site) {
-  return !!host && (host === site || host.endsWith(`.${site}`));
+  if (!host || !site) return false;
+  if (host === site || host.endsWith(`.${site}`)) return true;
+  const pages = pagesHostOf(site);
+  return host === pages || host.endsWith(`.${pages}`);
 }
 
 /** Validate a sign-up. Returns { ok, site, email, sourcePage } or { ok:false, error }. */
