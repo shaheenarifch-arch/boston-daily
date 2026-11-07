@@ -49,6 +49,7 @@ import d20261104results from './2026-11-04-results.sql';
 import d20261105 from './2026-11-05.sql';
 import d20261106 from './2026-11-06.sql';
 import d20261106travel from './2026-11-06-travel-desk.sql';
+import d20261107 from './2026-11-07.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -99,4 +100,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-05', d20261105],
   ['2026-11-06', d20261106],
   ['2026-11-06-travel-desk', d20261106travel],
+  ['2026-11-07', d20261107],
 ];
