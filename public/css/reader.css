@@ -758,3 +758,20 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 
 /* Section divider inside story bodies (markdown ---) */
 .story-body hr { border: 0; border-top: 1px solid var(--rule); width: 6rem; margin: 2rem auto; }
+
+/* Travel page "Plan your trip" partner section (src/travel-desk.js) */
+.travel-desk { margin: 2rem 0; padding-top: 1rem; border-top: 2px solid var(--ink, #111); }
+.travel-desk .chips { margin: .6rem 0 1rem; }
+.td-group { margin: 1.4rem 0; scroll-margin-top: 4rem; }
+.td-title { font-size: 1.15rem; margin: 0 0 .2rem; }
+.td-note { margin: 0 0 .7rem; font-size: .9rem; opacity: .8; }
+.td-note a { text-decoration: underline; }
+.td-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem; grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr)); }
+.td-card a { display: flex; flex-direction: column; height: 100%; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; overflow: hidden; color: inherit; text-decoration: none; background: #fff; }
+.td-card a:hover { border-color: currentColor; }
+.td-img { display: block; aspect-ratio: 3 / 2; background: #f7f8f9; overflow: hidden; }
+.td-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.td-img.td-logo img { object-fit: contain; padding: 1.2rem; }
+.td-name { font-weight: 700; padding: .6rem .75rem .2rem; line-height: 1.3; }
+.td-desc { padding: 0 .75rem; font-size: .86rem; line-height: 1.4; opacity: .8; }
+.td-cta { margin-top: auto; padding: .6rem .75rem .75rem; font-weight: 700; font-size: .88rem; }

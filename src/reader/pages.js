@@ -3,6 +3,7 @@ import { esc, html, json, errorJson, formatDateLong, formatDateTime, relativeSta
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { adPartnerProductIds } from '../ads.js';
+import { travelDesk, travelDeskProducts } from '../travel-desk.js';
 import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from '../advertise.js';
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
@@ -301,7 +302,7 @@ export async function homePage(env, editionDate = null) {
   <section class="section-row">
     <h2 class="row-title">Guides and shopping</h2>
     <ul class="section-grid">${nicheSections.map((x) => `<li><a href="/section/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}
-      <li><a href="/shop">Partner picks</a></li>
+      <li><a href="/shop">Special Picks</a></li>
 <li><a href="/courses">Skill Center</a></li></ul>
   </section>
   ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}`;
@@ -367,6 +368,7 @@ export async function sectionPage(env, slug, ctx = null) {
   ]);
 
   const adProducts = showCommerce ? await adPartnerProducts(db, slug) : [];
+  const travelDeskHtml = showCommerce && slug === 'travel' ? travelDesk(await travelDeskProducts(db)) : '';
   const [first, ...others] = news;
   // Partner Offers: category-matched products from every affiliate merchant (src/offers.js).
   const offerCtx = pageContext(section);
@@ -402,6 +404,7 @@ export async function sectionPage(env, slug, ctx = null) {
       <div class="col-main">
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, seenImages, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages, showSection: !!children.length })).join('')}</div>` : ''}
+        ${travelDeskHtml}
         ${isNewsSection ? '' : mainMods}
         ${!isNewsSection && showCommerce ? paidProductAds(slug) : ''}
       </div>
@@ -500,7 +503,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   </article>${offersHtml ? `<div class="story-offers">${offersHtml}</div></div>` : ''}
   ${related.length ? `<section class="section-row related"><h2 class="row-title">More in ${esc(section?.name || '')}</h2>
     <div class="row-cards">${related.map((s) => storyCard(s, { size: 'm', tz: site.tz, showSection: false })).join('')}</div></section>` : ''}
-  ${partnerPicks(products, { title: 'Related partner picks', more: `/shop?section=${encodeURIComponent(story.section_slug)}` })}
+  ${partnerPicks(products, { title: 'Related special picks', more: `/shop?section=${encodeURIComponent(story.section_slug)}` })}
 `;
 
   const url = site.url ? `${site.url}/story/${story.slug}` : undefined;
@@ -552,7 +555,7 @@ export async function shopPage(env, url) {
   const commerceSections = chrome.sections.filter((s) => s.commerce_allowed && !s.parent_slug && s.kind !== 'commerce');
   const current = merchants.find((m) => m.id === merchant);
   const body = `<div class="page-head">
-      <h1>${current && current.display_name_allowed ? esc(current.name) : 'Partner picks'}</h1>
+      <h1>${current && current.display_name_allowed ? esc(current.name) : 'Special Picks'}</h1>
       <p class="page-sub">Products from our affiliate partners. We may earn a commission when you buy through these links, at no extra cost to you. Partners never influence Boston Daily news coverage.</p>
       <nav class="chips" aria-label="Filter by section"><a href="/shop"${!section && !merchant ? ' aria-current="page"' : ''}>All</a>${commerceSections.map((s) => `<a href="/shop?section=${esc(s.slug)}"${section === s.slug ? ' aria-current="page"' : ''}>${esc(s.name)}</a>`).join('')}</nav>
     </div>
@@ -560,7 +563,7 @@ export async function shopPage(env, url) {
     ${merchants.filter((m) => m.display_name_allowed).length ? `<section class="merchants"><h2 class="row-title">Shop by partner</h2>
       <ul class="merchant-list">${merchants.filter((m) => m.display_name_allowed).map((m) => `<li><a href="/shop?merchant=${esc(m.id)}">${esc(m.name)}</a> <span class="muted">${m.n}</span></li>`).join('')}</ul></section>` : ''}
     <p class="cta-line"><a href="mailto:${esc(SITE(env).email)}?subject=${encodeURIComponent('[PARTNER] Feature our products')}">Feature your products on Boston Daily</a></p>`;
-  return html(layout(env, chrome, { title: 'Partner picks', description: 'Partner picks from Boston Daily: products from our affiliate partners across home, style, outdoor, tech and more, clearly labeled as affiliate links.', canonical: '/shop', active: 'shop', body }));
+  return html(layout(env, chrome, { title: 'Special Picks', description: 'Special Picks from Boston Daily: products from our affiliate partners across home, style, outdoor, tech and more, clearly labeled as affiliate links.', canonical: '/shop', active: 'shop', body }));
 }
 
 export async function businessesPage(env) {
@@ -633,7 +636,7 @@ export async function businessProfile(env, slug) {
         <dl class="welcome-facts">${faq.map(([q, a]) => `<div><dt>${esc(q)}</dt><dd>${esc(a)}</dd></div>`).join('')}</dl></section>
       ${posts.length ? `<section class="section-row"><h2 class="row-title">Latest guides from ${esc(b.name)}</h2><div class="row-cards">${posts.map((s) => storyCard(s, { size: 'm', tz: site.tz })).join('')}</div></section>` : ''}
       ${courses.length ? `<section class="section-row"><h2 class="row-title">Featured courses</h2><ul class="course-list">${courses.map(courseItem).join('')}</ul></section>` : ''}
-      ${partnerPicks(products, { title: 'Related partner picks' })}
+      ${partnerPicks(products, { title: 'Related special picks' })}
     </div><aside class="col-rail">${houseAd(site, 'LISTING')}</aside></div>`;
   return html(layout(env, chrome, {
     title: `${b.name}${what ? `: ${what}` : ''}`, description: desc, canonical: `/businesses/${b.slug}`, active: 'businesses', body,
