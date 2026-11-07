@@ -4,6 +4,7 @@ import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
 import { adPartnerProductIds } from '../ads.js';
 import { travelDesk, travelDeskProducts } from '../travel-desk.js';
+import { SECTION_PICKS, sectionPicks, sectionPicksProducts } from '../section-picks.js';
 import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from '../advertise.js';
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
@@ -369,6 +370,7 @@ export async function sectionPage(env, slug, ctx = null) {
 
   const adProducts = showCommerce ? await adPartnerProducts(db, slug) : [];
   const travelDeskHtml = showCommerce && slug === 'travel' ? travelDesk(await travelDeskProducts(db)) : '';
+  const picksHtml = showCommerce && SECTION_PICKS[slug] ? sectionPicks(slug, await sectionPicksProducts(db, slug)) : '';
   const [first, ...others] = news;
   // Partner Offers: category-matched products from every affiliate merchant (src/offers.js).
   const offerCtx = pageContext(section);
@@ -403,6 +405,7 @@ export async function sectionPage(env, slug, ctx = null) {
     <div class="columns">
       <div class="col-main">
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, seenImages, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
+        ${picksHtml}
         ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages, showSection: !!children.length })).join('')}</div>` : ''}
         ${travelDeskHtml}
         ${isNewsSection ? '' : mainMods}
