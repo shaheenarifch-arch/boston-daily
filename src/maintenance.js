@@ -38,6 +38,8 @@ async function probe(url) {
     const res = await fetch(url, { method: 'GET', redirect: 'manual', headers: { 'user-agent': 'BostonDailyLinkCheck/1.0' }, signal: AbortSignal.timeout(8000) });
     // Body is not needed; release it.
     res.body?.cancel?.();
+    // Amazon answers automated checks with 503; that is a bot wall, not a dead affiliate link.
+    if (res.status === 503 && /(^|\.)amazon\.com$/.test(new URL(url).hostname)) return true;
     return res.status < 400 || res.status === 403 || res.status === 405 || res.status === 429; // bot walls ≠ dead links
   } catch {
     return false;

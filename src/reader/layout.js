@@ -93,7 +93,7 @@ ${drive ? TRAVELPAYOUTS_DRIVE : ''}
   </div></nav>
   <nav class="nav nav-niche" aria-label="More sections"><div class="wrap nav-scroll">
     ${niche.map(navLink).join('')}
-    <a href="/shop"${active === 'shop' ? ' aria-current="page"' : ''}>Partner picks</a>
+    <a href="/shop"${active === 'shop' ? ' aria-current="page"' : ''}>Special Picks</a>
     <a href="/courses"${active === 'courses' ? ' aria-current="page"' : ''}>Skill Center</a>
   </div></nav>
 </header>
@@ -124,7 +124,7 @@ ${body}
     <div>
       <p class="footer-h">Guides</p>
       ${niche.slice(0, 6).map((s) => `<p><a href="/section/${esc(s.slug)}">${esc(s.name)}</a></p>`).join('')}
-      <p><a href="/shop">Partner picks</a></p>
+      <p><a href="/shop">Special Picks</a></p>
       <p><a href="/courses">Skill Center</a></p>
     </div>
     <div>

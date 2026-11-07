@@ -81,7 +81,7 @@ export function productCard(p) {
   </li>`;
 }
 
-export function partnerPicks(products, { title = 'Partner picks', more = '/shop' } = {}) {
+export function partnerPicks(products, { title = 'Special Picks', more = '/shop' } = {}) {
   if (!products || !products.length) return '';
   return `<aside class="module module-commerce" aria-label="${esc(title)}">
     <header class="module-head">
@@ -90,7 +90,7 @@ export function partnerPicks(products, { title = 'Partner picks', more = '/shop'
     </header>
     <p class="module-disclosure">We may earn a commission when you buy through these links. Partners never influence our news coverage.</p>
     <ul class="product-grid">${products.map(productCard).join('')}</ul>
-    <a class="module-more" href="${esc(more)}">See all partner picks</a>
+    <a class="module-more" href="${esc(more)}">See all special picks</a>
   </aside>`;
 }
 
@@ -111,7 +111,7 @@ export function shopBand(products, { title = 'Shop the day' } = {}) {
         ${p.price != null ? `<span class="shop-price">${esc(money(p.price, p.currency))}</span>` : ''}
         <span class="shop-cta">Shop now</span>
       </a></li>`).join('')}</ul>
-    <a class="shop-more" href="/shop">More partner picks</a>
+    <a class="shop-more" href="/shop">More special picks</a>
   </section>`;
 }
 
@@ -197,7 +197,7 @@ export function partnerEdit(items, sectionName = {}) {
   const leadM = merchantOf(lead);
   return `<aside class="module partner-edit" aria-labelledby="pe-h">
     <header class="pe-head">
-      <p class="pe-kicker"><span>Partner picks</span><span class="label label-commerce">Affiliate</span></p>
+      <p class="pe-kicker"><span>Special Picks</span><span class="label label-commerce">Affiliate</span></p>
       <h2 class="pe-title" id="pe-h">The Daily Edit</h2>
       <p class="pe-dek">Finds from our partner shops, chosen fresh each morning.</p>
     </header>
@@ -209,7 +209,7 @@ export function partnerEdit(items, sectionName = {}) {
         <span class="pe-text">${meta(p)}<span class="pe-name">${esc(p.name)}</span>${m ? `<span class="pe-merchant">${esc(m)}</span>` : ''}</span>`)}</li>`;
     }).join('')}</ol>
     <p class="module-disclosure pe-disclosure">We may earn a commission when you buy through these links, at no extra cost to you. Partners never influence our news coverage.</p>
-    <a class="module-more" href="/shop">See all partner picks <span aria-hidden="true">→</span></a>
+    <a class="module-more" href="/shop">See all special picks <span aria-hidden="true">→</span></a>
   </aside>`;
 }
 
