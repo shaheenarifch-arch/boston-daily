@@ -809,6 +809,7 @@ export async function editorPage(env) {
     'Healthcare &amp; Innovation', 'Business &amp; Economic Trends', 'Culture &amp; Lifestyle', 'Global Affairs', 'Community Stories'];
   const body = `<article class="prose standards editor-profile">
     <p class="editor-kicker">About the editor</p>
+    <img class="editor-photo" src="/img/shaheen-arif.jpg" alt="Shaheen Arif, Editor of BostonDaily.us" width="160" height="160" loading="eager">
     <h1>Shaheen Arif</h1>
     <p class="editor-role">Editor, BostonDaily.us</p>
     <p>Shaheen Arif is the Editor of BostonDaily.us, with a passion for reporting, journalism, public affairs, politics, emerging trends, and the changing lifestyles that shape communities.</p>
@@ -824,7 +825,9 @@ export async function editorPage(env) {
   return html(layout(env, chrome, {
     title: 'Shaheen Arif, Editor', description: 'Shaheen Arif is the Editor of BostonDaily.us, covering politics, public affairs, technology, healthcare and the trends shaping Boston and the nation.',
     canonical: '/editor', ogType: 'profile', body,
+    image: site.url ? `${site.url}/img/shaheen-arif.jpg` : undefined,
     jsonLd: { '@context': 'https://schema.org', '@type': 'ProfilePage', mainEntity: { '@type': 'Person', name: 'Shaheen Arif', jobTitle: 'Editor',
+      image: site.url ? `${site.url}/img/shaheen-arif.jpg` : undefined,
       worksFor: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined }, url: site.url ? `${site.url}/editor` : undefined,
       knowsAbout: ['Politics', 'Public affairs', 'Massachusetts', 'Technology', 'Artificial intelligence', 'Healthcare innovation', 'Business', 'Global affairs'] } },
   }));

@@ -412,6 +412,7 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 /* About the editor */
 .editor-kicker { font: 700 .78rem/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; margin: 1.5rem 0 .4rem; }
 .editor-profile h1 { margin: 0; }
+.editor-photo { display: block; width: 160px; height: 160px; border-radius: 50%; object-fit: cover; margin: 0 0 1rem; border: 1px solid var(--rule); }
 .editor-role { font: italic 400 1.1rem/1.3 var(--serif); margin: .35rem 0 1.4rem; padding-bottom: 1rem; border-bottom: 1px solid var(--rule); }
 .editor-interests { columns: 2; column-gap: 2rem; padding-left: 1.1rem; }
 .editor-interests li { break-inside: avoid; margin-bottom: .3rem; }
