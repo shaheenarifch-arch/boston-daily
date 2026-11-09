@@ -688,7 +688,7 @@ export async function advertisePage(env, url) {
     ${sent ? '<p class="flash flash-ok">Thanks. Your inquiry reached our partnerships team, and we will reply by email.</p>' : ''}
     ${err ? `<p class="flash flash-err">${err === 'email' ? 'Not sent: please enter a valid email address.' : esc(err)}</p>` : ''}
     <div class="columns"><div class="col-main">
-      <section class="prose" style="margin:0 0 22px">
+      <section class="prose" data-atlas-hide hidden style="margin:0 0 22px">
         <h2 style="margin-top:0">See how AI sees your business</h2>
         <p>Before you advertise, check how visible your website is to ChatGPT, Perplexity and Google AI — a free scan from ATLAS, no account needed.</p>
         <div id="atlas-scan"></div>
