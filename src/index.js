@@ -114,7 +114,7 @@ const worker = {
       if (pathname === '/news-sitemap.xml') return await sitemap(env, true);
       if (pathname === '/robots.txt') {
         const base = (env.SITE_URL || '').replace(/\/$/, '');
-        return new Response(`User-agent: *\nDisallow: /admin/\nDisallow: /api/\nDisallow: /go/\nSitemap: ${base}/sitemap.xml\nSitemap: ${base}/news-sitemap.xml\n`, { headers: { 'content-type': 'text/plain' } });
+        return new Response(`User-agent: *\nDisallow: /admin/\nDisallow: /api/\nDisallow: /go/\nDisallow: /share/\nSitemap: ${base}/sitemap.xml\nSitemap: ${base}/news-sitemap.xml\n`, { headers: { 'content-type': 'text/plain' } });
       }
       return await notFound(env);
     } catch (err) {
