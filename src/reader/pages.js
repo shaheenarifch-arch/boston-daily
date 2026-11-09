@@ -688,6 +688,12 @@ export async function advertisePage(env, url) {
     ${sent ? '<p class="flash flash-ok">Thanks. Your inquiry reached our partnerships team, and we will reply by email.</p>' : ''}
     ${err ? `<p class="flash flash-err">${err === 'email' ? 'Not sent: please enter a valid email address.' : esc(err)}</p>` : ''}
     <div class="columns"><div class="col-main">
+      <section class="prose" style="margin:0 0 22px">
+        <h2 style="margin-top:0">See how AI sees your business</h2>
+        <p>Before you advertise, check how visible your website is to ChatGPT, Perplexity and Google AI — a free scan from ATLAS, no account needed.</p>
+        <div id="atlas-scan"></div>
+        <script src="https://iop.getservices.ai/widget.js"></script>
+      </section>
       <table class="ad-table"><thead><tr><th scope="col">Product</th><th scope="col">What it is</th><th scope="col">Get started</th></tr></thead>
       <tbody>${PACKAGES.map(([tag, name, desc]) => `<tr><td>${esc(name)}</td><td>${esc(desc)}</td><td><a href="#inquiry" data-advertise data-package="${esc(name)}">Plan this ad</a></td></tr>`).join('')}</tbody></table>
       <section class="prose" id="protocols"><h2>How advertising works here</h2>
