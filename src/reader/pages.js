@@ -820,7 +820,7 @@ export async function editorPage(env) {
     <ul class="editor-interests">${interests.map((i) => `<li>${i}</li>`).join('')}</ul>
     <h2>Editorial mission</h2>
     <blockquote class="editor-mission">Report what matters. Understand what is changing. Give readers the context to form their own views.</blockquote>
-    <p>Story tip or correction? Email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>. Read our <a href="/standards">editorial standards</a>.</p>
+    <p>Story tip or correction? Email <a href="mailto:${esc(site.editorEmail)}">${esc(site.editorEmail)}</a>. Read our <a href="/standards">editorial standards</a>.</p>
   </article>`;
   return html(layout(env, chrome, {
     title: 'Shaheen Arif, Editor', description: 'Shaheen Arif is the Editor of BostonDaily.us, covering politics, public affairs, technology, healthcare and the trends shaping Boston and the nation.',
