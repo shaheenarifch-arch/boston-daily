@@ -4,6 +4,21 @@ import { esc } from './util.js';
 // An item is either an affiliate product (by id, linked through /go/p) or a site in the
 // GetServices.ai network (house placement, linked directly). Real images only.
 const UTM = 'utm_source=bostondaily&utm_medium=special_picks';
+// GetServices.ai products shown beside ATLAS on Technology and AI. Images are real screenshots of each site.
+function getservicesFamily(campaign) {
+  const q = `${UTM}&utm_campaign=${campaign}`;
+  return [
+    { house: { name: 'GetServices AI Studio', url: `https://studio.getservices.ai/?${q}`, image: '/img/picks/studio.webp',
+      desc: 'ROMEO builds apps and websites, runs ATLAS AEO, writes content and automates daily work.', cta: 'Open Studio' } },
+    { house: { name: 'BLACK', url: `https://black.getservices.ai/?${q}`, image: '/img/picks/black.webp',
+      desc: 'Executive AI that routes one prompt across GPT, Claude, Gemini, Grok and Perplexity.', cta: 'Unlock BLACK' } },
+    { house: { name: 'itsmPRO', url: `https://itsm.getservices.ai/?${q}`, image: '/img/picks/itsm.webp',
+      desc: 'AI-native IT service management you run by words, built for small and regulated teams.', cta: 'Request early access' } },
+    { house: { name: 'AI Pods', url: `https://getservices.ai/ai-pods?${q}`, image: '/img/picks/ai-pods.webp',
+      desc: 'Subscribe to outcomes: tax, marketing, scheduling, customer success and security pods.', cta: 'View all pods' } },
+  ];
+}
+const MAX_CARDS = { technology: 5, ai: 5 }; // other sections stay at 2
 export const SECTION_PICKS = {
   business: [
     { house: { name: 'BusinessBuy', url: `https://businessbuy.site/?${UTM}&utm_campaign=business`, image: 'https://businessbuy.site/hero-businesses.webp',
@@ -12,10 +27,12 @@ export const SECTION_PICKS = {
   technology: [
     { house: { name: 'ATLAS AEO', url: `https://app.getservices.ai/?${UTM}&utm_campaign=technology`, image: 'https://app.getservices.ai/og-image.jpg',
       desc: 'Free AI search visibility scan: see whether ChatGPT, Perplexity and Google AI cite your business.', cta: 'Run a free scan' } },
+    ...getservicesFamily('technology'),
   ],
   ai: [
     { house: { name: 'ATLAS AEO', url: `https://app.getservices.ai/?${UTM}&utm_campaign=ai`, image: 'https://app.getservices.ai/og-image.jpg',
       desc: 'Answer-engine optimization from GetServices.ai: audits, competitor tracking and AI writing tools.', cta: 'Run a free scan' } },
+    ...getservicesFamily('ai'),
   ],
   lifestyle: [
     { product: 'p-40882-fb227d310d' }, // Bedsure 6-Piece Washed Cotton Sheet Set (home)
@@ -41,7 +58,7 @@ export function sectionPicks(slug, byId) {
     if (i.house) return { ...i.house, href: i.house.url, rel: 'sponsored noopener' };
     const p = byId.get(i.product);
     return p && p.image_url ? { name: p.name, desc: p.description || p.merchant_name, image: p.image_url, href: `/go/p/${p.id}`, rel: 'sponsored nofollow noopener', cta: 'See offer' } : null;
-  }).filter(Boolean).slice(0, 2);
+  }).filter(Boolean).slice(0, MAX_CARDS[slug] || 2);
   if (!cards.length) return '';
   return `<section class="special-picks" aria-label="Special Picks">
     <header class="sp-head"><h2 class="sp-title">Special Picks</h2><span class="label label-ad">Sponsored</span></header>
