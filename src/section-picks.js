@@ -25,12 +25,12 @@ export const SECTION_PICKS = {
       desc: 'Businesses for sale, valuation help and step-by-step acquisition guides.', cta: 'Visit BusinessBuy' } },
   ],
   technology: [
-    { house: { name: 'ATLAS AEO', url: `https://app.getservices.ai/?${UTM}&utm_campaign=technology`, image: 'https://app.getservices.ai/og-image.jpg',
+    { house: { name: 'ATLAS AEO', url: `https://app.getservices.ai/?${UTM}&utm_campaign=technology`, image: 'https://app.getservices.ai/og-image.jpg', fit: 'contain',
       desc: 'Free AI search visibility scan: see whether ChatGPT, Perplexity and Google AI cite your business.', cta: 'Run a free scan' } },
     ...getservicesFamily('technology'),
   ],
   ai: [
-    { house: { name: 'ATLAS AEO', url: `https://app.getservices.ai/?${UTM}&utm_campaign=ai`, image: 'https://app.getservices.ai/og-image.jpg',
+    { house: { name: 'ATLAS AEO', url: `https://app.getservices.ai/?${UTM}&utm_campaign=ai`, image: 'https://app.getservices.ai/og-image.jpg', fit: 'contain',
       desc: 'Answer-engine optimization from GetServices.ai: audits, competitor tracking and AI writing tools.', cta: 'Run a free scan' } },
     ...getservicesFamily('ai'),
   ],
@@ -63,7 +63,7 @@ export function sectionPicks(slug, byId) {
   return `<section class="special-picks" aria-label="Special Picks">
     <header class="sp-head"><h2 class="sp-title">Special Picks</h2><span class="label label-ad">Sponsored</span></header>
     <ul class="sp-grid">${cards.map((c) => `<li><a class="sp-card" href="${esc(c.href)}" rel="${c.rel}" target="_blank">
-      <span class="sp-img"><img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" decoding="async"></span>
+      <span class="sp-img${c.fit === 'contain' ? ' sp-contain' : ''}"><img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" decoding="async"></span>
       <span class="sp-body"><span class="sp-name">${esc(c.name)}</span>${c.desc ? `<span class="sp-desc">${esc(c.desc)}</span>` : ''}<span class="sp-cta">${esc(c.cta)} →</span></span>
     </a></li>`).join('')}</ul>
     <p class="sp-note">Sponsored placements and affiliate links; we may earn a commission. <a href="/standards">How we label advertising</a></p>
