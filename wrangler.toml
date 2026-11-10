@@ -38,7 +38,7 @@ SITE_NAME = "Boston Daily"
 SITE_TAGLINE = "A GetServices.ai publication"
 SITE_URL = "https://bostondaily.us"
 TIMEZONE = "America/New_York"
-CONTACT_EMAIL = "agents@getservices.ai"
+CONTACT_EMAIL = "editor@bostondaily.us"
 # Story tips and correction requests go to EDITOR_EMAIL (falls back to CONTACT_EMAIL).
 # Inbox is set up via Cloudflare Email Routing: https://developers.cloudflare.com/email-routing/get-started/
 EDITOR_EMAIL = "editor@bostondaily.us"
