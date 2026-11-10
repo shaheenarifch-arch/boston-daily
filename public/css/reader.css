@@ -225,6 +225,7 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .story-byline { font: 600 .9rem var(--sans); margin: 1.2rem 0 .2rem; display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
 .reviewer { font-weight: 400; color: var(--ink-soft); }
 .story-times { font: 400 .82rem/1.5 var(--sans); color: var(--granite); margin: 0; display: flex; flex-wrap: wrap; gap: .2rem 1rem; }
+.story-ai-note { font: 400 .82rem/1.5 var(--sans); color: var(--granite); margin: .4rem 0 0; }
 .story-figure { margin: 1.75rem 0; }
 .story-figure img { width: 100%; border-radius: 4px; }
 .story-figure figcaption { font: 400 .78rem var(--sans); color: var(--granite); margin-top: .4rem; }

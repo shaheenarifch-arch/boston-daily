@@ -45,6 +45,9 @@ EDITOR_EMAIL = "editor@bostondaily.us"
 # Reviewer line: a story approved by the console user "Shaheen" shows "Reviewed by Shaheen Arif, Editor".
 # EDITOR_NAME = "Shaheen Arif"
 CONTACT_PHONE = "313-729-1534"
+# Physical postal address (street or PO box) shown at the bottom of every newsletter email.
+# Required by the US CAN-SPAM Act: https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business
+# MAILING_ADDRESS = "PO Box 000, Boston, MA 02101"
 NETWORK_NAME = "GetServices.ai"
 # true = commercial (partner lane) items that pass every policy gate publish without an editor.
 # Newsroom stories never auto-publish. Politics/Health/sensitive always need a human.

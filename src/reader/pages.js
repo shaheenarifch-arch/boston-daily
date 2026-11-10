@@ -493,6 +493,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
       ${story.dek ? `<p class="story-dek">${esc(story.dek)}</p>` : ''}
       <p class="story-byline">${story.byline ? `By ${esc(story.byline)}` : ''}${reviewerLabel ? `<span class="reviewer">Reviewed by ${esc(reviewerLabel)}</span>` : ''}</p>
       <p class="story-times">${times}</p>
+      ${!commercial && story.type !== 'opinion' ? '<p class="story-ai-note">AI tools helped research and draft this story. A Boston Daily editor reviewed it before publication. <a href="/standards#ai">How we use AI</a>.</p>' : ''}
     </header>
     ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="${esc(story.headline)}" decoding="async">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'correction'), site.tz)}
@@ -786,6 +787,8 @@ export async function standardsPage(env) {
   const chrome = await loadChrome(env);
   const body = `<article class="prose standards"><h1>Editorial standards</h1>
     <p>Boston Daily is published by ${esc(site.network)}. AI tools help our newsroom find, research and draft stories. Editors decide what is published.</p>
+    <h2 id="ai">How we use AI</h2>
+    <p>AI tools help us spot news, gather public records and sources, and write first drafts. They do not publish anything on their own. An editor checks facts, names, quotes and sources and approves every news story before it goes live. News stories show an AI-use note under the byline. Opinion columns are written and signed by their named authors.</p>
     <h2 id="sourcing">Sourcing and copyright</h2>
     <p>We report from primary sources, official records, licensed wire services, permitted press releases and our own reporting. We do not copy or closely rewrite other publications’ articles. We use other outlets’ coverage only to discover stories, then report them from original sources. Images run only when we hold the rights to use them. Each story lists its public sources.</p>
     <h2 id="approval">Human approval</h2>
@@ -880,7 +883,7 @@ export async function privacyPage(env) {
 export async function termsPage(env) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
-  const updated = 'November 2, 2026';
+  const updated = 'November 10, 2026';
   const body = `<article class="prose standards"><h1>Terms of use</h1>
     <p class="muted">Last updated: ${updated}</p>
     <p>These terms apply to ${esc(site.name)} (the “site”), published by ${esc(site.network)}. By using the site you agree to them. If you do not agree, please do not use the site.</p>
@@ -893,6 +896,8 @@ export async function termsPage(env) {
     <p>Comments are reviewed by an editor before they appear. By posting, you confirm that what you write is your own and lawful, and you give us permission to publish, edit for length or clarity, or remove it. Do not post abuse, harassment, spam, personal information about others, or anything defamatory or infringing.</p>
     <h2>Advertising and partner links</h2>
     <p>The site carries clearly labeled advertising and affiliate (partner) links, and we may earn a commission when you buy through them. Advertisers and partners do not buy, edit or approve our news coverage. Products and services offered by advertisers and partners are their responsibility, under their own terms. See <a href="/standards#commercial">how we label commercial content</a> and <a href="/advertise">advertise with us</a>.</p>
+    <h2 id="copyright">Copyright complaints (DMCA)</h2>
+    <p>If you believe something on the site infringes your copyright, email our designated agent at <a href="mailto:${esc(site.editorEmail)}?subject=${encodeURIComponent('[DMCA] Copyright notice')}">${esc(site.editorEmail)}</a> with: the work you own, the page link where it appears, your contact details, a statement that you believe in good faith the use is not authorized, a statement that your notice is accurate and, under penalty of perjury, that you are the owner or authorized to act for the owner, and your physical or electronic signature. We remove infringing material promptly and may close the accounts of repeat infringers. If your comment or material was removed by mistake, you may send a counter-notice to the same address.</p>
     <h2>Links to other websites</h2>
     <p>We link to sources and other websites so you can check our work. We are not responsible for their content or their privacy practices.</p>
     <h2>Privacy</h2>
@@ -906,7 +911,7 @@ export async function termsPage(env) {
   </article>`;
   return html(layout(env, chrome, {
     title: 'Terms of use', description: `The terms for using ${site.name}: our content, corrections, comments, labeled advertising and partner links, and privacy.`, canonical: '/terms', body,
-    jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', name: `Terms of use | ${site.name}`, url: site.url ? `${site.url}/terms` : undefined, dateModified: '2026-11-02',
+    jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', name: `Terms of use | ${site.name}`, url: site.url ? `${site.url}/terms` : undefined, dateModified: '2026-11-10',
       publisher: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined } },
   }));
 }
