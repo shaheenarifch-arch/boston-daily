@@ -93,7 +93,7 @@ function emailHtml(site, kind, stories, sub) {
     <div style="font:12px Arial,sans-serif;color:#6b7480">${esc(title)}</div></td></tr>
     ${items}
     <tr><td style="padding-top:18px;font:12px Arial,sans-serif;color:#6b7480">You’re receiving this because you subscribed at ${esc(base.replace(/^https?:\/\//, ''))}.
-      <a href="${unsub}" style="color:#1d4f73">Unsubscribe</a></td></tr></table></td></tr></table></body></html>` };
+      <a href="${unsub}" style="color:#1d4f73">Unsubscribe</a>${site.mailingAddress ? `<br>${esc(site.name)}, ${esc(site.mailingAddress)}` : ''}</td></tr></table></td></tr></table></body></html>` };
 }
 
 async function storiesFor(db, kind) {
