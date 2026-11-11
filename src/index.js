@@ -17,9 +17,42 @@ import {
 
 const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
 
+// ── Edge cache for public reader pages ──
+// Reader pages are the same for every visitor (no cookies, no sign-in), so a copy is kept at
+// Cloudflare's edge for EDGE_TTL seconds. A burst of visitors or Googlebot then mostly skips D1,
+// which is what returned 500s under load. New or edited stories can take up to EDGE_TTL to show.
+// How the Cache API works: https://developers.cloudflare.com/workers/runtime-apis/cache/
+const EDGE_TTL = 300;
+const CACHEABLE = [/^\/$/, /^\/editions$/, /^\/edition\/\d{4}-\d{2}-\d{2}\/?$/, /^\/section\/[a-z0-9-]+\/?$/, /^\/story\/[a-z0-9-]+\/?$/];
+// Ad/analytics tags don't change the page, so they share one cached copy. Any other query (e.g. ?comment=) skips the cache.
+const IGNORED_PARAMS = /^(utm_[a-z]+|fbclid|gclid|msclkid|ref)$/i;
+
+function edgeCacheKey(request) {
+  if (request.method !== 'GET') return null;
+  const url = new URL(request.url);
+  if (url.hostname.startsWith('www.') || !CACHEABLE.some((re) => re.test(url.pathname))) return null;
+  if ([...url.searchParams.keys()].some((k) => !IGNORED_PARAMS.test(k))) return null;
+  return new Request(`${url.origin}${url.pathname}`, { method: 'GET' });
+}
+
 const worker = {
   async fetch(request, env, ctx) {
-    const response = await worker.handleRequest(request, env, ctx);
+    const key = edgeCacheKey(request);
+    const cache = key && typeof caches !== 'undefined' ? caches.default : null;
+    let response = cache ? await cache.match(key).catch(() => null) : null;
+    if (!response) {
+      response = await worker.handleRequest(request, env, ctx);
+      // One retry after a short pause: a brief D1 overload shouldn't become an error page.
+      if (response.status >= 500 && (request.method === 'GET' || request.method === 'HEAD')) {
+        await new Promise((r) => setTimeout(r, 250));
+        response = await worker.handleRequest(request, env, ctx);
+      }
+      if (cache && response.status === 200 && (response.headers.get('content-type') || '').includes('text/html')) {
+        const stored = new Response(response.clone().body, response);
+        stored.headers.set('cache-control', `public, s-maxage=${EDGE_TTL}, max-age=0`);
+        ctx.waitUntil(cache.put(key, stored).catch(() => {}));
+      }
+    }
     trackVisit(request, response, env, ctx);
     return response;
   },
@@ -120,7 +153,9 @@ const worker = {
     } catch (err) {
       console.error(err);
       if (pathname.startsWith('/api/')) return errorJson('Server error', 500);
-      return new Response('Boston Daily is temporarily unavailable. Please try again shortly.', { status: 500, headers: { 'content-type': 'text/plain' } });
+      // 503 + Retry-After tells Google the outage is temporary, so it retries instead of marking the page broken.
+      // https://developers.google.com/search/docs/crawling-indexing/http-network-errors
+      return new Response('Boston Daily is temporarily unavailable. Please try again shortly.', { status: 503, headers: { 'content-type': 'text/plain', 'retry-after': '60' } });
     }
   },
 
