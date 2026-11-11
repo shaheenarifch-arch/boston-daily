@@ -40,7 +40,12 @@ const worker = {
     const key = edgeCacheKey(request);
     const cache = key && typeof caches !== 'undefined' ? caches.default : null;
     let response = cache ? await cache.match(key).catch(() => null) : null;
-    if (!response) {
+    if (response) {
+      // Browsers get the page's normal short lifetime (e.g. 60 s), never the edge TTL or Cloudflare's 4 h default.
+      response = new Response(response.body, response);
+      response.headers.set('cache-control', response.headers.get('x-browser-cache-control') || 'public, max-age=60');
+      response.headers.delete('x-browser-cache-control');
+    } else {
       response = await worker.handleRequest(request, env, ctx);
       // One retry after a short pause: a brief D1 overload shouldn't become an error page.
       if (response.status >= 500 && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -50,6 +55,8 @@ const worker = {
       if (cache && response.status === 200 && (response.headers.get('content-type') || '').includes('text/html')) {
         const stored = new Response(response.clone().body, response);
         stored.headers.set('cache-control', `public, s-maxage=${EDGE_TTL}, max-age=0`);
+        // Remember the page's own browser header so a cache hit sends that, not the edge-only one.
+        stored.headers.set('x-browser-cache-control', response.headers.get('cache-control') || 'public, max-age=60');
         ctx.waitUntil(cache.put(key, stored).catch(() => {}));
       }
     }
