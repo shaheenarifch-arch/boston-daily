@@ -55,7 +55,9 @@ async function imageOk(url) {
     const type = res.headers.get('content-type') || '';
     res.body?.cancel?.();
     if (res.ok && type.startsWith('image/')) return true;
-    if ([400, 403, 404, 410].includes(res.status) || (res.ok && !type.startsWith('image/'))) return false;
+    // 403 is a bot wall (loc.gov refuses automated checks), not a dead photo: never remove a photo for it.
+    if (res.status === 403) return true;
+    if ([400, 404, 410].includes(res.status) || (res.ok && !type.startsWith('image/'))) return false;
     return null;
   } catch { return null; }
 }
