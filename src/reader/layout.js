@@ -32,6 +32,11 @@ export async function loadChrome(env) {
 // Travelpayouts Drive (project 589458). Loaded only where commerce is allowed (see commerceAllowed): never on US Politics, Opinion or sensitive stories.
 const TRAVELPAYOUTS_DRIVE = "<script nowprocket data-noptimize=\"1\" data-cfasync=\"false\" data-wpfc-render=\"false\" seraph-accel-crit=\"1\" data-no-defer=\"1\" data-cmp-ab=\"2\">\n  (function () {\n      var script = document.createElement(\"script\");\n      script.async = 1;\n      script.setAttribute(\"data-cmp-ab\",\"2\");\n      script.src = 'https://emrldtp.cc/NTg5NDU4.js?t=589458';\n      document.head.appendChild(script);\n  })();\n</script>";
 
+// Chambelli store carousel (30-50 CJ products, left/right arrows), shown at the top of
+// pages where commerce is allowed (the same pages as the Travelpayouts script). It hides
+// itself when no products are approved. Manage products: chambelli.getservices.ai/carousels
+const CHAMBELLI_CAROUSEL = '<div class="chambelli-store wrap" role="region" aria-label="Shop Chambelli picks"><script async src="https://chambelli.getservices.ai/widget.js" data-api="https://chambelli.getservices.ai" data-site="bostondaily" data-placement="article-footer" data-title="Shop Chambelli picks"></script></div>';
+
 export function layout(env, chrome, { title, description = '', canonical = '', body, jsonLd = null, ogType = 'website', image = '', active = '', noindex = false, drive = false }) {
   const site = SITE(env);
   const today = localDate(new Date(), site.tz);
@@ -97,6 +102,7 @@ ${drive ? TRAVELPAYOUTS_DRIVE : ''}
     <a href="/courses"${active === 'courses' ? ' aria-current="page"' : ''}>Skill Center</a>
   </div></nav>
 </header>
+${drive ? CHAMBELLI_CAROUSEL : ''}
 <main id="main" class="wrap">
 ${body}
 </main>
