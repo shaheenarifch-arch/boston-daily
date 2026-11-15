@@ -16,6 +16,7 @@ import m0009 from '../migrations/0009_story_image_checks.sql';
 import m0010 from '../migrations/0010_partner_offers.sql';
 import m0011 from '../migrations/0011_advertise_ai_usage.sql';
 import m0012 from '../migrations/0012_site_subscribers.sql';
+import m0013 from '../migrations/0013_guest_posts.sql';
 import seedSql from '../seed/seed.sql';
 import { CONTENT_PACKAGES } from '../content/index.js';
 
@@ -31,6 +32,7 @@ const MIGRATIONS = [
   ['0010_partner_offers.sql', m0010],
   ['0011_advertise_ai_usage.sql', m0011],
   ['0012_site_subscribers.sql', m0012],
+  ['0013_guest_posts.sql', m0013],
 ];
 
 let ready = null;

@@ -225,6 +225,7 @@ main.wrap { padding-top: 2rem; padding-bottom: 3.5rem; }
 .story-byline { font: 600 .9rem var(--sans); margin: 1.2rem 0 .2rem; display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
 .reviewer { font-weight: 400; color: var(--ink-soft); }
 .story-times { font: 400 .82rem/1.5 var(--sans); color: var(--granite); margin: 0; display: flex; flex-wrap: wrap; gap: .2rem 1rem; }
+.story-ai-note { font: 400 .82rem/1.5 var(--sans); color: var(--granite); margin: .4rem 0 0; }
 .story-figure { margin: 1.75rem 0; }
 .story-figure img { width: 100%; border-radius: 4px; }
 .story-figure figcaption { font: 400 .78rem var(--sans); color: var(--granite); margin-top: .4rem; }
@@ -794,3 +795,35 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .sp-card:hover .sp-name { text-decoration: underline; }
 .sp-note { margin: .7rem 0 0; font-size: .78rem; opacity: .7; }
 .sp-note a { text-decoration: underline; }
+
+/* ── Guest posts (/write-for-us, status page, author box) ── */
+.gp-form { margin: 2rem 0; max-width: 46rem; }
+.gp-form fieldset { border: 0; padding: 0; margin: 0 0 1rem; display: grid; gap: .75rem; }
+.gp-form legend { font: 700 .95rem var(--sans); margin-bottom: .5rem; }
+.gp-help { font: 400 .8rem/1.45 var(--sans); color: var(--ink-soft); margin: -.4rem 0 .2rem; }
+.gp-help code, .gp-guidelines code { font-size: .85em; background: var(--wash); padding: 0 .25rem; border-radius: 3px; }
+.gp-optional { font-weight: 400; color: var(--ink-soft); }
+.gp-check { display: flex !important; gap: .55rem; align-items: flex-start; font-weight: 400 !important; line-height: 1.45; }
+.gp-check input { margin-top: .2rem; }
+.gp-nav { display: flex; gap: .6rem; }
+.gp-wc-ok { color: #1f6b3a; font-weight: 600; }
+.gp-wc-warn { color: #8a2c1a; font-weight: 600; }
+.gp-facts { margin: .6rem 0; padding-left: 1.1rem; font: 400 .88rem/1.6 var(--sans); }
+.gp-rail, .gp-cta { background: var(--wash); margin-bottom: 1.25rem; }
+.gp-cta .button { margin-top: .2rem; }
+.gp-cta-line { font: 400 .92rem var(--sans); padding: .8rem 1rem; background: var(--wash); border-radius: 5px; margin: 1.5rem 0; }
+.gp-author { margin: 1.75rem 0; padding: 1rem 1.1rem; border-top: 2px solid var(--ink); background: var(--wash); font-family: var(--sans); font-size: .95rem; }
+.gp-author-label { font: 700 .72rem var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 .35rem; }
+.gp-author .gp-help { margin: .5rem 0 0; }
+.gp-status-now { font: 500 1rem var(--sans); }
+.gp-badge { display: inline-block; padding: .2rem .55rem; border-radius: 4px; font: 600 .85rem var(--sans); background: var(--wash); color: var(--ink); }
+.gp-badge-live, .gp-badge-accepted, .gp-badge-scheduled { background: #e3f1e7; color: #1f6b3a; }
+.gp-badge-changes_requested { background: #e7eef6; color: #1d4f7a; }
+.gp-badge-declined { background: #fbefec; color: #6e2a1c; }
+.gp-progress { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: 1rem 0; font: 500 .82rem var(--sans); }
+.gp-progress li { padding: .35rem .7rem; border-radius: 999px; background: var(--wash); color: var(--ink-soft); }
+.gp-progress li.done { background: #e3f1e7; color: #1f6b3a; }
+.gp-progress li.current { outline: 2px solid #1f6b3a; }
+.gp-lookup { max-width: 28rem; }
+/* The step-by-step form hides steps and buttons with the hidden attribute; display rules above must not override it. */
+.gp-form [hidden] { display: none !important; }

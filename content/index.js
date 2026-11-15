@@ -51,7 +51,11 @@ import d20261106 from './2026-11-06.sql';
 import d20261106travel from './2026-11-06-travel-desk.sql';
 import d20261107 from './2026-11-07.sql';
 import d20261109brigham from './2026-11-09-brigham-strike.sql';
-import d20261110 from './2026-11-10.sql';
+import d20261111 from './2026-11-11.sql';
+import d20261113 from './2026-11-13.sql';
+import d20261114 from './2026-11-14.sql';
+import d20261114images from './2026-11-14-missing-images.sql';
+import d20261114restore from './2026-11-14-restore-photos.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -104,5 +108,9 @@ export const CONTENT_PACKAGES = [
   ['2026-11-06-travel-desk', d20261106travel],
   ['2026-11-07', d20261107],
   ['2026-11-09-brigham-strike', d20261109brigham],
-  ['2026-11-10', d20261110],
+  ['2026-11-11', d20261111],
+  ['2026-11-13', d20261113],
+  ['2026-11-14', d20261114],
+  ['2026-11-14-missing-images', d20261114images],
+  ['2026-11-14-restore-photos', d20261114restore],
 ];

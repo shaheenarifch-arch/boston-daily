@@ -12,6 +12,8 @@ export const SITE = (env) => ({
   editorEmail: env.EDITOR_EMAIL || env.CONTACT_EMAIL || 'agents@getservices.ai',
   editorName: env.EDITOR_NAME || 'Shaheen Arif',
   phone: env.CONTACT_PHONE || '',
+  // Physical postal address (street or PO box) printed in every newsletter email, as CAN-SPAM requires.
+  mailingAddress: env.MAILING_ADDRESS || '',
   network: env.NETWORK_NAME || 'GetServices.ai',
 });
 
