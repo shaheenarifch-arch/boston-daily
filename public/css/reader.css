@@ -825,3 +825,5 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .gp-progress li.done { background: #e3f1e7; color: #1f6b3a; }
 .gp-progress li.current { outline: 2px solid #1f6b3a; }
 .gp-lookup { max-width: 28rem; }
+/* The step-by-step form hides steps and buttons with the hidden attribute; display rules above must not override it. */
+.gp-form [hidden] { display: none !important; }
