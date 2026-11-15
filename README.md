@@ -106,3 +106,11 @@ Category-matched products from every affiliate merchant, in the side panel of se
 - **Editors** (`/api/admin`): `PATCH /products/:id` (tags, extra_sections, regions, section_slug, category, promo_label/start/end, featured, sponsored, sensitive_ok, availability, status) · `PATCH /offers/sections/:slug` (partner_offers on/off, offer_tags) · `PATCH /offers/stories/:id` (partner_offers on/off, partner_offer_ids) · `GET /offers/preview?story=|section=` · `GET /offers/stats?days=30`.
 - **Merchant sync** (`/api/ingest/products`) may send `tags`, `sections`, `regions`, `promo_label`, `promo_start`, `promo_end`, `sponsored`; fields it omits keep their editor values.
 - **Analytics:** `offer_stats` counts impressions and clicks per day, page category and product. No story, candidate or viewpoint is recorded, and merchant tracking links are not changed.
+
+## Guest posts ("Write for Us")
+
+- **Reader side**: `/write-for-us` (guidelines + 3-step form), linked from the Opinion, Columns and Analysis pages, the end of every opinion story, the footer and the Contact page. After sending, the author gets a reference number (GP-12345) and a private status page at `/guest-post/status` (Received → In review → Accepted → Scheduled → Live, or Changes requested / Declined). With "changes requested" the author edits and resubmits from that page.
+- **Approval**: only the **Shaheen** console login can accept, request changes or decline (`GUEST_APPROVERS` in `src/lifecycle.js`). Accept creates an Opinion story (byline "Name | Guest Contributor", `source_system = 'guest'`) in the editorial queue, and that story can also only be approved by Shaheen. Other editors and automated systems are blocked.
+- **Emails** (`src/guest-posts.js`, via Resend when `RESEND_API_KEY` + `NEWSLETTER_FROM` are set): author confirmation, editor alert to `EDITOR_EMAIL`, changes requested, accepted, declined, and "your post is live" with share links (sent on publish and by the 5-minute cron). Without the keys every email is logged in the submission history as "not sent".
+- **Rules**: 800–1,500 words, a real photo not already used on the site, up to 3 links plus one bio link (all `nofollow ugc`), four agreement boxes, 3 submissions a day per email/IP, honeypot spam trap. Free to submit; paid placement goes to Advertise.
+- **Console**: `/admin` → Guest posts.

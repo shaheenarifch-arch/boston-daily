@@ -1,4 +1,5 @@
 import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
+import { guestAuthorBox, writeForUsBox } from '../guest-posts.js';
 import { esc, html, json, errorJson, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid, ipHash } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
@@ -412,6 +413,7 @@ export async function sectionPage(env, slug, ctx = null) {
         ${!isNewsSection && showCommerce ? paidProductAds(slug) : ''}
       </div>
       <aside class="col-rail">
+        ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() : ''}
         ${isNewsSection ? paidAdvertising(pickedMods.join('')) : railMods}
         ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>
@@ -457,6 +459,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   ctx?.waitUntil?.(db.prepare('UPDATE stories SET view_count = view_count + 1 WHERE id = ?').bind(story.id).run().catch(() => {}));
   const { results: comments } = await db.prepare("SELECT name, body, created_at FROM comments WHERE story_id = ? AND status = 'approved' ORDER BY created_at ASC LIMIT 200").bind(story.id).all();
   const commentNote = reqUrl?.searchParams.get('comment');
+  const guest = story.source_system === 'guest' ? await db.prepare('SELECT author_name, author_bio, author_website FROM guest_posts WHERE story_id = ?').bind(story.id).first() : null;
 
   const commercial = story.lane === 'partner_commerce';
   const showCommerce = commerceAllowed(section, story);
@@ -497,7 +500,9 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     </header>
     ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="${esc(story.headline)}" decoding="async">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'correction'), site.tz)}
-    <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial })}</div>
+    <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial, ugcLinks: story.source_system === 'guest' })}</div>
+    ${guestAuthorBox(guest)}
+    ${story.type === 'opinion' && !commercial ? writeForUsBox({ compact: true }) : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'update'), site.tz)}
     ${sourcesBlock(sources)}
     ${commercial ? '' : subscribeBox()}
@@ -521,7 +526,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     author: story.byline
       ? (commercial || /staff$/i.test(story.byline)
         ? { '@type': 'Organization', name: story.byline, url: site.url ? `${site.url}/standards` : undefined }
-        : { '@type': 'Person', name: story.byline })
+        : { '@type': 'Person', name: guest ? guest.author_name : story.byline })
       : { '@type': 'Organization', name: `${site.name} Staff`, url: site.url ? `${site.url}/standards` : undefined },
     editor: reviewerName
       ? { '@type': 'Person', name: reviewerName, url: site.url && /shaheen arif/i.test(reviewerName) ? `${site.url}/editor` : undefined }
@@ -930,6 +935,8 @@ export async function contactPage(env) {
     <p>Send tips, documents or leads to ${mail('[TIP] Story tip', site.email)}.</p>
     <h2>Corrections</h2>
     <p>If we got something wrong, ${mail('[CORRECTION] Correction request', 'tell us')} with the story link. See our <a href="/corrections">corrections</a> and <a href="/standards">editorial standards</a>.</p>
+    <h2>Guest posts</h2>
+    <p>We publish guest columns and analysis. Read the <a href="/write-for-us#guidelines">guidelines</a> and <a href="/write-for-us">submit a guest post</a>. Already sent one? <a href="/guest-post/status">Check its status</a>.</p>
     <h2>Advertising and partnerships</h2>
     <p>See <a href="/advertise">advertise with us</a>, or email about ${mail('[LISTING] Business listing', 'business listings')} and ${mail('[SPONSORED] Sponsored content', 'sponsored content')}.</p>
     <h2>Newsletters</h2>
@@ -999,7 +1006,7 @@ ${results.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc><ne
       WHERE st.status IN ${PUBLIC} AND (st.section_slug = sec.slug OR ch.parent_slug = sec.slug OR st.type = sec.slug))`).all(),
     env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active' AND (health_ok IS NULL OR health_ok = 1)").all(),
   ]);
-  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections', '/privacy', '/terms', '/contact',
+  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/write-for-us', '/standards', '/editor', '/corrections', '/privacy', '/terms', '/contact',
     ...sections.map((s) => `/section/${s.slug}`), ...biz.map((b) => `/businesses/${b.slug}`)];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

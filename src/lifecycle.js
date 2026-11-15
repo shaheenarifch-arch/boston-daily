@@ -33,6 +33,10 @@ export const NEWSROOM_TYPES = ['news_story', 'analysis', 'opinion', 'feature'];
 export const COMMERCE_TYPES = ['blog_post', 'product_feature', 'sponsored'];
 export const DISCLOSURE_LABELS = ['Affiliate', 'Sponsored', 'Partner Content', 'Advertisement'];
 
+/** Guest posts (source_system 'guest') can only be approved by these editor logins (Shaheen's standing rule). */
+export const GUEST_APPROVERS = ['shaheen'];
+export const isGuestApprover = (actor) => !!actor && actor.kind === 'human' && GUEST_APPROVERS.includes(String(actor.name || '').toLowerCase());
+
 export function canTransition(from, to) {
   return (TRANSITIONS[from] || []).includes(to);
 }
@@ -61,6 +65,10 @@ export function approvalProblems(story, section, sources, actor) {
         ? 'Newsroom stories can only be approved by a human editor.'
         : 'This section or story is flagged for mandatory human approval.',
     );
+  }
+
+  if (story.source_system === 'guest' && !isGuestApprover(actor)) {
+    problems.push('Guest posts can only be approved by Shaheen.');
   }
 
   if (story.hero_image_url && !story.hero_image_rights) {

@@ -83,13 +83,13 @@ async function start(name) {
 // ── Router ──
 const routes = {
   live: renderLive, queue: renderQueue, stories: renderStories, story: renderStory, new: renderNewStory,
-  editions: renderEditions, commerce: renderCommerce, businesses: renderBusinesses, inquiries: renderInquiries, comments: renderComments,
+  editions: renderEditions, commerce: renderCommerce, businesses: renderBusinesses, inquiries: renderInquiries, comments: renderComments, guests: renderGuests, guest: renderGuest,
 };
 window.addEventListener('hashchange', route);
 async function route() {
   const [hashPath] = location.hash.slice(1).split('?');
   const [, name = 'live', arg] = hashPath.split('/');
-  document.querySelectorAll('[data-nav]').forEach((a) => a.toggleAttribute('aria-current', a.dataset.nav === name || (name === 'story' && a.dataset.nav === 'stories')));
+  document.querySelectorAll('[data-nav]').forEach((a) => a.toggleAttribute('aria-current', a.dataset.nav === name || (name === 'story' && a.dataset.nav === 'stories') || (name === 'guest' && a.dataset.nav === 'guests')));
   view.innerHTML = '<p class="loading">Loading…</p>';
   try {
     await (routes[name] || renderLive)(arg);
@@ -106,6 +106,7 @@ async function refreshBadges() {
     $('#queue-count').hidden = !q; $('#queue-count').textContent = q;
     $('#inq-count').hidden = !o.commerce.new_inquiries; $('#inq-count').textContent = o.commerce.new_inquiries;
     $('#com-count').hidden = !o.commerce.pending_comments; $('#com-count').textContent = o.commerce.pending_comments;
+    $('#gp-count').hidden = !o.commerce.new_guest_posts; $('#gp-count').textContent = o.commerce.new_guest_posts;
   } catch { /* ignore */ }
 }
 
@@ -650,6 +651,59 @@ async function renderComments() {
     </tbody></table></div>` : '<p class="sub">Nothing here.</p>'}</section>`;
   view.querySelectorAll('[data-mod]').forEach((b) => b.addEventListener('click', async () => {
     try { await api('PATCH', `/comments/${b.dataset.id}`, { status: b.dataset.mod }); toast(b.dataset.mod === 'approved' ? 'Comment approved.' : 'Comment rejected.'); renderComments(); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
+  }));
+}
+
+// ── Guest posts ──
+const GP_LABEL = { received: 'Received', in_review: 'In review', changes_requested: 'Changes requested', accepted: 'Accepted', live: 'Live', declined: 'Declined' };
+const gpChip = (s) => `<span class="status status-${s === 'live' ? 'published' : s === 'accepted' ? 'approved' : s === 'declined' ? 'rejected' : s === 'received' ? 'editorial_review' : 'drafting'}">${esc(GP_LABEL[s] || s)}</span>`;
+const emailNote = (ok) => (ok ? '' : '<p class="warn">Email sending is not set up (RESEND_API_KEY and NEWSLETTER_FROM secrets), so authors are not emailed yet. Everything else works. <a href="https://resend.com/docs/dashboard/api-keys/introduction" target="_blank" rel="noopener">How to get a Resend key</a></p>');
+
+async function renderGuests() {
+  const params = new URLSearchParams(location.hash.split('?')[1] || '');
+  const status = params.get('status') || 'open';
+  const data = await api('GET', `/guest-posts?status=${status}`);
+  const tab = (st, label) => `<a class="btn ${st === status ? 'btn-primary' : ''}" href="#/guests?status=${st}">${label}</a>`;
+  view.innerHTML = `<header class="view-head"><div><h1>Guest posts</h1><p class="sub">Submissions from <a href="/write-for-us" target="_blank" rel="noopener">/write-for-us</a>. Only Shaheen can accept, request changes or decline, and an accepted piece still needs Shaheen's approval in the editorial queue before it can publish.</p></div>
+      <div class="actions">${tab('open', 'To review')}${tab('changes_requested', 'Changes requested')}${tab('accepted', 'Accepted')}${tab('live', 'Live')}${tab('declined', 'Declined')}${tab('all', 'All')}</div></header>
+    ${emailNote(data.email_configured)}
+    <section class="panel">${data.guest_posts.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Received</th><th>Ref</th><th>Headline</th><th>Author</th><th>Section</th><th>Status</th><th>Story</th></tr></thead><tbody>
+    ${data.guest_posts.map((g) => `<tr><td class="nowrap">${esc(when(g.created_at))}</td><td class="nowrap">${esc(g.ref)}</td><td><a href="#/guest/${esc(g.id)}">${esc(g.headline)}</a></td>
+      <td>${esc(g.author_name)}<br><a href="mailto:${esc(g.author_email)}">${esc(g.author_email)}</a></td><td>${esc(g.section_slug)}</td><td>${gpChip(g.status)}</td>
+      <td>${g.story_id ? `<a href="#/story/${esc(g.story_id)}">${statusChip(g.story_status)}</a>` : ''}</td></tr>`).join('')}
+    </tbody></table></div>` : '<p class="sub">Nothing here.</p>'}</section>`;
+}
+
+async function renderGuest(id) {
+  const d = await api('GET', `/guest-posts/${id}`);
+  const g = d.guest_post;
+  const open = ['received', 'in_review', 'changes_requested'].includes(g.status);
+  view.innerHTML = `<header class="view-head"><div><p class="sub"><a href="#/guests">← Guest posts</a></p><h1>${esc(g.headline)}</h1>
+      <p class="sub">${esc(g.ref)} · ${gpChip(g.status)} · ${esc(d.words)} words · ${esc(g.section_slug)} · sent ${esc(when(g.created_at))}</p></div></header>
+    ${emailNote(d.email_configured)}
+    ${d.story ? `<section class="panel"><p>Story: <a href="#/story/${esc(d.story.id)}">open in the story editor</a> ${statusChip(d.story.status)}. Approve and publish it there; the author gets the “your post is live” email automatically.</p></section>` : ''}
+    ${open ? (d.can_decide ? `<section class="panel"><h2>Decision</h2>
+      <p class="sub"><strong>Accept</strong> creates a draft Opinion story (byline “${esc(g.author_name)} | Guest Contributor”) in the editorial queue and emails the author. <strong>Request changes</strong> and <strong>Decline</strong> email your note to the author.</p>
+      <label>Note to the author<textarea id="gp-note" rows="4" placeholder="Required for changes or decline. Optional for accept."></textarea></label>
+      <div class="actions">${g.status === 'received' ? '<button class="btn" data-gp="review">Mark in review</button>' : ''}
+        <button class="btn btn-primary" data-gp="accept">Accept → create draft</button><button class="btn" data-gp="changes">Request changes</button><button class="btn btn-danger" data-gp="decline">Decline</button></div>
+      <div id="gp-err"></div></section>` : '<section class="panel"><p class="warn">Only Shaheen can accept, request changes or decline guest posts.</p></section>') : ''}
+    <section class="panel"><h2>Author</h2><p><strong>${esc(g.author_name)}</strong> · <a href="mailto:${esc(g.author_email)}">${esc(g.author_email)}</a>${g.author_website ? ` · <a href="${esc(g.author_website)}" target="_blank" rel="noopener nofollow">${esc(g.author_website)}</a>` : ''}</p><p>${esc(g.author_bio)}</p></section>
+    <section class="panel"><h2>Preview</h2>${g.dek ? `<p><em>${esc(g.dek)}</em></p>` : ''}
+      <figure><img src="${esc(g.hero_image_url)}" alt="" style="max-width:100%;max-height:320px"><figcaption class="sub">${esc(g.hero_image_credit)} · <a href="${esc(g.hero_image_url)}" target="_blank" rel="noopener">open image</a> (check it is a real photo the author has rights to)</figcaption></figure>
+      <div class="prose">${d.preview}</div></section>
+    <section class="panel"><h2>Sources from the author</h2>${g.sources ? `<ul>${g.sources.split('\n').filter(Boolean).map((s) => `<li>${/^https?:\/\//.test(s.trim()) ? `<a href="${esc(s.trim())}" target="_blank" rel="noopener nofollow">${esc(s.trim())}</a>` : esc(s)}</li>`).join('')}</ul>` : '<p class="sub">None given.</p>'}</section>
+    <section class="panel"><h2>History</h2><ul>${d.events.map((e) => `<li>${esc(when(e.created_at))} · ${esc(e.kind)} · ${esc(e.actor)}${e.note ? ` — ${esc(e.note)}` : ''}</li>`).join('')}</ul></section>`;
+  view.querySelectorAll('[data-gp]').forEach((b) => b.addEventListener('click', async () => {
+    const action = b.dataset.gp;
+    if (action === 'decline' && !confirm('Decline this guest post and email the author?')) return;
+    b.disabled = true;
+    try {
+      const r = await api('POST', `/guest-posts/${id}/action`, { action, note: $('#gp-note').value });
+      toast({ accept: 'Accepted. Draft story created and the author was emailed.', changes: 'Changes requested. The author was emailed.', decline: 'Declined. The author was emailed.', review: 'Marked in review.' }[action]);
+      if (r.story_id) location.hash = `#/story/${r.story_id}`; else renderGuest(id);
+      refreshBadges();
+    } catch (err) { b.disabled = false; $('#gp-err').innerHTML = `<p class="error">${esc(err.message)}</p>${problemList(err)}`; }
   }));
 }
 

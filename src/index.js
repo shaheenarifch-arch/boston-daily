@@ -10,6 +10,7 @@ import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import { autofillEndpoint, copyEndpoint, checkEndpoint } from './advertise.js';
 import { siteSubscribe, siteUnsubscribe } from './site-subscribe.js';
+import { writeForUsPage, submitGuestPost, guestStatusPage, resubmitGuestPost, guestLiveSweep } from './guest-posts.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
   advertisePage, submitInquiry, latestUpdate, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, termsPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound, llmsTxt,
@@ -114,6 +115,8 @@ const worker = {
       if (pathname === '/api/advertise/autofill' && method === 'POST') return await autofillEndpoint(env, request);
       if (pathname === '/api/advertise/copy' && method === 'POST') return await copyEndpoint(env, request);
       if (pathname === '/api/advertise/check' && method === 'POST') return await checkEndpoint(env, request);
+      if (pathname === '/write-for-us' && method === 'POST') return await submitGuestPost(env, request, ctx);
+      if (pathname === '/guest-post/status' && method === 'POST') return await resubmitGuestPost(env, request, url, ctx);
       if (pathname === '/subscribe' && method === 'POST') return await subscribe(env, request);
       if (pathname === '/api/subscribe' && method === 'POST') return await siteSubscribe(env, request);
       if (pathname === '/api/unsubscribe' && method === 'GET') return await siteUnsubscribe(env, url);
@@ -137,6 +140,8 @@ const worker = {
       if ((m = pathname.match(/^\/businesses\/([a-z0-9-]+)\/?$/))) return await businessProfile(env, m[1]);
       if (pathname === '/courses') return await coursesPage(env, url);
       if (pathname === '/advertise') return await advertisePage(env, url);
+      if (pathname === '/write-for-us' || pathname === '/guest-posts' || pathname === '/write-for-us/') return await writeForUsPage(env);
+      if (pathname === '/guest-post/status') return await guestStatusPage(env, url);
       if (pathname === '/standards') return await standardsPage(env);
       if (pathname === '/editor') return await editorPage(env);
       if (pathname === '/newsletters' || pathname === '/subscribe') return await newslettersPage(env, url);
@@ -169,7 +174,8 @@ const worker = {
   async scheduled(event, env, ctx) {
     await ensureDatabase(env.DB);
     if (event.cron === '*/5 * * * *') {
-      ctx.waitUntil(publishDueScheduled(env.DB).then(() => checkStoryImages(env.DB, 12)));
+      // After publishing, guest authors whose story just went live get their "your post is live" email.
+      ctx.waitUntil(publishDueScheduled(env.DB).then(() => guestLiveSweep(env)).then(() => checkStoryImages(env.DB, 12)));
       return;
     }
     // Daily: build and publish today's edition, then routine link and health checks.
