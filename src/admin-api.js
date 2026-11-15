@@ -12,6 +12,7 @@ import { visitorStats } from './analytics.js';
 import { searchConsoleReport } from './gsc.js';
 import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
 import { pageContext, selectOffers, cachedCandidates, clearOfferCache } from './offers.js';
+import { guestAdmin, guestLiveSweep } from './guest-posts.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
   'hero_image_rights', 'disclosure_label', 'disclosure_text', 'sponsor_name', 'sensitive', 'priority', 'is_lead_candidate', 'slug'];
@@ -91,7 +92,11 @@ export async function handleAdmin(request, env, url, editor) {
           case 'approve': return json({ ok: true, story: await approve(db, id, editor, body.note) });
           case 'reject': return json({ ok: true, story: await reject(db, id, editor, body.note) });
           case 'schedule': return json({ ok: true, story: await schedule(db, id, body.at, editor) });
-          case 'publish': return json({ ok: true, story: await publish(db, id, editor) });
+          case 'publish': {
+            const story = await publish(db, id, editor);
+            if (story.source_system === 'guest') await guestLiveSweep(env); // "your post is live" email right away
+            return json({ ok: true, story });
+          }
           case 'update': return json({ ok: true, story: await revisePublished(db, id, 'update', body, body.note, editor) });
           case 'correct': return json({ ok: true, story: await revisePublished(db, id, 'correction', body, body.note, editor) });
           case 'sources': return addSource(db, id, body, editor);
@@ -253,6 +258,9 @@ export async function handleAdmin(request, env, url, editor) {
       return json({ ok: true, courses: results });
     }
 
+    // ── Guest posts (only Shaheen can accept, request changes or decline) ──
+    if (seg[0] === 'guest-posts') return await guestAdmin(env, request, seg, editor);
+
     // ── Inquiries ──
     if (seg[0] === 'inquiries') {
       if (seg.length === 1 && method === 'GET') {
@@ -306,7 +314,8 @@ async function overview(env) {
       (SELECT COALESCE(SUM(clicks),0) FROM businesses) AS business_clicks,
       (SELECT COUNT(*) FROM courses WHERE status = 'active') AS courses,
       (SELECT COUNT(*) FROM inquiries WHERE status = 'new') AS new_inquiries,
-      (SELECT COUNT(*) FROM comments WHERE status = 'pending') AS pending_comments`).first();
+      (SELECT COUNT(*) FROM comments WHERE status = 'pending') AS pending_comments,
+      (SELECT COUNT(*) FROM guest_posts WHERE status = 'received') AS new_guest_posts`).first();
   const today = localDate(new Date(), env.TIMEZONE);
   const edition = await db.prepare('SELECT e.*, (SELECT COUNT(*) FROM edition_items i WHERE i.edition_id = e.id) AS items FROM editions e WHERE edition_date = ?').bind(today).first();
   return {
