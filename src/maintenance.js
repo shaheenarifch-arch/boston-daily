@@ -68,6 +68,14 @@ function wikimediaOriginal(url) {
   return m ? `${m[1]}/${m[2]}` : null;
 }
 
+/** Once a day, queue every live story's hero image for a fresh check, so a photo link that breaks after
+ * publishing is caught by the five-minute checker instead of staying broken on the site. */
+export async function requeueStoryImageChecks(db) {
+  const r = await db.prepare(`UPDATE stories SET image_checked_at = NULL WHERE hero_image_url IS NOT NULL AND image_checked_at IS NOT NULL
+    AND status IN ('PUBLISHED','UPDATED','CORRECTED')`).run();
+  return r.meta?.changes ?? 0;
+}
+
 /**
  * Check story hero images. Working images are kept; a Wikimedia thumbnail that fails falls back to
  * the original file (or a smaller thumbnail); anything still broken is removed so readers never see a broken picture.
