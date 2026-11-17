@@ -888,7 +888,7 @@ export async function privacyPage(env) {
 export async function termsPage(env) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
-  const updated = 'November 10, 2026';
+  const updated = 'November 17, 2026';
   const body = `<article class="prose standards"><h1>Terms of use</h1>
     <p class="muted">Last updated: ${updated}</p>
     <p>These terms apply to ${esc(site.name)} (the “site”), published by ${esc(site.network)}. By using the site you agree to them. If you do not agree, please do not use the site.</p>
@@ -903,6 +903,7 @@ export async function termsPage(env) {
     <p>The site carries clearly labeled advertising and affiliate (partner) links, and we may earn a commission when you buy through them. Advertisers and partners do not buy, edit or approve our news coverage. Products and services offered by advertisers and partners are their responsibility, under their own terms. See <a href="/standards#commercial">how we label commercial content</a> and <a href="/advertise">advertise with us</a>.</p>
     <h2 id="copyright">Copyright complaints (DMCA)</h2>
     <p>If you believe something on the site infringes your copyright, email our designated agent at <a href="mailto:${esc(site.editorEmail)}?subject=${encodeURIComponent('[DMCA] Copyright notice')}">${esc(site.editorEmail)}</a> with: the work you own, the page link where it appears, your contact details, a statement that you believe in good faith the use is not authorized, a statement that your notice is accurate and, under penalty of perjury, that you are the owner or authorized to act for the owner, and your physical or electronic signature. We respond to valid notices by promptly removing or disabling access to the material. <strong>Repeat infringer policy:</strong> in appropriate circumstances we permanently block people who repeatedly post infringing material from commenting or submitting content. If your comment or material was removed by mistake, you may send a counter-notice to the same address.</p>
+    <p><strong>Designated agent:</strong> Shaheen Arif, 50 Pinecrest Vlg 50, Hopkinton, MA 01748 · Phone: (313) 729-1534 · Email: <a href="mailto:${esc(site.editorEmail)}">${esc(site.editorEmail)}</a>. Registered with the U.S. Copyright Office, <a href="https://dmca.copyright.gov/osp/" rel="noopener">DMCA Designated Agent Directory</a>, registration no. DMCA-1085830.</p>
     <h2>Links to other websites</h2>
     <p>We link to sources and other websites so you can check our work. We are not responsible for their content or their privacy practices.</p>
     <h2>Privacy</h2>
