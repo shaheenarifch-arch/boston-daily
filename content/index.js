@@ -57,6 +57,7 @@ import d20261114 from './2026-11-14.sql';
 import d20261114images from './2026-11-14-missing-images.sql';
 import d20261114restore from './2026-11-14-restore-photos.sql';
 import d20261115 from './2026-11-15.sql';
+import d20261116 from './2026-11-16.sql';
 import d20261117 from './2026-11-17.sql';
 import d20261117photos from './2026-11-17-sports-photos.sql';
 import d20261117photos2 from './2026-11-17-sports-photos-2.sql';
@@ -118,6 +119,7 @@ export const CONTENT_PACKAGES = [
   ['2026-11-14-missing-images', d20261114images],
   ['2026-11-14-restore-photos', d20261114restore],
   ['2026-11-15', d20261115],
+  ['2026-11-16', d20261116],
   ['2026-11-17', d20261117],
   ['2026-11-17-sports-photos', d20261117photos],
   ['2026-11-17-sports-photos-2', d20261117photos2],
