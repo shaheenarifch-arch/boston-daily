@@ -57,6 +57,9 @@ async function imageOk(url) {
     if (res.ok && type.startsWith('image/')) return true;
     // 403 is a bot wall (loc.gov refuses automated checks), not a dead photo: never remove a photo for it.
     if (res.status === 403) return true;
+    // Library of Congress blocks automated checks in other ways too (error codes or an HTML page instead of
+    // the image), which made this check wipe working story photos. Never remove a loc.gov photo.
+    if (new URL(url).hostname === 'tile.loc.gov') return true;
     if ([400, 404, 410].includes(res.status) || (res.ok && !type.startsWith('image/'))) return false;
     return null;
   } catch { return null; }

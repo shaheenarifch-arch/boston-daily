@@ -19,11 +19,12 @@ test('UK EasyPass block carries all 8 Turbopass passes via /go/p, and Rome only 
   assert.match(block, /label-commerce">Affiliate/);
 });
 
-test('Turbopass passes stay off non-UK placements; EasyPass keeps its Rome card there', () => {
-  assert.deepEqual(adPartnerProductIds('travel'), []);
-  const out = sidePanelProductAds('travel', adPartnerProductIds('uk').map(row));
-  assert.ok(!out.includes('/go/p/'));
-  assert.ok(out.includes('ezpass.uk/rome-480.webp'));
+test('EasyPass (UK site) stays off non-UK placements', () => {
+  for (const p of ['travel', 'home', 'us']) {
+    assert.deepEqual(adPartnerProductIds(p), []);
+    const out = sidePanelProductAds(p, adPartnerProductIds('uk').map(row));
+    assert.ok(!out.includes('ezpass.uk'), p);
+  }
 });
 
 test('without product rows (deactivated) the EasyPass block is unchanged', () => {
