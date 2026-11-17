@@ -48,7 +48,8 @@ export const PRODUCT_ADS = [
     advertiser: 'EasyPass',
     domain: 'ezpass.uk',
     title: 'City sightseeing passes',
-    placements: ['uk', 'travel', 'home'],
+    // ezpass.uk is a UK site: UK pages only (editor rule, Nov 2026).
+    placements: ['uk'],
     awin: true,
     active: true,
     // On UK pages the block also carries the Turbopass city passes (Awin affiliate products, linked via /go/p).

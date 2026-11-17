@@ -4,7 +4,7 @@ import { handleAdmin } from './admin-api.js';
 import { ingestBlogPost, ingestProducts, ingestBusinesses, ingestCourses } from './ingest.js';
 import { publishDueScheduled } from './lifecycle.js';
 import { buildEdition } from './editions.js';
-import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
+import { checkProductLinks, checkBusinessHealth, checkStoryImages, requeueStoryImageChecks } from './maintenance.js';
 import { ensureDatabase } from './bootstrap.js';
 import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
@@ -187,6 +187,8 @@ const worker = {
       if (new Date().getUTCDay() === 0) console.log(await sendNewsletter(env, 'weekly'));
       await checkProductLinks(env.DB, 30);
       await checkBusinessHealth(env.DB, 15);
+      // Re-check every live story photo today (the five-minute job works through the queue).
+      await requeueStoryImageChecks(env.DB);
     })());
   },
 };
