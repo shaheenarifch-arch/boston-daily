@@ -4,12 +4,13 @@ import { handleAdmin } from './admin-api.js';
 import { ingestBlogPost, ingestProducts, ingestBusinesses, ingestCourses } from './ingest.js';
 import { publishDueScheduled } from './lifecycle.js';
 import { buildEdition } from './editions.js';
-import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
+import { checkProductLinks, checkBusinessHealth, checkStoryImages, requeueStoryImageChecks } from './maintenance.js';
 import { ensureDatabase } from './bootstrap.js';
 import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import { autofillEndpoint, copyEndpoint, checkEndpoint } from './advertise.js';
 import { siteSubscribe, siteUnsubscribe } from './site-subscribe.js';
+import { writeForUsPage, submitGuestPost, guestStatusPage, resubmitGuestPost, guestLiveSweep } from './guest-posts.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
   advertisePage, submitInquiry, latestUpdate, submitComment, shareRedirect, standardsPage, editorPage, correctionsPage, privacyPage, termsPage, contactPage, searchPage, notFound, rssFeed, sitemap, outbound, llmsTxt,
@@ -17,9 +18,49 @@ import {
 
 const GOOGLE_VERIFICATION = new Set(['/google3a5b0bc815cd2f55.html', '/google77d0e4245e3633a5.html']);
 
+// ── Edge cache for public reader pages ──
+// Reader pages are the same for every visitor (no cookies, no sign-in), so a copy is kept at
+// Cloudflare's edge for EDGE_TTL seconds. A burst of visitors or Googlebot then mostly skips D1,
+// which is what returned 500s under load. New or edited stories can take up to EDGE_TTL to show.
+// How the Cache API works: https://developers.cloudflare.com/workers/runtime-apis/cache/
+const EDGE_TTL = 300;
+const CACHEABLE = [/^\/$/, /^\/editions$/, /^\/edition\/\d{4}-\d{2}-\d{2}\/?$/, /^\/section\/[a-z0-9-]+\/?$/, /^\/story\/[a-z0-9-]+\/?$/];
+// Ad/analytics tags don't change the page, so they share one cached copy. Any other query (e.g. ?comment=) skips the cache.
+const IGNORED_PARAMS = /^(utm_[a-z]+|fbclid|gclid|msclkid|ref)$/i;
+
+function edgeCacheKey(request) {
+  if (request.method !== 'GET') return null;
+  const url = new URL(request.url);
+  if (url.hostname.startsWith('www.') || !CACHEABLE.some((re) => re.test(url.pathname))) return null;
+  if ([...url.searchParams.keys()].some((k) => !IGNORED_PARAMS.test(k))) return null;
+  return new Request(`${url.origin}${url.pathname}`, { method: 'GET' });
+}
+
 const worker = {
   async fetch(request, env, ctx) {
-    const response = await worker.handleRequest(request, env, ctx);
+    const key = edgeCacheKey(request);
+    const cache = key && typeof caches !== 'undefined' ? caches.default : null;
+    let response = cache ? await cache.match(key).catch(() => null) : null;
+    if (response) {
+      // Browsers get the page's normal short lifetime (e.g. 60 s), never the edge TTL or Cloudflare's 4 h default.
+      response = new Response(response.body, response);
+      response.headers.set('cache-control', response.headers.get('x-browser-cache-control') || 'public, max-age=60');
+      response.headers.delete('x-browser-cache-control');
+    } else {
+      response = await worker.handleRequest(request, env, ctx);
+      // One retry after a short pause: a brief D1 overload shouldn't become an error page.
+      if (response.status >= 500 && (request.method === 'GET' || request.method === 'HEAD')) {
+        await new Promise((r) => setTimeout(r, 250));
+        response = await worker.handleRequest(request, env, ctx);
+      }
+      if (cache && response.status === 200 && (response.headers.get('content-type') || '').includes('text/html')) {
+        const stored = new Response(response.clone().body, response);
+        stored.headers.set('cache-control', `public, s-maxage=${EDGE_TTL}, max-age=0`);
+        // Remember the page's own browser header so a cache hit sends that, not the edge-only one.
+        stored.headers.set('x-browser-cache-control', response.headers.get('cache-control') || 'public, max-age=60');
+        ctx.waitUntil(cache.put(key, stored).catch(() => {}));
+      }
+    }
     trackVisit(request, response, env, ctx);
     return response;
   },
@@ -74,6 +115,8 @@ const worker = {
       if (pathname === '/api/advertise/autofill' && method === 'POST') return await autofillEndpoint(env, request);
       if (pathname === '/api/advertise/copy' && method === 'POST') return await copyEndpoint(env, request);
       if (pathname === '/api/advertise/check' && method === 'POST') return await checkEndpoint(env, request);
+      if (pathname === '/write-for-us' && method === 'POST') return await submitGuestPost(env, request, ctx);
+      if (pathname === '/guest-post/status' && method === 'POST') return await resubmitGuestPost(env, request, url, ctx);
       if (pathname === '/subscribe' && method === 'POST') return await subscribe(env, request);
       if (pathname === '/api/subscribe' && method === 'POST') return await siteSubscribe(env, request);
       if (pathname === '/api/unsubscribe' && method === 'GET') return await siteUnsubscribe(env, url);
@@ -97,6 +140,8 @@ const worker = {
       if ((m = pathname.match(/^\/businesses\/([a-z0-9-]+)\/?$/))) return await businessProfile(env, m[1]);
       if (pathname === '/courses') return await coursesPage(env, url);
       if (pathname === '/advertise') return await advertisePage(env, url);
+      if (pathname === '/write-for-us' || pathname === '/guest-posts' || pathname === '/write-for-us/') return await writeForUsPage(env);
+      if (pathname === '/guest-post/status') return await guestStatusPage(env, url);
       if (pathname === '/standards') return await standardsPage(env);
       if (pathname === '/editor') return await editorPage(env);
       if (pathname === '/newsletters' || pathname === '/subscribe') return await newslettersPage(env, url);
@@ -120,14 +165,17 @@ const worker = {
     } catch (err) {
       console.error(err);
       if (pathname.startsWith('/api/')) return errorJson('Server error', 500);
-      return new Response('Boston Daily is temporarily unavailable. Please try again shortly.', { status: 500, headers: { 'content-type': 'text/plain' } });
+      // 503 + Retry-After tells Google the outage is temporary, so it retries instead of marking the page broken.
+      // https://developers.google.com/search/docs/crawling-indexing/http-network-errors
+      return new Response('Boston Daily is temporarily unavailable. Please try again shortly.', { status: 503, headers: { 'content-type': 'text/plain', 'retry-after': '60' } });
     }
   },
 
   async scheduled(event, env, ctx) {
     await ensureDatabase(env.DB);
     if (event.cron === '*/5 * * * *') {
-      ctx.waitUntil(publishDueScheduled(env.DB).then(() => checkStoryImages(env.DB, 12)));
+      // After publishing, guest authors whose story just went live get their "your post is live" email.
+      ctx.waitUntil(publishDueScheduled(env.DB).then(() => guestLiveSweep(env)).then(() => checkStoryImages(env.DB, 12)));
       return;
     }
     // Daily: build and publish today's edition, then routine link and health checks.
@@ -139,6 +187,8 @@ const worker = {
       if (new Date().getUTCDay() === 0) console.log(await sendNewsletter(env, 'weekly'));
       await checkProductLinks(env.DB, 30);
       await checkBusinessHealth(env.DB, 15);
+      // Re-check every live story photo today (the five-minute job works through the queue).
+      await requeueStoryImageChecks(env.DB);
     })());
   },
 };

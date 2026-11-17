@@ -1,0 +1,7 @@
+-- Front-page image fixes (2026-11-17).
+-- 1) Two sports stories showed the grey "Boston Daily" placeholder: the nightly image check wiped their loc.gov
+--    photos (now fixed in src/maintenance.js). They get real, on-topic, unused Wikimedia Commons photos, checked to load.
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Drake_Maye_%26_Michael_Jordan_Patriots_NOV2024.png/1280px-Drake_Maye_%26_Michael_Jordan_Patriots_NOV2024.png', hero_image_credit = 'Patriots quarterback Drake Maye during a game in November 2024 (file). Photo: Tennessee Titans / Wikimedia Commons, CC BY 3.0', hero_image_rights = 'licensed', image_checked_at = NULL WHERE slug = 'patriots-fear-drake-maye-fractured-ankle-out-indefinitely-devito' AND hero_image_url IS NULL;
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Evan_Fournier%2C_Boston_Celtics_vs_Orlando_Magic_on_May_5%2C_2021.jpg/1280px-Evan_Fournier%2C_Boston_Celtics_vs_Orlando_Magic_on_May_5%2C_2021.jpg', hero_image_credit = 'The Celtics play the Orlando Magic (file, May 2021). Photo: Jose Garcia / Wikimedia Commons, CC BY-SA 2.0', hero_image_rights = 'licensed', image_checked_at = NULL WHERE slug = 'magic-115-celtics-105-orlando-ends-boston-six-game-win-streak' AND hero_image_url IS NULL;
+-- 2) FullScopeMD "B12 (Injectable)": its product image no longer loads, so it is taken out of Special Picks.
+UPDATE products SET status = 'inactive', updated_at = '2026-11-17T22:15:00.000Z' WHERE id = 'p-130233-1bd82ea84b';

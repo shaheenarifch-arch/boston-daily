@@ -1,4 +1,5 @@
 import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
+import { guestAuthorBox, writeForUsBox } from '../guest-posts.js';
 import { esc, html, json, errorJson, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid, ipHash } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
@@ -412,6 +413,7 @@ export async function sectionPage(env, slug, ctx = null) {
         ${!isNewsSection && showCommerce ? paidProductAds(slug) : ''}
       </div>
       <aside class="col-rail">
+        ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() : ''}
         ${isNewsSection ? paidAdvertising(pickedMods.join('')) : railMods}
         ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>
@@ -457,6 +459,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   ctx?.waitUntil?.(db.prepare('UPDATE stories SET view_count = view_count + 1 WHERE id = ?').bind(story.id).run().catch(() => {}));
   const { results: comments } = await db.prepare("SELECT name, body, created_at FROM comments WHERE story_id = ? AND status = 'approved' ORDER BY created_at ASC LIMIT 200").bind(story.id).all();
   const commentNote = reqUrl?.searchParams.get('comment');
+  const guest = story.source_system === 'guest' ? await db.prepare('SELECT author_name, author_bio, author_website FROM guest_posts WHERE story_id = ?').bind(story.id).first() : null;
 
   const commercial = story.lane === 'partner_commerce';
   const showCommerce = commerceAllowed(section, story);
@@ -493,10 +496,13 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
       ${story.dek ? `<p class="story-dek">${esc(story.dek)}</p>` : ''}
       <p class="story-byline">${story.byline ? `By ${esc(story.byline)}` : ''}${reviewerLabel ? `<span class="reviewer">Reviewed by ${esc(reviewerLabel)}</span>` : ''}</p>
       <p class="story-times">${times}</p>
+      ${!commercial && story.type !== 'opinion' ? '<p class="story-ai-note">AI tools helped research and draft this story. A Boston Daily editor reviewed it before publication. <a href="/standards#ai">How we use AI</a>.</p>' : ''}
     </header>
     ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="${esc(story.headline)}" decoding="async">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'correction'), site.tz)}
-    <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial })}</div>
+    <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial, ugcLinks: story.source_system === 'guest' })}</div>
+    ${guestAuthorBox(guest)}
+    ${story.type === 'opinion' && !commercial ? writeForUsBox({ compact: true }) : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'update'), site.tz)}
     ${sourcesBlock(sources)}
     ${commercial ? '' : subscribeBox()}
@@ -520,7 +526,7 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
     author: story.byline
       ? (commercial || /staff$/i.test(story.byline)
         ? { '@type': 'Organization', name: story.byline, url: site.url ? `${site.url}/standards` : undefined }
-        : { '@type': 'Person', name: story.byline })
+        : { '@type': 'Person', name: guest ? guest.author_name : story.byline })
       : { '@type': 'Organization', name: `${site.name} Staff`, url: site.url ? `${site.url}/standards` : undefined },
     editor: reviewerName
       ? { '@type': 'Person', name: reviewerName, url: site.url && /shaheen arif/i.test(reviewerName) ? `${site.url}/editor` : undefined }
@@ -688,6 +694,12 @@ export async function advertisePage(env, url) {
     ${sent ? '<p class="flash flash-ok">Thanks. Your inquiry reached our partnerships team, and we will reply by email.</p>' : ''}
     ${err ? `<p class="flash flash-err">${err === 'email' ? 'Not sent: please enter a valid email address.' : esc(err)}</p>` : ''}
     <div class="columns"><div class="col-main">
+      <section class="prose" data-atlas-hide hidden style="margin:0 0 22px">
+        <h2 style="margin-top:0">See how AI sees your business</h2>
+        <p>Before you advertise, check how visible your website is to ChatGPT, Perplexity and Google AI — a free scan from ATLAS, no account needed.</p>
+        <div id="atlas-scan"></div>
+        <script src="https://iop.getservices.ai/widget.js"></script>
+      </section>
       <table class="ad-table"><thead><tr><th scope="col">Product</th><th scope="col">What it is</th><th scope="col">Get started</th></tr></thead>
       <tbody>${PACKAGES.map(([tag, name, desc]) => `<tr><td>${esc(name)}</td><td>${esc(desc)}</td><td><a href="#inquiry" data-advertise data-package="${esc(name)}">Plan this ad</a></td></tr>`).join('')}</tbody></table>
       <section class="prose" id="protocols"><h2>How advertising works here</h2>
@@ -780,6 +792,8 @@ export async function standardsPage(env) {
   const chrome = await loadChrome(env);
   const body = `<article class="prose standards"><h1>Editorial standards</h1>
     <p>Boston Daily is published by ${esc(site.network)}. AI tools help our newsroom find, research and draft stories. Editors decide what is published.</p>
+    <h2 id="ai">How we use AI</h2>
+    <p>AI tools help us spot news, gather public records and sources, and write first drafts. They do not publish anything on their own. An editor checks facts, names, quotes and sources and approves every news story before it goes live. News stories show an AI-use note under the byline. Opinion columns are written and signed by their named authors.</p>
     <h2 id="sourcing">Sourcing and copyright</h2>
     <p>We report from primary sources, official records, licensed wire services, permitted press releases and our own reporting. We do not copy or closely rewrite other publications’ articles. We use other outlets’ coverage only to discover stories, then report them from original sources. Images run only when we hold the rights to use them. Each story lists its public sources.</p>
     <h2 id="approval">Human approval</h2>
@@ -803,6 +817,7 @@ export async function editorPage(env) {
     'Healthcare &amp; Innovation', 'Business &amp; Economic Trends', 'Culture &amp; Lifestyle', 'Global Affairs', 'Community Stories'];
   const body = `<article class="prose standards editor-profile">
     <p class="editor-kicker">About the editor</p>
+    <img class="editor-photo" src="/img/shaheen-arif.jpg" alt="Shaheen Arif, Editor of BostonDaily.us" width="160" height="160" loading="eager">
     <h1>Shaheen Arif</h1>
     <p class="editor-role">Editor, BostonDaily.us</p>
     <p>Shaheen Arif is the Editor of BostonDaily.us, with a passion for reporting, journalism, public affairs, politics, emerging trends, and the changing lifestyles that shape communities.</p>
@@ -813,12 +828,14 @@ export async function editorPage(env) {
     <ul class="editor-interests">${interests.map((i) => `<li>${i}</li>`).join('')}</ul>
     <h2>Editorial mission</h2>
     <blockquote class="editor-mission">Report what matters. Understand what is changing. Give readers the context to form their own views.</blockquote>
-    <p>Story tip or correction? Email <a href="mailto:${esc(site.email)}">${esc(site.email)}</a>. Read our <a href="/standards">editorial standards</a>.</p>
+    <p>Story tip or correction? Email <a href="mailto:${esc(site.editorEmail)}">${esc(site.editorEmail)}</a>. Read our <a href="/standards">editorial standards</a>.</p>
   </article>`;
   return html(layout(env, chrome, {
     title: 'Shaheen Arif, Editor', description: 'Shaheen Arif is the Editor of BostonDaily.us, covering politics, public affairs, technology, healthcare and the trends shaping Boston and the nation.',
     canonical: '/editor', ogType: 'profile', body,
+    image: site.url ? `${site.url}/img/shaheen-arif.jpg` : undefined,
     jsonLd: { '@context': 'https://schema.org', '@type': 'ProfilePage', mainEntity: { '@type': 'Person', name: 'Shaheen Arif', jobTitle: 'Editor',
+      image: site.url ? `${site.url}/img/shaheen-arif.jpg` : undefined,
       worksFor: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined }, url: site.url ? `${site.url}/editor` : undefined,
       knowsAbout: ['Politics', 'Public affairs', 'Massachusetts', 'Technology', 'Artificial intelligence', 'Healthcare innovation', 'Business', 'Global affairs'] } },
   }));
@@ -871,7 +888,7 @@ export async function privacyPage(env) {
 export async function termsPage(env) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
-  const updated = 'November 2, 2026';
+  const updated = 'November 17, 2026';
   const body = `<article class="prose standards"><h1>Terms of use</h1>
     <p class="muted">Last updated: ${updated}</p>
     <p>These terms apply to ${esc(site.name)} (the “site”), published by ${esc(site.network)}. By using the site you agree to them. If you do not agree, please do not use the site.</p>
@@ -884,6 +901,9 @@ export async function termsPage(env) {
     <p>Comments are reviewed by an editor before they appear. By posting, you confirm that what you write is your own and lawful, and you give us permission to publish, edit for length or clarity, or remove it. Do not post abuse, harassment, spam, personal information about others, or anything defamatory or infringing.</p>
     <h2>Advertising and partner links</h2>
     <p>The site carries clearly labeled advertising and affiliate (partner) links, and we may earn a commission when you buy through them. Advertisers and partners do not buy, edit or approve our news coverage. Products and services offered by advertisers and partners are their responsibility, under their own terms. See <a href="/standards#commercial">how we label commercial content</a> and <a href="/advertise">advertise with us</a>.</p>
+    <h2 id="copyright">Copyright complaints (DMCA)</h2>
+    <p>If you believe something on the site infringes your copyright, email our designated agent at <a href="mailto:${esc(site.editorEmail)}?subject=${encodeURIComponent('[DMCA] Copyright notice')}">${esc(site.editorEmail)}</a> with: the work you own, the page link where it appears, your contact details, a statement that you believe in good faith the use is not authorized, a statement that your notice is accurate and, under penalty of perjury, that you are the owner or authorized to act for the owner, and your physical or electronic signature. We respond to valid notices by promptly removing or disabling access to the material. <strong>Repeat infringer policy:</strong> in appropriate circumstances we permanently block people who repeatedly post infringing material from commenting or submitting content. If your comment or material was removed by mistake, you may send a counter-notice to the same address.</p>
+    <p><strong>Designated agent:</strong> Shaheen Arif, 5 Constitution Ct, Hopkinton, MA 01748 · Phone: (313) 729-1534 · Email: <a href="mailto:${esc(site.editorEmail)}">${esc(site.editorEmail)}</a>. Registered with the U.S. Copyright Office, <a href="https://dmca.copyright.gov/osp/" rel="noopener">DMCA Designated Agent Directory</a>, registration no. DMCA-1085830.</p>
     <h2>Links to other websites</h2>
     <p>We link to sources and other websites so you can check our work. We are not responsible for their content or their privacy practices.</p>
     <h2>Privacy</h2>
@@ -897,7 +917,7 @@ export async function termsPage(env) {
   </article>`;
   return html(layout(env, chrome, {
     title: 'Terms of use', description: `The terms for using ${site.name}: our content, corrections, comments, labeled advertising and partner links, and privacy.`, canonical: '/terms', body,
-    jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', name: `Terms of use | ${site.name}`, url: site.url ? `${site.url}/terms` : undefined, dateModified: '2026-11-02',
+    jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', name: `Terms of use | ${site.name}`, url: site.url ? `${site.url}/terms` : undefined, dateModified: '2026-11-10',
       publisher: { '@type': 'NewsMediaOrganization', name: site.name, url: site.url || undefined } },
   }));
 }
@@ -916,6 +936,8 @@ export async function contactPage(env) {
     <p>Send tips, documents or leads to ${mail('[TIP] Story tip', site.email)}.</p>
     <h2>Corrections</h2>
     <p>If we got something wrong, ${mail('[CORRECTION] Correction request', 'tell us')} with the story link. See our <a href="/corrections">corrections</a> and <a href="/standards">editorial standards</a>.</p>
+    <h2>Guest posts</h2>
+    <p>We publish guest columns and analysis. Read the <a href="/write-for-us#guidelines">guidelines</a> and <a href="/write-for-us">submit a guest post</a>. Already sent one? <a href="/guest-post/status">Check its status</a>.</p>
     <h2>Advertising and partnerships</h2>
     <p>See <a href="/advertise">advertise with us</a>, or email about ${mail('[LISTING] Business listing', 'business listings')} and ${mail('[SPONSORED] Sponsored content', 'sponsored content')}.</p>
     <h2>Newsletters</h2>
@@ -985,7 +1007,7 @@ ${results.map((s) => `<url><loc>${xmlEsc(base)}/story/${xmlEsc(s.slug)}</loc><ne
       WHERE st.status IN ${PUBLIC} AND (st.section_slug = sec.slug OR ch.parent_slug = sec.slug OR st.type = sec.slug))`).all(),
     env.DB.prepare("SELECT slug FROM businesses WHERE status = 'active' AND (health_ok IS NULL OR health_ok = 1)").all(),
   ]);
-  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/standards', '/editor', '/corrections', '/privacy', '/terms', '/contact',
+  const urls = ['/', '/editions', '/shop', '/businesses', '/courses', '/advertise', '/write-for-us', '/standards', '/editor', '/corrections', '/privacy', '/terms', '/contact',
     ...sections.map((s) => `/section/${s.slug}`), ...biz.map((b) => `/businesses/${b.slug}`)];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

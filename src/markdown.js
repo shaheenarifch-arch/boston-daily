@@ -9,7 +9,9 @@ import { esc, isHttpUrl } from './util.js';
 // A leading YAML front-matter block (---\n…\n---) from imported posts is metadata, never shown to readers.
 const stripFrontMatter = (src) => String(src || '').replace(/\r\n?/g, '\n').replace(/^\s*---\n[\s\S]*?\n---[ \t]*(\n|$)/, '');
 
-export function renderMarkdown(src, { sponsoredLinks = false } = {}) {
+export function renderMarkdown(src, { sponsoredLinks = false, ugcLinks = false } = {}) {
+  // Guest-written text: links are marked nofollow ugc (https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links).
+  if (ugcLinks && !sponsoredLinks) sponsoredLinks = 'ugc';
   const lines = stripFrontMatter(src).split('\n');
   const out = [];
   let para = [];
@@ -89,7 +91,7 @@ function inline(text, sponsoredLinks) {
   s = s.replace(/\u0000(\d+)\u0000/g, (_, i) => {
     const { label, url } = tokens[Number(i)];
     if (!isHttpUrl(url)) return esc(label);
-    const rel = sponsoredLinks ? 'sponsored nofollow noopener' : 'noopener';
+    const rel = sponsoredLinks === 'ugc' ? 'nofollow ugc noopener' : sponsoredLinks ? 'sponsored nofollow noopener' : 'noopener';
     return `<a href="${esc(url)}" rel="${rel}" target="_blank">${esc(label)}</a>`;
   });
   return s;

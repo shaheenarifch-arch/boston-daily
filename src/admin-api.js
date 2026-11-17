@@ -12,6 +12,7 @@ import { visitorStats } from './analytics.js';
 import { searchConsoleReport } from './gsc.js';
 import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
 import { pageContext, selectOffers, cachedCandidates, clearOfferCache } from './offers.js';
+import { guestAdmin, guestLiveSweep } from './guest-posts.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
   'hero_image_rights', 'disclosure_label', 'disclosure_text', 'sponsor_name', 'sensitive', 'priority', 'is_lead_candidate', 'slug'];
@@ -91,9 +92,14 @@ export async function handleAdmin(request, env, url, editor) {
           case 'approve': return json({ ok: true, story: await approve(db, id, editor, body.note) });
           case 'reject': return json({ ok: true, story: await reject(db, id, editor, body.note) });
           case 'schedule': return json({ ok: true, story: await schedule(db, id, body.at, editor) });
-          case 'publish': return json({ ok: true, story: await publish(db, id, editor) });
+          case 'publish': {
+            const story = await publish(db, id, editor);
+            if (story.source_system === 'guest') await guestLiveSweep(env); // "your post is live" email right away
+            return json({ ok: true, story });
+          }
           case 'update': return json({ ok: true, story: await revisePublished(db, id, 'update', body, body.note, editor) });
           case 'correct': return json({ ok: true, story: await revisePublished(db, id, 'correction', body, body.note, editor) });
+          case 'photo': return replacePublishedPhoto(db, id, body, editor);
           case 'sources': return addSource(db, id, body, editor);
           default: break;
         }
@@ -253,6 +259,9 @@ export async function handleAdmin(request, env, url, editor) {
       return json({ ok: true, courses: results });
     }
 
+    // ── Guest posts (only Shaheen can accept, request changes or decline) ──
+    if (seg[0] === 'guest-posts') return await guestAdmin(env, request, seg, editor);
+
     // ── Inquiries ──
     if (seg[0] === 'inquiries') {
       if (seg.length === 1 && method === 'GET') {
@@ -306,7 +315,8 @@ async function overview(env) {
       (SELECT COALESCE(SUM(clicks),0) FROM businesses) AS business_clicks,
       (SELECT COUNT(*) FROM courses WHERE status = 'active') AS courses,
       (SELECT COUNT(*) FROM inquiries WHERE status = 'new') AS new_inquiries,
-      (SELECT COUNT(*) FROM comments WHERE status = 'pending') AS pending_comments`).first();
+      (SELECT COUNT(*) FROM comments WHERE status = 'pending') AS pending_comments,
+      (SELECT COUNT(*) FROM guest_posts WHERE status = 'received') AS new_guest_posts`).first();
   const today = localDate(new Date(), env.TIMEZONE);
   const edition = await db.prepare('SELECT e.*, (SELECT COUNT(*) FROM edition_items i WHERE i.edition_id = e.id) AS items FROM editions e WHERE edition_date = ?').bind(today).first();
   return {
@@ -381,6 +391,26 @@ async function storyDetail(db, id, editor) {
     requires_human: requiresHuman(story, section),
     transitions: TRANSITIONS[story.status] || [],
   });
+}
+
+/** Swap the photo on a published story (e.g. when its photo link breaks). Text changes still go through Update or Correct. */
+async function replacePublishedPhoto(db, id, body, editor) {
+  const story = await db.prepare('SELECT id, status FROM stories WHERE id = ?').bind(id).first();
+  if (!story) return errorJson('Story not found', 404);
+  if (!PUBLIC_STATES.includes(story.status)) return errorJson('Only published stories use photo replacement; edit drafts directly.', 409);
+  const url = (body.hero_image_url || '').trim();
+  const credit = (body.hero_image_credit || '').trim();
+  const rights = (body.hero_image_rights || '').trim();
+  if (!isHttpUrl(url)) return errorJson('Hero image must be an http(s) URL', 422);
+  if (!credit || !rights) return errorJson('A photo credit and usage rights are required.', 422);
+  const ts = nowIso();
+  await db.batch([
+    db.prepare('UPDATE stories SET hero_image_url = ?, hero_image_credit = ?, hero_image_rights = ?, image_checked_at = NULL, updated_at = ? WHERE id = ?')
+      .bind(url, credit, rights, ts, id),
+    db.prepare('INSERT INTO story_events (id, story_id, from_status, to_status, actor, note, created_at) VALUES (?,?,?,?,?,?,?)')
+      .bind(uid(), id, story.status, story.status, editor.name, `Photo replaced: ${credit}`.slice(0, 300), ts),
+  ]);
+  return json({ ok: true });
 }
 
 async function editStory(db, id, body, editor) {

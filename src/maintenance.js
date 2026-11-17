@@ -55,7 +55,12 @@ async function imageOk(url) {
     const type = res.headers.get('content-type') || '';
     res.body?.cancel?.();
     if (res.ok && type.startsWith('image/')) return true;
-    if ([400, 403, 404, 410].includes(res.status) || (res.ok && !type.startsWith('image/'))) return false;
+    // 403 is a bot wall (loc.gov refuses automated checks), not a dead photo: never remove a photo for it.
+    if (res.status === 403) return true;
+    // Library of Congress blocks automated checks in other ways too (error codes or an HTML page instead of
+    // the image), which made this check wipe working story photos. Never remove a loc.gov photo.
+    if (new URL(url).hostname === 'tile.loc.gov') return true;
+    if ([400, 404, 410].includes(res.status) || (res.ok && !type.startsWith('image/'))) return false;
     return null;
   } catch { return null; }
 }
@@ -64,6 +69,14 @@ async function imageOk(url) {
 function wikimediaOriginal(url) {
   const m = url.match(/^(https:\/\/upload\.wikimedia\.org\/wikipedia\/commons)\/thumb\/([0-9a-f]\/[0-9a-f]{2}\/[^/]+)\/[^/]+$/);
   return m ? `${m[1]}/${m[2]}` : null;
+}
+
+/** Once a day, queue every live story's hero image for a fresh check, so a photo link that breaks after
+ * publishing is caught by the five-minute checker instead of staying broken on the site. */
+export async function requeueStoryImageChecks(db) {
+  const r = await db.prepare(`UPDATE stories SET image_checked_at = NULL WHERE hero_image_url IS NOT NULL AND image_checked_at IS NOT NULL
+    AND status IN ('PUBLISHED','UPDATED','CORRECTED')`).run();
+  return r.meta?.changes ?? 0;
 }
 
 /**
