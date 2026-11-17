@@ -99,6 +99,7 @@ export async function handleAdmin(request, env, url, editor) {
           }
           case 'update': return json({ ok: true, story: await revisePublished(db, id, 'update', body, body.note, editor) });
           case 'correct': return json({ ok: true, story: await revisePublished(db, id, 'correction', body, body.note, editor) });
+          case 'photo': return replacePublishedPhoto(db, id, body, editor);
           case 'sources': return addSource(db, id, body, editor);
           default: break;
         }
@@ -390,6 +391,26 @@ async function storyDetail(db, id, editor) {
     requires_human: requiresHuman(story, section),
     transitions: TRANSITIONS[story.status] || [],
   });
+}
+
+/** Swap the photo on a published story (e.g. when its photo link breaks). Text changes still go through Update or Correct. */
+async function replacePublishedPhoto(db, id, body, editor) {
+  const story = await db.prepare('SELECT id, status FROM stories WHERE id = ?').bind(id).first();
+  if (!story) return errorJson('Story not found', 404);
+  if (!PUBLIC_STATES.includes(story.status)) return errorJson('Only published stories use photo replacement; edit drafts directly.', 409);
+  const url = (body.hero_image_url || '').trim();
+  const credit = (body.hero_image_credit || '').trim();
+  const rights = (body.hero_image_rights || '').trim();
+  if (!isHttpUrl(url)) return errorJson('Hero image must be an http(s) URL', 422);
+  if (!credit || !rights) return errorJson('A photo credit and usage rights are required.', 422);
+  const ts = nowIso();
+  await db.batch([
+    db.prepare('UPDATE stories SET hero_image_url = ?, hero_image_credit = ?, hero_image_rights = ?, image_checked_at = NULL, updated_at = ? WHERE id = ?')
+      .bind(url, credit, rights, ts, id),
+    db.prepare('INSERT INTO story_events (id, story_id, from_status, to_status, actor, note, created_at) VALUES (?,?,?,?,?,?,?)')
+      .bind(uid(), id, story.status, story.status, editor.name, `Photo replaced: ${credit}`.slice(0, 300), ts),
+  ]);
+  return json({ ok: true });
 }
 
 async function editStory(db, id, body, editor) {
