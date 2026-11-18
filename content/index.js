@@ -60,6 +60,7 @@ import d20261115 from './2026-11-15.sql';
 import d20261117 from './2026-11-17.sql';
 import d20261117photos from './2026-11-17-sports-photos.sql';
 import d20261117photos2 from './2026-11-17-sports-photos-2.sql';
+import d20261118 from './2026-11-18.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -121,4 +122,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-17', d20261117],
   ['2026-11-17-sports-photos', d20261117photos],
   ['2026-11-17-sports-photos-2', d20261117photos2],
+  ['2026-11-18', d20261118],
 ];
