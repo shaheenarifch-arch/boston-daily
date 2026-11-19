@@ -68,7 +68,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 ${canon ? `<meta property="og:url" content="${esc(canon)}">` : ''}
 ${(() => { const ogImage = image || `${site.url || ''}/og-default.png`; return `<meta property="og:image" content="${esc(ogImage)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title || site.name)}"><meta name="twitter:description" content="${esc(metaDesc)}"><meta name="twitter:image" content="${esc(ogImage)}">`; })()}
 <meta name="theme-color" content="#ffffff">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="alternate" type="application/rss+xml" title="${esc(site.name)}" href="/feed.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

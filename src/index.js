@@ -152,7 +152,8 @@ const worker = {
       if (pathname === '/contact') return await contactPage(env);
       if (pathname === '/search') return await searchPage(env, url);
       if ((m = pathname.match(/^\/go\/([pbc])\/([A-Za-z0-9-]+)$/))) return await outbound(env, m[1], m[2], ctx, url);
-      if (pathname === '/favicon.ico') return Response.redirect(`${url.origin}/favicon.svg`, 301);
+      // /favicon.ico is a real 16/32/48px icon in public/ (Google Search needs a raster icon, a multiple of 48px).
+      // Help: https://developers.google.com/search/docs/appearance/favicon-in-search
     if (pathname === '/llms.txt') return await llmsTxt(env);
     if (pathname === '/feed.xml') return await rssFeed(env);
       if (pathname === '/sitemap.xml') return await sitemap(env, false);
