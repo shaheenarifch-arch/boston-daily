@@ -64,6 +64,7 @@ import d20261118 from './2026-11-18.sql';
 import d20261118frontfix from './2026-11-18-front-page-fix.sql';
 import d20261118lead from './2026-11-18-front-page-lead.sql';
 import d20261119ailaws from './2026-11-19-ai-laws-update.sql';
+import d20261120thanksgiving from './2026-11-20-thanksgiving.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -129,4 +130,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-18-front-page-fix', d20261118frontfix],
   ['2026-11-18-front-page-lead', d20261118lead],
   ['2026-11-19-ai-laws-update', d20261119ailaws],
+  ['2026-11-20-thanksgiving', d20261120thanksgiving],
 ];
