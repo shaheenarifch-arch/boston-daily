@@ -11,7 +11,7 @@ import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
   SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard, paidAdvertising,
-  sourcesBlock, noticesBlock, emptyState, storyStamp, marketplaceFeature,
+  sourcesBlock, noticesBlock, emptyState, storyStamp, marketplaceFeature, networkModule,
 } from './components.js';
 
 const PUBLIC = "('PUBLISHED','UPDATED','CORRECTED')";
@@ -474,6 +474,13 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   recordImpressions(db, offerCtx, offers, ctx?.waitUntil?.bind(ctx));
   const offersHtml = paidAdvertising(partnerOffers(offers, offerCtx));
   const products = commercial && showCommerce ? await deals(db, { section: story.section_slug, limit: 3 }) : [];
+  // Labeled "From our network" box: section-matched network businesses (featured ones if the section has none).
+  // Same rules as other commercial modules: never on partner content, opinion, sensitive or commerce-free pages.
+  let network = [];
+  if (!commercial && showCommerce && story.type !== 'opinion') {
+    network = await networkFor(db, story.section_slug);
+    if (!network.length) network = await networkFor(db);
+  }
 
   const typeLabel = { analysis: 'Analysis', opinion: 'Opinion', feature: 'Feature' }[story.type];
   const liveAgo = (iso) => ` <span class="time-ago">(<time datetime="${esc(iso)}" data-ago>${esc(relativeStamp(iso, site.tz))}</time>)</span>`;
@@ -498,13 +505,14 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
       <p class="story-times">${times}</p>
       ${!commercial && story.type !== 'opinion' ? '<p class="story-ai-note">AI tools helped research and draft this story. A Boston Daily editor reviewed it before publication. <a href="/standards#ai">How we use AI</a>.</p>' : ''}
     </header>
-    ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="${esc(story.headline)}" decoding="async">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
+    ${story.hero_image_url && story.hero_image_rights ? `<figure class="story-figure"><img src="${esc(story.hero_image_url)}" alt="${esc(story.headline)}" decoding="async" fetchpriority="high">${story.hero_image_credit ? `<figcaption>${esc(story.hero_image_credit)}</figcaption>` : ''}</figure>` : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'correction'), site.tz)}
     <div class="story-body">${renderMarkdown(story.body, { sponsoredLinks: commercial, ugcLinks: story.source_system === 'guest' })}</div>
     ${guestAuthorBox(guest)}
     ${story.type === 'opinion' && !commercial ? writeForUsBox({ compact: true }) : ''}
     ${noticesBlock(notices.filter((n) => n.kind === 'update'), site.tz)}
     ${sourcesBlock(sources)}
+    ${networkModule(network, site.network)}
     ${commercial ? '' : subscribeBox()}
     ${shareBar(story)}
     ${commentsBlock(story, comments, commentNote, site.tz)}
@@ -538,7 +546,12 @@ export async function storyPage(env, slug, ctx, reqUrl = null) {
   };
   // Answer-engine markup: a "Frequently asked questions" section with ### questions becomes FAQPage data.
   const faq = faqFromBody(story.body);
-  const ld = faq.length >= 2 ? [jsonLd, { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : jsonLd;
+  const crumbs = [{ name: site.name, url: site.url ? `${site.url}/` : undefined }];
+  if (section?.parent) crumbs.push({ name: section.parent.name, url: site.url ? `${site.url}/section/${section.parent.slug}` : undefined });
+  if (section) crumbs.push({ name: section.name, url: site.url ? `${site.url}/section/${section.slug}` : undefined });
+  crumbs.push({ name: story.headline, url });
+  const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.url })) };
+  const ld = [jsonLd, breadcrumb, ...(faq.length >= 2 ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : [])];
   return html(layout(env, chrome, { drive: showCommerce,
     title: story.headline, description: story.dek || excerpt(story.body, 160), canonical: `/story/${story.slug}`,
     ogType: 'article', image: story.hero_image_rights ? story.hero_image_url : '', body, jsonLd: ld, active: section?.parent?.slug || story.section_slug,
