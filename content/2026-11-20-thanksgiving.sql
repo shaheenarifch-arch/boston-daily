@@ -17,7 +17,7 @@ Driving still dominates. AAA expects 72.9 million people to travel by car, sligh
 
 ## Will gas prices set a Thanksgiving record?
 
-They could. The national average was $3.81 a gallon on Nov. 16, according to AAA. If prices hold, Thanksgiving Day gas would be the most expensive on record, topping the previous Thanksgiving Day high of $3.58 set in 2022.
+They could. The national average was $3.69 a gallon on Nov. 20, according to AAA. If prices hold, Thanksgiving Day gas would be the most expensive on record, topping the previous Thanksgiving Day high of $3.58 set in 2022.
 
 ## What are the busiest days at Logan Airport?
 
@@ -31,7 +31,7 @@ Travelers should:
 
 ## Will air traffic problems affect the holiday?
 
-A problem with air traffic control communications and radar feeds on Friday, Nov. 13, led the Federal Aviation Administration to impose a nationwide ground stop that lasted more than four hours, the Associated Press reported. Transportation Secretary Sean Duffy and FAA Administrator Bryan Bedford said they expected air traffic to return to normal well before the holiday rush.
+A problem with air traffic control communications and radar feeds on Friday, Nov. 13, led the Federal Aviation Administration to impose a nationwide ground stop that lasted more than four hours, the Associated Press reported. Officials said the system would likely be back to normal before the Thanksgiving rush.
 
 ## What about the roads in Massachusetts?
 
@@ -66,7 +66,7 @@ This year''s total is still $5.42, or 8.5%, below that 2022 peak, the Farm Burea
 
 ## Why is Thanksgiving dinner more expensive this year?
 
-Turkey drove most of the increase. A 16-pound turkey averaged $23.68 in the survey, up 10% from $21.50 last year.
+Turkey drove most of the increase. A 16-pound turkey averaged $23.68 in the survey, up 10% from $21.30 last year.
 
 Apart from turkey, the Farm Bureau found higher prices for several other holiday staples, including boneless ham, milk, dinner rolls, sweet potatoes, russet potatoes, frozen peas and frozen green beans. Prices for several other items in the survey fell slightly.
 
@@ -239,7 +239,7 @@ INSERT OR IGNORE INTO story_sources (id, story_id, title, url, publisher, channe
 INSERT OR IGNORE INTO story_sources (id, story_id, title, url, publisher, channel, rights_type, verified, public, retrieved_at, notes, added_by, created_at) VALUES ('bd-20261120-tg-events-src8', 'bd-20261120-tg-events', 'Will Run for Pie / Newburyport Maudslay Turkey Trot 2026', 'https://runsignup.com/Race/MA/Newbuyport/WCRCWildTurkeyTrot5kRunWalk', 'RunSignup', 'web', 'PRIMARY_SOURCE', 1, 1, '2026-11-20T04:00:00.000Z', 'Opened and checked by the newsroom assistant on 2026-11-19. Editor to confirm.', 'newsroom-assistant', '2026-11-20T04:00:00.000Z');
 INSERT OR IGNORE INTO story_events (id, story_id, from_status, to_status, actor, note, created_at) VALUES ('bd-20261120-tg-events-ev1', 'bd-20261120-tg-events', NULL, 'EDITORIAL_REVIEW', 'newsroom-assistant', 'Thanksgiving 2026 package draft; awaiting editor approval', '2026-11-20T04:00:00.000Z');
 
-INSERT OR IGNORE INTO stories (id, slug, lane, type, section_slug, status, sensitive, headline, dek, body, byline, hero_image_url, hero_image_credit, hero_image_rights, disclosure_label, disclosure_text, source_system, source_ref, priority, is_lead_candidate, created_by, created_at, updated_at) VALUES ('bd-20261120-tg-help', 'how-to-help-thanksgiving-2026-greater-boston-food-banks-volunteer', 'newsroom', 'news_story', 'us', 'EDITORIAL_REVIEW', 1, 'How to help this Thanksgiving: Food banks and volunteering in Greater Boston', 'The Greater Boston Food Bank expects to distribute a record number of meals this year. Here is how to give, volunteer or find food.', 'For many families in Massachusetts, the holiday table is harder to fill this year. The Greater Boston Food Bank, the largest hunger-relief organization in New England, said in June that it expects to distribute more than 94 million meals in 2026, about 260,000 a day and roughly 2 million more than last year.
+INSERT OR IGNORE INTO stories (id, slug, lane, type, section_slug, status, sensitive, headline, dek, body, byline, hero_image_url, hero_image_credit, hero_image_rights, disclosure_label, disclosure_text, source_system, source_ref, priority, is_lead_candidate, created_by, created_at, updated_at) VALUES ('bd-20261120-tg-help', 'how-to-help-thanksgiving-2026-greater-boston-food-banks-volunteer', 'newsroom', 'news_story', 'us', 'EDITORIAL_REVIEW', 1, 'How to help this Thanksgiving: Food banks and volunteering in Greater Boston', 'The Greater Boston Food Bank expects to distribute a record number of meals this year. Here is how to give, volunteer or find food.', 'For many families in Massachusetts, the holiday table is harder to fill this year. The Greater Boston Food Bank, the largest hunger-relief organization in New England, said in June that it expects to distribute about 94 million meals in 2026, about 260,000 a day and roughly 2 million more than last year.
 
 The food bank also said it would put a record of nearly $65 million toward buying food this year.
 
@@ -338,7 +338,7 @@ For many of us, that list is long. It includes parents and grandparents who made
 
 This year, gratitude should come with a second step.
 
-The Greater Boston Food Bank expects to distribute more than 94 million meals in 2026, a record. That number is not an abstraction. It is the retiree stretching a fixed income, the family paying more for rent and heat, and the worker whose hours were cut. A Thanksgiving dinner for 10 costs about 6% more than last year, according to the American Farm Bureau Federation. For families already counting every dollar, that difference matters.
+The Greater Boston Food Bank expects to distribute about 94 million meals in 2026, a record. That number is not an abstraction. It is the retiree stretching a fixed income, the family paying more for rent and heat, and the worker whose hours were cut. A Thanksgiving dinner for 10 costs about 6% more than last year, according to the American Farm Bureau Federation. For families already counting every dollar, that difference matters.
 
 So here is my request for this Thanksgiving.
 
