@@ -67,6 +67,7 @@ import d20261119ailaws from './2026-11-19-ai-laws-update.sql';
 import d20261120thanksgiving from './2026-11-20-thanksgiving.sql';
 import d20261121 from './2026-11-21.sql';
 import d20261121cleanup from './2026-11-21-cleanup.sql';
+import d20261122bdguide from './2026-11-22-boston-daily-guide.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -135,4 +136,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-20-thanksgiving', d20261120thanksgiving],
   ['2026-11-21', d20261121],
   ['2026-11-21-cleanup', d20261121cleanup],
+  ['2026-11-22-boston-daily-guide', d20261122bdguide],
 ];

@@ -63,3 +63,13 @@ test('masthead: "h:mm AM ET" today, with the date on earlier days', () => {
   assert.match(mastheadUpdated('2026-01-05T11:30:00Z', TZ), /^Jan 5, 6:30 AM ET$/);
   assert.equal(mastheadUpdated(null, TZ), '');
 });
+
+test('a line that is only a site image renders as a captioned figure; other images are dropped', async () => {
+  const { renderMarkdown } = await import('../src/markdown.js');
+  const out = renderMarkdown('Intro.\n\n![The Advertise page](/img/guides/advertise.jpg "Screenshot of the Advertise page")\n\nMore.');
+  assert.match(out, /<figure class="story-figure"><img src="\/img\/guides\/advertise\.jpg" alt="The Advertise page" loading="lazy" decoding="async"><figcaption>Screenshot of the Advertise page<\/figcaption><\/figure>/);
+  assert.match(out, /<p>Intro\.<\/p>/);
+  for (const bad of ['https://evil.test/x.jpg', '/img/../secret.jpg', 'javascript:alert(1)', '/img/x.svg']) {
+    assert.ok(!renderMarkdown(`![x](${bad})`).includes('<img'), bad);
+  }
+});

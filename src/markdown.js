@@ -3,7 +3,8 @@ import { esc, isHttpUrl } from './util.js';
 /**
  * Minimal, safe Markdown → HTML for story bodies.
  * Everything is escaped first; only a small whitelist of constructs is produced.
- * Supports: ## / ### headings, paragraphs, - and 1. lists, > quotes, | pipe | tables |, **bold**, *italic*, [text](https://url).
+ * Supports: ## / ### headings, paragraphs, - and 1. lists, > quotes, | pipe | tables |, **bold**, *italic*, [text](https://url),
+ * and a line that is only ![alt](/img/file.jpg "caption") as a captioned figure (site-hosted images only).
  * Raw HTML in the source is never passed through.
  */
 // A leading YAML front-matter block (---\n…\n---) from imported posts is metadata, never shown to readers.
@@ -55,6 +56,12 @@ export function renderMarkdown(src, { sponsoredLinks = false, ugcLinks = false }
     flushTable();
     // A line of three or more dashes, stars or underscores is a section divider.
     if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { flushAll(); out.push('<hr>'); continue; }
+    // A line that is only an image becomes a captioned figure. Only images served from this site's /img/ folder are shown.
+    if ((m = line.match(/^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*$/))) {
+      flushAll();
+      if (isSiteImage(m[2])) out.push(`<figure class="story-figure"><img src="${esc(m[2])}" alt="${esc(m[1])}" loading="lazy" decoding="async">${m[3] ? `<figcaption>${esc(m[3])}</figcaption>` : ''}</figure>`);
+      continue;
+    }
     if ((m = line.match(/^(#{2,3})\s+(.*)$/))) {
       flushAll();
       const level = m[1].length;
@@ -78,6 +85,8 @@ export function renderMarkdown(src, { sponsoredLinks = false, ugcLinks = false }
   flushAll();
   return out.join('\n');
 }
+
+const isSiteImage = (url) => /^\/img\/[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*\.(jpe?g|png|webp)$/.test(url);
 
 function inline(text, sponsoredLinks) {
   // Pull links out before escaping so their URLs can be validated.
