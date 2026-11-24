@@ -1,0 +1,3 @@
+-- Business story (2026-11-24): the live Nvidia/Huang story had no photo. Add a real photo of Nvidia's HQ, not used anywhere else on the site.
+-- License checked on the Commons file page: Dicklyon, own work, CC BY-SA 4.0.
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Nvidia_campus_aerial.jpg', hero_image_credit = 'Nvidia''s Endeavor headquarters building and campus in Santa Clara, California (file photo, 2017). Photo: Dicklyon / Wikimedia Commons, CC BY-SA 4.0', hero_image_rights = 'licensed', image_checked_at = NULL WHERE slug = 'nvidia-board-reinstates-jensen-huang-ceo-eleven-days-after-resignation';
