@@ -65,6 +65,7 @@ import d20261118frontfix from './2026-11-18-front-page-fix.sql';
 import d20261118lead from './2026-11-18-front-page-lead.sql';
 import d20261119ailaws from './2026-11-19-ai-laws-update.sql';
 import d20261120thanksgiving from './2026-11-20-thanksgiving.sql';
+import d20261124tgweather from './2026-11-24-thanksgiving-weather-mbta.sql';
 import d20261121 from './2026-11-21.sql';
 import d20261121cleanup from './2026-11-21-cleanup.sql';
 import d20261122bdguide from './2026-11-22-boston-daily-guide.sql';
@@ -72,7 +73,7 @@ import d20261123 from './2026-11-23.sql';
 import d20261123autophoto from './2026-11-23-auto-recall-photo.sql';
 import d20261123uk from './2026-11-23-uk.sql';
 import d20261124 from './2026-11-24.sql';
-import d20261124nvphoto from './2026-11-24-nvidia-photo.sql';
+import d20261124fapage from './2026-11-24-first-amendment-page.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -146,5 +147,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-23-auto-recall-photo', d20261123autophoto],
   ['2026-11-23-uk', d20261123uk],
   ['2026-11-24', d20261124],
-  ['2026-11-24-nvidia-photo', d20261124nvphoto],
+  ['2026-11-24-first-amendment-page', d20261124fapage],
 ];

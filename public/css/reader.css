@@ -882,3 +882,11 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .ai-plan-featured .ai-plan-cta:hover, .ai-plan-featured .ai-plan-cta:focus-visible { background: #dbb65e; color: var(--navy-deep); }
 .ai-plans-help { margin: 1rem 0 0; font: 400 .85rem/1.5 var(--sans); color: var(--ink-soft); }
 .ai-plans-help a { color: var(--navy); font-weight: 600; }
+
+/* 1st Amendment Page (Opinion section) header */
+.fa-banner { margin: 1rem 0 .5rem; padding: 1.1rem 1.25rem; background: var(--paper); border: 1px solid var(--rule); border-left: 4px solid var(--navy); border-radius: 4px; max-width: 52rem; }
+.fa-kicker { margin: 0 0 .5rem; font: 700 .72rem/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.fa-quote { margin: 0; font: italic 400 1.08rem/1.55 var(--serif); color: var(--navy); }
+.fa-cite { margin: .5rem 0 0; font: 400 .82rem/1.4 var(--sans); color: var(--ink-soft); }
+.fa-invite { margin: .8rem 0 0; font: 500 .95rem/1.5 var(--sans); color: var(--ink); }
+.fa-cite a, .fa-invite a { color: var(--navy); font-weight: 600; }
