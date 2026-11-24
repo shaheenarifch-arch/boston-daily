@@ -10,6 +10,7 @@ import { trackVisit, loginLocked, recordLoginFailure } from './analytics.js';
 import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsletter.js';
 import { autofillEndpoint, copyEndpoint, checkEndpoint } from './advertise.js';
 import { siteSubscribe, siteUnsubscribe } from './site-subscribe.js';
+import { cornerFeed, cornerPost, cornerStand, cornerReplies, cornerReply, cornerReport, cornerDelete, cornerAudio } from './corner.js';
 import { writeForUsPage, submitGuestPost, guestStatusPage, resubmitGuestPost, guestLiveSweep } from './guest-posts.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
@@ -122,6 +123,23 @@ const worker = {
       if (pathname === '/api/unsubscribe' && method === 'GET') return await siteUnsubscribe(env, url);
       let cm;
       if ((cm = pathname.match(/^\/story\/([a-z0-9-]+)\/comment$/)) && method === 'POST') return await submitComment(env, request, cm[1]);
+      // ── Boston Speakers' Corner (open podium on the 1st Amendment Page) ──
+      if (pathname.startsWith('/api/corner/')) {
+        let c;
+        if (pathname === '/api/corner/feed' && method === 'GET') return await cornerFeed(env, url);
+        if (pathname === '/api/corner/post' && method === 'POST') return await cornerPost(env, request);
+        if ((c = pathname.match(/^\/api\/corner\/audio\/([a-f0-9-]{36})$/)) && (method === 'GET' || method === 'HEAD')) return await cornerAudio(env, request, c[1], ctx);
+        if ((c = pathname.match(/^\/api\/corner\/([a-f0-9-]{36})\/(stand|reply|report|delete|replies)$/))) {
+          if (c[2] === 'replies' && method === 'GET') return await cornerReplies(env, c[1]);
+          if (method === 'POST') {
+            if (c[2] === 'stand') return await cornerStand(env, request, c[1]);
+            if (c[2] === 'reply') return await cornerReply(env, request, c[1]);
+            if (c[2] === 'report') return await cornerReport(env, request, c[1], ctx);
+            if (c[2] === 'delete') return await cornerDelete(env, request, c[1]);
+          }
+        }
+        return errorJson('Not found', 404);
+      }
       if (pathname === '/api/health') return json({ ok: true, service: 'boston-daily' });
       if (pathname === '/api/updated' && method === 'GET') return await latestUpdate(env);
 

@@ -13,6 +13,7 @@ import { searchConsoleReport } from './gsc.js';
 import { checkProductLinks, checkBusinessHealth, checkStoryImages } from './maintenance.js';
 import { pageContext, selectOffers, cachedCandidates, clearOfferCache } from './offers.js';
 import { guestAdmin, guestLiveSweep } from './guest-posts.js';
+import { cornerAdmin } from './corner.js';
 
 const EDITABLE = ['headline', 'dek', 'body', 'section_slug', 'type', 'byline', 'credited_reviewer', 'hero_image_url', 'hero_image_credit',
   'hero_image_rights', 'disclosure_label', 'disclosure_text', 'sponsor_name', 'sensitive', 'priority', 'is_lead_candidate', 'slug'];
@@ -238,6 +239,9 @@ export async function handleAdmin(request, env, url, editor) {
       }
     }
 
+    // ── Boston Speakers' Corner (open podium; the editor reviews reports and can take posts down) ──
+    if (seg[0] === 'corner') return await cornerAdmin(env, request, url, editor, seg);
+
     // ── Comments (pre-moderated) ──
     if (seg[0] === 'comments') {
       if (seg.length === 1 && method === 'GET') {
@@ -316,7 +320,8 @@ async function overview(env) {
       (SELECT COUNT(*) FROM courses WHERE status = 'active') AS courses,
       (SELECT COUNT(*) FROM inquiries WHERE status = 'new') AS new_inquiries,
       (SELECT COUNT(*) FROM comments WHERE status = 'pending') AS pending_comments,
-      (SELECT COUNT(*) FROM guest_posts WHERE status = 'received') AS new_guest_posts`).first();
+      (SELECT COUNT(*) FROM guest_posts WHERE status = 'received') AS new_guest_posts,
+      (SELECT COUNT(DISTINCT post_id) FROM corner_reports WHERE resolved = 0) AS corner_reports`).first();
   const today = localDate(new Date(), env.TIMEZONE);
   const edition = await db.prepare('SELECT e.*, (SELECT COUNT(*) FROM edition_items i WHERE i.edition_id = e.id) AS items FROM editions e WHERE edition_date = ?').bind(today).first();
   return {

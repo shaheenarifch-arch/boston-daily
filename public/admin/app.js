@@ -83,7 +83,7 @@ async function start(name) {
 // ── Router ──
 const routes = {
   live: renderLive, queue: renderQueue, stories: renderStories, story: renderStory, new: renderNewStory,
-  editions: renderEditions, commerce: renderCommerce, businesses: renderBusinesses, inquiries: renderInquiries, comments: renderComments, guests: renderGuests, guest: renderGuest,
+  editions: renderEditions, commerce: renderCommerce, businesses: renderBusinesses, inquiries: renderInquiries, comments: renderComments, corner: renderCorner, guests: renderGuests, guest: renderGuest,
 };
 window.addEventListener('hashchange', route);
 async function route() {
@@ -107,6 +107,7 @@ async function refreshBadges() {
     $('#inq-count').hidden = !o.commerce.new_inquiries; $('#inq-count').textContent = o.commerce.new_inquiries;
     $('#com-count').hidden = !o.commerce.pending_comments; $('#com-count').textContent = o.commerce.pending_comments;
     $('#gp-count').hidden = !o.commerce.new_guest_posts; $('#gp-count').textContent = o.commerce.new_guest_posts;
+    $('#sc-count').hidden = !o.commerce.corner_reports; $('#sc-count').textContent = o.commerce.corner_reports;
   } catch { /* ignore */ }
 }
 
@@ -651,6 +652,39 @@ async function renderComments() {
     </tbody></table></div>` : '<p class="sub">Nothing here.</p>'}</section>`;
   view.querySelectorAll('[data-mod]').forEach((b) => b.addEventListener('click', async () => {
     try { await api('PATCH', `/comments/${b.dataset.id}`, { status: b.dataset.mod }); toast(b.dataset.mod === 'approved' ? 'Comment approved.' : 'Comment rejected.'); renderComments(); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
+  }));
+}
+
+// ── Boston Speakers' Corner ──
+// Posts go live at once. Readers report threats, doxxing, spam or illegal content; three serious reports hide a post until you decide.
+const SC_KIND = { text: 'Writing', voice: 'Voice', song: 'Song', video: 'Video' };
+async function renderCorner() {
+  const params = new URLSearchParams(location.hash.split('?')[1] || '');
+  const v = params.get('view') || 'reported';
+  const d = await api('GET', `/corner?view=${v}`);
+  const tab = (key, label) => `<a class="btn ${key === v ? 'btn-primary' : ''}" href="#/corner?view=${key}">${label}</a>`;
+  const media = (p) => p.audio_url ? `<audio controls preload="none" src="${esc(p.audio_url)}" style="max-width:260px"></audio>`
+    : p.youtube_id ? `<a href="https://www.youtube.com/watch?v=${esc(p.youtube_id)}" target="_blank" rel="noopener">Open video</a>` : '';
+  const btns = (p) => `${p.status !== 'live' ? `<button class="btn btn-primary" data-sc="live" data-id="${esc(p.id)}">Keep up</button>` : ''} ${p.status !== 'removed' ? `<button class="btn btn-danger" data-sc="removed" data-id="${esc(p.id)}">Take down</button>` : ''} ${p.status === 'live' && p.reasons ? `<button class="btn" data-sc="live" data-id="${esc(p.id)}">Dismiss reports</button>` : ''}`;
+  view.innerHTML = `<header class="view-head"><div><h1>Speakers’ Corner</h1>
+      <p class="sub">The open podium on the <a href="/section/opinion#corner" target="_blank" rel="noopener">1st Amendment Page</a>. Posts go live at once; only threats, doxxing, spam and illegal content come down. Three serious reader reports hide a post until you choose <strong>Keep up</strong> or <strong>Take down</strong>.</p></div>
+      <div class="actions">${tab('reported', 'Reported')}${tab('hidden', 'Hidden')}${tab('live', 'Live')}${tab('removed', 'Taken down')}</div></header>
+    <section class="panel">${d.posts.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Posted</th><th>Speaker</th><th>Type</th><th>Post</th><th>Reports</th><th></th></tr></thead><tbody>
+    ${d.posts.map((p) => `<tr><td class="nowrap">${esc(when(p.created_at))}</td><td>${esc(p.name)}${p.town ? `<br><span class="sub">${esc(p.town)}</span>` : ''}</td><td>${esc(SC_KIND[p.kind] || p.kind)}</td>
+      <td class="detail">${esc(p.body || '')}${media(p) ? `<div>${media(p)}</div>` : ''}${p.status_reason ? `<p class="sub">${esc(p.status_reason)}</p>` : ''}</td>
+      <td>${p.reasons ? esc(p.reasons.split(',').join(', ')) : '—'}</td><td class="nowrap">${btns(p)} <a class="btn" href="/section/opinion#v-${esc(p.id)}" target="_blank" rel="noopener">View</a></td></tr>`).join('')}
+    </tbody></table></div>` : `<p class="sub">${v === 'reported' ? 'No open reports. The podium is running itself.' : 'Nothing here.'}</p>`}</section>
+    ${d.replies.length ? `<section class="panel"><h2>Reported comments</h2><div class="table-wrap"><table class="table"><thead><tr><th>Posted</th><th>Name</th><th>Comment</th><th>Reports</th><th></th></tr></thead><tbody>
+    ${d.replies.map((r) => `<tr><td class="nowrap">${esc(when(r.created_at))}</td><td>${esc(r.name)}</td><td class="detail">${esc(r.body)}</td><td>${esc((r.reasons || '').split(',').join(', '))}</td>
+      <td class="nowrap"><button class="btn btn-primary" data-scr="live" data-id="${esc(r.id)}">Keep up</button> <button class="btn btn-danger" data-scr="removed" data-id="${esc(r.id)}">Take down</button></td></tr>`).join('')}
+    </tbody></table></div></section>` : ''}`;
+  view.querySelectorAll('[data-sc]').forEach((b) => b.addEventListener('click', async () => {
+    let reason;
+    if (b.dataset.sc === 'removed') { reason = prompt('Reason for taking it down (kept in the log):', 'Threat of violence'); if (reason === null) return; }
+    try { await api('PATCH', `/corner/${b.dataset.id}`, { status: b.dataset.sc, reason }); toast(b.dataset.sc === 'removed' ? 'Taken down.' : 'Kept up. Reports cleared.'); renderCorner(); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
+  }));
+  view.querySelectorAll('[data-scr]').forEach((b) => b.addEventListener('click', async () => {
+    try { await api('PATCH', `/corner/reply/${b.dataset.id}`, { status: b.dataset.scr }); toast(b.dataset.scr === 'removed' ? 'Comment taken down.' : 'Comment kept up.'); renderCorner(); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
   }));
 }
 
