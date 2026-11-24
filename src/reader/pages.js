@@ -418,6 +418,7 @@ export async function sectionPage(env, slug, ctx = null) {
       </div>
       <aside class="col-rail">
         ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() : ''}
+        ${slug === 'opinion' ? FIRST_AMENDMENT_ACTIVITIES : ''}
         ${isNewsSection ? paidAdvertising(pickedMods.join('')) : railMods}
         ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>
@@ -716,6 +717,30 @@ const FIRST_AMENDMENT_BANNER = `<div class="fa-banner">
         <blockquote class="fa-quote">“Congress shall make no law respecting an establishment of religion, or prohibiting the free exercise thereof; or abridging the freedom of speech, or of the press; or the right of the people peaceably to assemble, and to petition the Government for a redress of grievances.”</blockquote>
         <p class="fa-cite">First Amendment to the U.S. Constitution, 1791. <a href="https://www.archives.gov/founding-docs/bill-of-rights-transcript" target="_blank" rel="noopener">Read the Bill of Rights</a></p>
         <p class="fa-invite">This page belongs to our readers. Any guest writer can speak here, on any topic and from any viewpoint. <a href="/write-for-us">Submit your piece</a> · <a href="/write-for-us#guidelines">How it works</a></p>
+      </div>`;
+
+// "First Amendment activities" box on the 1st Amendment Page: links to the federal courts' free classroom
+// activities (landmark Supreme Court cases). Update the list here if uscourts.gov adds or moves activities.
+const USC_FA = 'https://www.uscourts.gov/about-federal-courts/educational-resources/educational-activities/first-amendment-activities';
+const FA_ACTIVITIES = [
+  ['Cox v. New Hampshire', 'Protests and freedom to assemble', 'cox-v-new-hampshire'],
+  ['Elonis v. U.S.', 'Social media and free speech', 'elonis-v-us'],
+  ['Counterman v. Colorado', 'Dive deeper: threats online', 'counterman-v-colorado'],
+  ['Engel v. Vitale', 'Prayer in schools and freedom of religion', 'engel-v-vitale'],
+  ['Hazelwood v. Kuhlmeier', 'Student newspapers and free speech', 'hazelwood-v-kuhlmeier'],
+  ['Hazelwood meets Mahanoy', 'Dive deeper: student speech off campus', 'hazelwood-meets-mahanoy'],
+  ['Morse v. Frederick', 'School-sponsored events and free speech', 'morse-v-frederick'],
+  ['Snyder v. Phelps', 'Public concerns, private matters and free speech', 'snyder-v-phelps'],
+  ['Texas v. Johnson', 'Flag burning and free speech', 'texas-v-johnson'],
+  ['Tinker v. Des Moines', 'Free speech in schools', 'tinker-v-des-moines'],
+  ['U.S. v. Alvarez', 'Lies and free speech', 'us-v-alvarez'],
+];
+const FIRST_AMENDMENT_ACTIVITIES = `<div class="module fa-activities">
+        <p class="module-title">First Amendment activities</p>
+        <p class="module-disclosure">Test your rights against landmark Supreme Court cases: religion, speech, press, assembly and petition. Free activities from the federal courts.</p>
+        <ul class="fa-act-list">${FA_ACTIVITIES.map(([c, t, path]) => `<li><a href="${USC_FA}/${path}" target="_blank" rel="noopener">${esc(c)}</a><span>${esc(t)}</span></li>`).join('')}</ul>
+        <p class="fa-act-more"><a href="https://www.uscourts.gov/file/document/first-amendment-word-cloud" target="_blank" rel="noopener">First Amendment word cloud</a> · <a href="${USC_FA}" target="_blank" rel="noopener">All activities</a></p>
+        <p class="fa-act-source">Source: United States Courts (uscourts.gov). Links open in a new tab.</p>
       </div>`;
 
 export async function coursesPage(env, url) {

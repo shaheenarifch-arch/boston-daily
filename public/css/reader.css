@@ -890,3 +890,11 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .fa-cite { margin: .5rem 0 0; font: 400 .82rem/1.4 var(--sans); color: var(--ink-soft); }
 .fa-invite { margin: .8rem 0 0; font: 500 .95rem/1.5 var(--sans); color: var(--ink); }
 .fa-cite a, .fa-invite a { color: var(--navy); font-weight: 600; }
+.fa-activities { margin-top: 1rem; }
+.fa-act-list { list-style: none; margin: .6rem 0 .4rem; padding: 0; }
+.fa-act-list li { padding: .45rem 0; border-top: 1px solid var(--rule); font: 400 .85rem/1.35 var(--sans); }
+.fa-act-list a { display: block; font-weight: 600; color: var(--navy); }
+.fa-act-list span { color: var(--ink-soft); }
+.fa-act-more { margin: .5rem 0 0; font: 600 .85rem/1.4 var(--sans); }
+.fa-act-more a { color: var(--navy); }
+.fa-act-source { margin: .5rem 0 0; font: 400 .75rem/1.4 var(--sans); color: var(--ink-soft); }
