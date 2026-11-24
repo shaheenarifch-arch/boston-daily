@@ -1,0 +1,2 @@
+-- Auto lead story (2026-11-23): replace the NHTSA tire diagram (a drawing) with a real photo, new to the site.
+UPDATE stories SET hero_image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Dallas_snow_2021.jpg/1280px-Dallas_snow_2021.jpg', hero_image_credit = 'A car driving through snow at night. Photo: Matthew T Rader, MatthewTRader.com / Wikimedia Commons, CC BY-SA 4.0', hero_image_rights = 'licensed', image_checked_at = NULL WHERE slug = 'check-car-open-recalls-nhtsa-vin-lookup';
