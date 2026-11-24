@@ -70,6 +70,7 @@ import d20261121cleanup from './2026-11-21-cleanup.sql';
 import d20261122bdguide from './2026-11-22-boston-daily-guide.sql';
 import d20261123 from './2026-11-23.sql';
 import d20261123autophoto from './2026-11-23-auto-recall-photo.sql';
+import d20261123uk from './2026-11-23-uk.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -141,4 +142,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-22-boston-daily-guide', d20261122bdguide],
   ['2026-11-23', d20261123],
   ['2026-11-23-auto-recall-photo', d20261123autophoto],
+  ['2026-11-23-uk', d20261123uk],
 ];
