@@ -4,6 +4,7 @@
 -- ── News sections ─────────────────────────────────────────────
 INSERT OR IGNORE INTO sections (slug,name,kind,parent_slug,sort_order,in_nav,commerce_allowed,always_human,description) VALUES
 ('us','US','news',NULL,10,1,1,0,'National news from across the United States'),
+('local','Local','news',NULL,15,1,1,0,'Boston and Massachusetts news'),
 ('us-politics','US Politics','news',NULL,20,1,0,1,'The White House, Congress, the courts, elections and policy'),
 ('world','World','news',NULL,30,1,1,0,'International news'),
 ('business','Business','news',NULL,40,1,1,0,'Markets, companies and the economy'),
