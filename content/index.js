@@ -65,6 +65,7 @@ import d20261118frontfix from './2026-11-18-front-page-fix.sql';
 import d20261118lead from './2026-11-18-front-page-lead.sql';
 import d20261119ailaws from './2026-11-19-ai-laws-update.sql';
 import d20261120thanksgiving from './2026-11-20-thanksgiving.sql';
+import d20261124tgweather from './2026-11-24-thanksgiving-weather-mbta.sql';
 import d20261121 from './2026-11-21.sql';
 import d20261121cleanup from './2026-11-21-cleanup.sql';
 import d20261122bdguide from './2026-11-22-boston-daily-guide.sql';
