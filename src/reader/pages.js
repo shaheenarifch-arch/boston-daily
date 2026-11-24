@@ -12,7 +12,7 @@ import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
 import {
-  SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard, paidAdvertising,
+  SITE, commerceAllowed, storyCard, partnerPicks, partnerOffers, partnerEdit, shopBand, paidProductAds, sidePanelProductAds, premiumAds, courseModule, courseItem, houseAd, productCard, paidAdvertising, affiliatesBox,
   sourcesBlock, noticesBlock, emptyState, storyStamp, marketplaceFeature, networkModule,
 } from './components.js';
 
@@ -393,6 +393,8 @@ export async function sectionPage(env, slug, ctx = null) {
     courseModule(courses, site.network),
   ];
   const isNewsSection = section.kind === 'news' || section.parent?.kind === 'news';
+  // Business pages carry the Affiliates box (Printful and future partners) under Paid Advertising.
+  const businessAffiliates = slug === 'business' || section.parent?.slug === 'business' ? affiliatesBox() : '';
   if (isNewsSection && showCommerce) sectionMods.push(paidProductAds(slug), sidePanelProductAds(slug, adProducts));
   // News sections keep commercial content to ~10% of the page, behind the Paid Advertising button; guide/shopping sections are partner-led.
   const pickedMods = isNewsSection ? commercialBudget(Math.max(news.length, 4), sectionMods, 2) : sectionMods.filter(Boolean);
@@ -423,7 +425,7 @@ export async function sectionPage(env, slug, ctx = null) {
       <aside class="col-rail">
         ${slug === 'opinion' ? eventsRail() + rightsCard() : ''}
         ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() : ''}
-        ${isNewsSection ? paidAdvertising(pickedMods.join('')) : railMods}
+        ${isNewsSection ? paidAdvertising(businessAffiliates + pickedMods.join('')) : businessAffiliates + railMods}
         ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>
     </div>`;
