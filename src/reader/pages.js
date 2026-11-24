@@ -6,6 +6,7 @@ import { getEditionWithItems } from '../editions.js';
 import { adPartnerProductIds } from '../ads.js';
 import { travelDesk, travelDeskProducts } from '../travel-desk.js';
 import { SECTION_PICKS, sectionPicks, sectionPicksProducts } from '../section-picks.js';
+import { flowerCarousel } from './flower-carousel.js';
 import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from '../advertise.js';
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
@@ -407,6 +408,7 @@ export async function sectionPage(env, slug, ctx = null) {
       <div class="col-main">
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, seenImages, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${picksHtml}
+        ${showCommerce ? flowerCarousel(slug) : ''}
         ${others.length ? `<div class="stream">${others.map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages, showSection: !!children.length })).join('')}</div>` : ''}
         ${travelDeskHtml}
         ${isNewsSection ? '' : mainMods}
