@@ -681,6 +681,32 @@ export async function businessProfile(env, slug) {
   }));
 }
 
+// GetServices.ai AI training plans (house offer from our own network). Checkout runs on
+// getservices.ai/learning, so both buttons link there; change prices or features here.
+const AI_PLANS_URL = 'https://getservices.ai/learning?utm_source=bostondaily&utm_medium=skill_center&utm_campaign=ai_plans#enroll';
+const AI_PLANS = [
+  { tag: 'Foundation', name: '4-Week AI Business Accelerator', price: '$189', cta: 'Start for $189', plan: 'foundation',
+    items: ['Basic AI understanding', '3 live workshops', 'All LLMs: ChatGPT, Gemini, Claude and Midjourney', 'Maximize AI in your own business'] },
+  { tag: 'Most popular', name: '3-Week AI Intensive — Done-With-You', price: '$389', cta: 'Claim Intensive $389', plan: 'intensive', featured: true,
+    items: ['Everything in Foundation', '1:1 technical roadblock removal', 'We implement any AI feature in your business', 'Lifetime replays', 'Certificate'] },
+];
+function aiPlansBlock() {
+  const card = (p) => `<article class="ai-plan${p.featured ? ' ai-plan-featured' : ''}">
+        <p class="ai-plan-tag">${esc(p.tag)}</p>
+        <h3 class="ai-plan-name">${esc(p.name)}</h3>
+        <p class="ai-plan-price"><strong>${esc(p.price)}</strong> one-time</p>
+        <ul class="ai-plan-list">${p.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
+        <a class="ai-plan-cta" href="${esc(AI_PLANS_URL.replace('#', `&utm_content=${p.plan}#`))}" target="_blank" rel="noopener" aria-label="${esc(`${p.cta}: ${p.name} on GetServices.ai (opens in a new tab)`)}">${esc(p.cta)}</a>
+      </article>`;
+  return `<section class="ai-plans" aria-labelledby="ai-plans-title">
+      <p class="label-network">From our network · GetServices.ai</p>
+      <h2 id="ai-plans-title" class="ai-plans-title">Start your AI journey: choose the level of support you need</h2>
+      <p class="ai-plans-sub">Build a foundation first, or get hands-on support to put AI to work faster.</p>
+      <div class="ai-plans-grid">${AI_PLANS.map(card).join('')}</div>
+      <p class="ai-plans-help">Not sure which plan fits? Foundation teaches you to use AI yourself; the Intensive adds 1:1 help and has our team build the AI feature for you. Payment and enrollment happen securely on GetServices.ai. <a href="https://getservices.ai/learning?utm_source=bostondaily&amp;utm_medium=skill_center&amp;utm_campaign=ai_plans_help" target="_blank" rel="noopener">See full course details</a> · <a href="mailto:agents@getservices.ai?subject=${encodeURIComponent('Question about the AI plans')}">Ask a question</a></p>
+    </section>`;
+}
+
 export async function coursesPage(env, url) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
@@ -693,6 +719,7 @@ export async function coursesPage(env, url) {
       <p class="page-sub">Online courses to learn new skills, curated by RealSkillSet (part of the ${esc(site.network)} network). Partner courses are marked Affiliate; check certificate fees on the provider’s site.</p>
       ${cats.length ? `<nav class="chips" aria-label="Course categories"><a href="/courses"${!cat ? ' aria-current="page"' : ''}>All</a>${cats.map((c) => `<a href="/courses?category=${encodeURIComponent(c.category)}"${cat === c.category ? ' aria-current="page"' : ''}>${esc(c.category)}</a>`).join('')}</nav>` : ''}
     </div>
+    ${aiPlansBlock()}
     ${results.length ? `<ul class="course-list course-list-wide">${results.map(courseItem).join('')}</ul>` : emptyState('The RealSkillSet catalog is being added. Visit realskillset.com in the meantime.', '<p><a class="button" href="https://realskillset.com" rel="noopener" target="_blank">Visit RealSkillSet</a></p>')}
     <p class="cta-line"><a href="mailto:${esc(site.email)}?subject=${encodeURIComponent('[COURSES] List my course')}">List your course</a></p>`;
   return html(layout(env, chrome, { title: 'Skill Center', description: 'Online courses to learn new skills: technology, business, languages, science and more.', canonical: '/courses', active: 'courses', body }));
