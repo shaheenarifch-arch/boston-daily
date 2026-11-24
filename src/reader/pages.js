@@ -402,10 +402,12 @@ export async function sectionPage(env, slug, ctx = null) {
       ${section.parent ? `<p class="crumb"><a href="/section/${esc(section.parent.slug)}">${esc(section.parent.name)}</a></p>` : ''}
       <h1>${esc(section.name)}</h1>
       ${section.always_human ? '<p class="page-sub">Every story in this section is reviewed and approved by a Boston Daily editor before publication.</p>' : ''}
+      ${slug === 'opinion' ? FIRST_AMENDMENT_BANNER : ''}
       ${children.length ? `<nav class="chips" aria-label="${esc(section.name)} subsections">${children.map((c) => `<a href="/section/${esc(c.slug)}">${esc(c.name)}</a>`).join('')}</nav>` : ''}
     </div>
     <div class="columns">
       <div class="col-main">
+        ${slug === 'opinion' && first ? '<h2 class="col-label">Latest opinions</h2>' : ''}
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, seenImages, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${picksHtml}
         ${showCommerce ? flowerCarousel(slug) : ''}
@@ -706,6 +708,15 @@ function aiPlansBlock() {
       <p class="ai-plans-help">Not sure which plan fits? Foundation teaches you to use AI yourself; the Intensive adds 1:1 help and has our team build the AI feature for you. Payment and enrollment happen securely on GetServices.ai. <a href="https://getservices.ai/learning?utm_source=bostondaily&amp;utm_medium=skill_center&amp;utm_campaign=ai_plans_help" target="_blank" rel="noopener">See full course details</a> · <a href="mailto:agents@getservices.ai?subject=${encodeURIComponent('Question about the AI plans')}">Ask a question</a></p>
     </section>`;
 }
+
+// Header for the Opinion section, shown to readers as the 1st Amendment Page (slug stays 'opinion' so links keep working).
+// The amendment's text is public domain; the link goes to the National Archives transcript.
+const FIRST_AMENDMENT_BANNER = `<div class="fa-banner">
+        <p class="fa-kicker">Freedom of speech · Your voice</p>
+        <blockquote class="fa-quote">“Congress shall make no law respecting an establishment of religion, or prohibiting the free exercise thereof; or abridging the freedom of speech, or of the press; or the right of the people peaceably to assemble, and to petition the Government for a redress of grievances.”</blockquote>
+        <p class="fa-cite">First Amendment to the U.S. Constitution, 1791. <a href="https://www.archives.gov/founding-docs/bill-of-rights-transcript" target="_blank" rel="noopener">Read the Bill of Rights</a></p>
+        <p class="fa-invite">This page belongs to our readers. Any guest writer can speak here, on any topic and from any viewpoint. <a href="/write-for-us">Submit your piece</a> · <a href="/write-for-us#guidelines">How it works</a></p>
+      </div>`;
 
 export async function coursesPage(env, url) {
   const site = SITE(env);

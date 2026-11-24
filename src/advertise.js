@@ -64,7 +64,7 @@ export function policyProblems({ company = '', website: rawWebsite = '', descrip
     if (m) blocked.push(`${label}: "${m[0]}" can't run on Boston Daily.`);
   }
   const noAds = (sections || []).filter((s) => NO_AD_SECTIONS.includes(s));
-  if (noAds.length) blocked.push(`No ads run on ${noAds.map((s) => (s === 'us-politics' ? 'US Politics' : 'Opinion')).join(' or ')} pages. Pick other sections.`);
+  if (noAds.length) blocked.push(`No ads run on ${noAds.map((s) => (s === 'us-politics' ? 'US Politics' : '1st Amendment Page')).join(' or ')} pages. Pick other sections.`);
   if (!website) flags.push('No website given: we need the landing page before anything runs.');
   else if (!isHttpUrl(website)) blocked.push('The website must be a full http(s) address.');
   if (ad.headline || ad.body) {

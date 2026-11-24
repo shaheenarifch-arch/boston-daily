@@ -73,6 +73,7 @@ import d20261123 from './2026-11-23.sql';
 import d20261123autophoto from './2026-11-23-auto-recall-photo.sql';
 import d20261123uk from './2026-11-23-uk.sql';
 import d20261124 from './2026-11-24.sql';
+import d20261124fapage from './2026-11-24-first-amendment-page.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -146,5 +147,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-23-auto-recall-photo', d20261123autophoto],
   ['2026-11-23-uk', d20261123uk],
   ['2026-11-24', d20261124],
-  ['2026-11-24-thanksgiving-weather-mbta', d20261124tgweather],
+  ['2026-11-24-first-amendment-page', d20261124fapage],
 ];
