@@ -1043,6 +1043,13 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .sc-rights details p { margin: .45rem 0 0; font: 400 .88rem/1.5 var(--sans); color: var(--ink-soft); }
 .sc-rights details a { color: var(--link); font-weight: 600; }
 .sc-rights-note { margin: .6rem 0 0; font: italic 400 .8rem/1.4 var(--sans); color: var(--granite); }
+.sc-cases { margin-top: 1rem; }
+.sc-cases-list { list-style: none; margin: 0; padding: 0; }
+.sc-cases-list li { border-top: 1px solid var(--rule); padding: .5rem 0; }
+.sc-cases-list a { color: var(--link); font: 600 .92rem/1.3 var(--sans); }
+.sc-cases-list span { display: block; margin-top: .15rem; font: 400 .84rem/1.4 var(--sans); color: var(--ink-soft); }
+.sc-cases-list .sc-cases-deeper a { font-size: .84rem; }
+.sc-cases .sc-rights-note a { color: var(--link); font-style: normal; font-weight: 600; }
 @media (max-width: 639px) {
   .sc { margin-left: -.5rem; margin-right: -.5rem; padding: .6rem; border-radius: 0; }
   .sc-title { font-size: 1.5rem; }

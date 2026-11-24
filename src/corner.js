@@ -680,3 +680,28 @@ export function rightsCard() {
     <p class="sc-rights-note">General information, not legal advice. For your own situation, talk to a lawyer.</p>
   </aside>`;
 }
+
+/** Side card: landmark Supreme Court First Amendment cases, each linking to the U.S. Courts educational activity. */
+export const LANDMARK_CASES = [
+  ['cox-v-new-hampshire', 'Cox v. New Hampshire', 'Protests and freedom to assemble'],
+  ['elonis-v-us', 'Elonis v. U.S.', 'Social media and free speech', ['counterman-v-colorado', 'Counterman v. Colorado']],
+  ['engel-v-vitale', 'Engel v. Vitale', 'Prayer in schools and freedom of religion'],
+  ['hazelwood-v-kuhlmeier', 'Hazelwood v. Kuhlmeier', 'Student newspapers and free speech', ['hazelwood-meets-mahanoy', 'Hazelwood meets Mahanoy']],
+  ['morse-v-frederick', 'Morse v. Frederick', 'School-sponsored events and free speech'],
+  ['snyder-v-phelps', 'Snyder v. Phelps', 'Public concerns, private matters, and free speech'],
+  ['texas-v-johnson', 'Texas v. Johnson', 'Flag burning and free speech'],
+  ['tinker-v-des-moines', 'Tinker v. Des Moines', 'Free speech in schools'],
+  ['us-v-alvarez', 'U.S. v. Alvarez', 'Lies and free speech'],
+];
+
+export function casesCard() {
+  const base = 'https://www.uscourts.gov/about-federal-courts/educational-resources/educational-activities/first-amendment-activities/';
+  const a = (slug, label) => `<a href="${base}${slug}" target="_blank" rel="noopener">${label}</a>`;
+  const items = LANDMARK_CASES.map(([slug, name, topic, deeper]) => `<li>${a(slug, `<em>${name}</em>`)}<span>${topic}</span>${deeper ? `<span class="sc-cases-deeper">Dive deeper: ${a(deeper[0], `<em>${deeper[1]}</em>`)}</span>` : ''}</li>`).join('');
+  return `<aside class="module sc-rights sc-cases" aria-labelledby="sc-cases-title">
+    <p class="module-title" id="sc-cases-title">Landmark cases</p>
+    <h3 class="sc-rights-h">The Supreme Court on free speech</h3>
+    <ul class="sc-cases-list">${items}</ul>
+    <p class="sc-rights-note">Case summaries and classroom activities from the federal courts. ${a('', 'All First Amendment activities')}</p>
+  </aside>`;
+}
