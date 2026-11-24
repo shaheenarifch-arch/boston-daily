@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { checkText, youtubeId, cleanName, audioMime, findAddress, cleanTag } from '../src/corner-filter.js';
-import { cornerHero, cornerApp, rightsCard } from '../src/corner.js';
+import { cornerHero, cornerApp, rightsCard, casesCard, LANDMARK_CASES } from '../src/corner.js';
 
 const blocked = (t) => checkText(t).ok === false;
 const code = (t) => checkText(t).code;
@@ -88,6 +88,16 @@ test('page fragments: real photo with credit, four tools, rights card with sourc
   for (const src of ['dhs.gov/file-civil-rights-complaint', 'oig.dhs.gov/hotline', 'justice.gov/crt', 'aclum.org/en/cases/glik-v-cunniffe']) assert.ok(rights.includes(src), src);
   assert.match(rights, /not legal advice/);
   assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(hero + app + rights));
+});
+
+test('landmark cases card: all 9 cases plus 2 dive-deeper links, each to uscourts.gov, no yellow', () => {
+  const html = casesCard();
+  assert.equal(LANDMARK_CASES.length, 9);
+  for (const name of ['Cox v. New Hampshire', 'Elonis v. U.S.', 'Counterman v. Colorado', 'Engel v. Vitale', 'Hazelwood v. Kuhlmeier', 'Hazelwood meets Mahanoy', 'Morse v. Frederick', 'Snyder v. Phelps', 'Texas v. Johnson', 'Tinker v. Des Moines', 'U.S. v. Alvarez']) assert.ok(html.includes(name), name);
+  const links = html.match(/href="[^"]+"/g);
+  assert.equal(links.length, 12);
+  for (const l of links) assert.ok(l.startsWith('href="https://www.uscourts.gov/about-federal-courts/educational-resources/educational-activities/first-amendment-activities/'), l);
+  assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
 });
 
 // ── Events board (freedom of assembly) ──
