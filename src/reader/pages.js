@@ -407,6 +407,7 @@ export async function sectionPage(env, slug, ctx = null) {
     </div>
     <div class="columns">
       <div class="col-main">
+        ${slug === 'opinion' && first ? '<h2 class="col-label">Latest opinions</h2>' : ''}
         ${first ? `<div class="section-lead">${storyCard(first, { size: 'lead', tz: site.tz, seenImages, showSection: !!children.length })}</div>` : emptyState(`${section.description ? `${section.description}. ` : ''}${section.name} stories will appear here as soon as the newsroom publishes them.`)}
         ${picksHtml}
         ${showCommerce ? flowerCarousel(slug) : ''}
