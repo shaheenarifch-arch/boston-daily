@@ -204,7 +204,8 @@ function guidelines(site) {
       <li><strong>Written by you:</strong> you may use tools to check grammar, but the ideas and writing must be yours. Mass-produced AI text is declined.</li>
       <li><strong>Links:</strong> up to 3 helpful links in the article and one link in your bio. Guest links are marked <code>nofollow</code>, as <a href="https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links" target="_blank" rel="noopener">Google recommends</a>.</li>
       <li><strong>Free and independent:</strong> we never charge to publish a guest post and we never accept payment for one. Want paid placement? That is clearly labeled <a href="/advertise">sponsored content</a>.</li>
-      <li><strong>Not accepted:</strong> gambling, adult, payday loans, crypto promotion, unproven health claims, personal attacks, and anything that breaks our <a href="/standards">editorial standards</a>.</li>
+      <li><strong>Any topic, any viewpoint:</strong> our 1st Amendment Page is open to every voice. We do not turn pieces down because we disagree with them.</li>
+      <li><strong>The only limits</strong> are speech the law does not protect and spam: defamation (false statements of fact that harm a real person), threats or calls to violence, harassment or private details of private people, someone else's copyrighted work, and ads or scams dressed up as articles. <a href="https://www.uscourts.gov/about-federal-courts/educational-resources/about-educational-outreach/activity-resources/what-does" target="_blank" rel="noopener">What the First Amendment does and does not protect</a>.</li>
       <li><strong>Editing:</strong> the editor may edit for length, clarity, accuracy and style, and decides the headline and publication date. Every guest post is personally approved by the editor before it goes live.</li>
     </ul>
     <h3 id="photos">Photo rules</h3>
@@ -224,7 +225,7 @@ export async function writeForUsPage(env, { values = {}, problems = [] } = {}) {
   const site = SITE(env);
   const chrome = await loadChrome(env);
   const v = { section_slug: 'columns', ...values };
-  const body = `<div class="page-head"><p class="crumb"><a href="/section/opinion">Opinion</a></p><h1>Write for Boston Daily</h1>
+  const body = `<div class="page-head"><p class="crumb"><a href="/section/opinion">1st Amendment Page</a></p><h1>Write for Boston Daily</h1>
       <p class="page-sub">Share your view with our readers. Guest columns and analysis are free to submit, and every piece is read and approved by the editor before it is published.</p>
       <p><a class="button" href="#guest-form">Submit a guest post</a> <a class="button button-quiet" href="#guidelines">Read the guidelines</a></p></div>
     <div class="columns"><div class="col-main">${guidelines(site)}</div>
@@ -406,8 +407,8 @@ export function guestAuthorBox(gp) {
 export function writeForUsBox({ compact = false } = {}) {
   return compact
     ? '<p class="gp-cta-line"><strong>Have a view?</strong> <a href="/write-for-us">Submit a guest column</a> to Boston Daily.</p>'
-    : `<div class="module gp-cta"><p class="module-title">Write for Boston Daily</p>
-      <p class="module-disclosure">Have an argument our readers should hear? We publish guest columns and analysis, ${MIN_WORDS}–${MAX_WORDS} words. Free to submit; every piece is reviewed by the editor.</p>
+    : `<div class="module gp-cta"><p class="module-title">Your voice on the 1st Amendment Page</p>
+      <p class="module-disclosure">Any guest writer, any topic, any viewpoint. Send ${MIN_WORDS}–${MAX_WORDS} words. Free to submit; the editor reviews each piece before it goes live.</p>
       <p><a class="button" href="/write-for-us">Submit a guest post</a></p><p><a class="module-more" href="/write-for-us#guidelines">Read the guidelines</a></p></div>`;
 }
 
