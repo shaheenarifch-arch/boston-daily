@@ -859,3 +859,26 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .gp-lookup { max-width: 28rem; }
 /* The step-by-step form hides steps and buttons with the hidden attribute; display rules above must not override it. */
 .gp-form [hidden] { display: none !important; }
+
+/* Skill Center: GetServices.ai AI plans (house offer). Navy text only; gold is used for borders and the featured button. */
+.ai-plans { margin: 1.5rem 0 2rem; padding: 1.4rem 1.25rem 1.1rem; background: var(--paper); border: 1px solid var(--rule); border-top: 3px solid var(--navy); border-radius: 4px; box-shadow: var(--shadow-card); }
+.ai-plans .label-network { margin: 0 0 .35rem; font: 700 .7rem/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.ai-plans-title { margin: 0; font: 600 1.4rem/1.25 var(--serif); color: var(--navy); }
+.ai-plans-sub { margin: .35rem 0 1.1rem; font: 400 .95rem/1.5 var(--sans); color: var(--ink-soft); }
+.ai-plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
+.ai-plan { display: flex; flex-direction: column; padding: 1.1rem 1.1rem 1.2rem; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+.ai-plan-featured { border: 2px solid var(--gold); }
+.ai-plan-tag { margin: 0 0 .4rem; font: 700 .72rem/1 var(--sans); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); }
+.ai-plan-featured .ai-plan-tag { color: var(--navy); }
+.ai-plan-name { margin: 0; font: 600 1.15rem/1.3 var(--serif); color: var(--navy); }
+.ai-plan-price { margin: .5rem 0 .75rem; font: 400 .9rem var(--sans); color: var(--ink-soft); }
+.ai-plan-price strong { font: 700 1.9rem/1 var(--sans); color: var(--ink); margin-right: .2rem; }
+.ai-plan-list { list-style: none; margin: 0 0 1.1rem; padding: 0; font: 400 .9rem/1.45 var(--sans); color: var(--ink); }
+.ai-plan-list li { position: relative; padding: .22rem 0 .22rem 1.35rem; }
+.ai-plan-list li::before { content: '✓'; position: absolute; left: 0; color: var(--navy); font-weight: 700; }
+.ai-plan-cta { margin-top: auto; display: block; text-align: center; padding: .75rem 1rem; border-radius: 6px; background: var(--navy); color: #fff; font: 700 .92rem/1 var(--sans); text-decoration: none; }
+.ai-plan-cta:hover, .ai-plan-cta:focus-visible { background: var(--navy-deep); color: #fff; }
+.ai-plan-featured .ai-plan-cta { background: var(--gold); color: var(--navy-deep); }
+.ai-plan-featured .ai-plan-cta:hover, .ai-plan-featured .ai-plan-cta:focus-visible { background: #dbb65e; color: var(--navy-deep); }
+.ai-plans-help { margin: 1rem 0 0; font: 400 .85rem/1.5 var(--sans); color: var(--ink-soft); }
+.ai-plans-help a { color: var(--navy); font-weight: 600; }
