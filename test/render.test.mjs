@@ -73,3 +73,14 @@ test('a line that is only a site image renders as a captioned figure; other imag
     assert.ok(!renderMarkdown(`![x](${bad})`).includes('<img'), bad);
   }
 });
+
+test('Business Affiliates box: Printful affiliate link, sponsored rel, disclosure, no yellow', async () => {
+  const { affiliatesBox } = await import('../src/reader/components.js');
+  const html = affiliatesBox();
+  assert.match(html, />Affiliates</);
+  assert.match(html, /href="https:\/\/www\.printful\.com\/a\/getservices"/);
+  assert.match(html, /rel="sponsored nofollow noopener noreferrer"/);
+  assert.match(html, /may earn a commission/);
+  assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
+  assert.equal(affiliatesBox([]), '');
+});

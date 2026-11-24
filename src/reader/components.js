@@ -319,6 +319,31 @@ export function paidAdvertising(inner, { variant = '' } = {}) {
   </details>`;
 }
 
+/** Business section: affiliate partners, shown inside Paid Advertising. Links are tracked affiliate links, marked sponsored. */
+export const BUSINESS_AFFILIATES = [
+  {
+    name: 'Printful',
+    url: 'https://www.printful.com/a/getservices',
+    blurb: 'Sell your own printed and embroidered merchandise, made to order one piece at a time, with no stock to hold and no minimum run.',
+    uses: 'T-shirts, hoodies, hats, embroidery, posters and accessories',
+    cta: 'Start with Printful',
+  },
+];
+
+export function affiliatesBox(items = BUSINESS_AFFILIATES) {
+  if (!items.length) return '';
+  return `<aside class="module affiliates" aria-labelledby="aff-h">
+    <p class="aff-kicker"><span id="aff-h">Affiliates</span><span class="label label-commerce">Affiliate</span></p>
+    ${items.map((a) => `<div class="aff-item">
+      <p class="aff-name">${esc(a.name)}</p>
+      <p class="aff-blurb">${esc(a.blurb)}</p>
+      ${a.uses ? `<p class="aff-uses">${esc(a.uses)}</p>` : ''}
+      <a class="button aff-cta" href="${esc(a.url)}" target="_blank" rel="sponsored nofollow noopener noreferrer" aria-label="${esc(`${a.cta} (opens in a new tab)`)}">${esc(a.cta)}</a>
+    </div>`).join('')}
+    <p class="aff-note">Boston Daily may earn a commission if you sign up through these links. <a href="/standards">How we label advertising</a></p>
+  </aside>`;
+}
+
 export function houseAd(site, kind = 'ADS', placement = null) {
   const ad = placement ? campaignFor(placement) : null;
   if (ad) {
