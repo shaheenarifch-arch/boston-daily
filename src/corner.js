@@ -29,7 +29,6 @@ const AUTO_HIDE_REPORTS = 3;
 const SERIOUS = ['threat', 'doxxing', 'illegal'];
 const RATE = { post: 10, reply: 30, report: 20, stand: 300, ai: 20 };
 const AI_DAILY_CAP = 400; // borderline-post checks per day across the whole site (keeps the Claude bill to cents)
-const PUBLIC_STORY = "('PUBLISHED','UPDATED','CORRECTED')";
 
 async function bump(env, vid, kind, limit, hourly = true) {
   const hour = hourly ? new Date().toISOString().slice(0, 13) : new Date().toISOString().slice(0, 10);
@@ -105,20 +104,9 @@ export async function cornerFeed(env, url) {
         WHERE status = 'live' AND post_id IN (${ids.map(() => '?').join(',')})) WHERE rn <= 2 ORDER BY created_at`).bind(...ids).all();
     for (const r of reps) (byPost.get(r.post_id) || byPost.set(r.post_id, []).get(r.post_id)).push(r);
   }
+  // Reader posts only. The editor's columns are listed once, in the page's "Columns" section,
+  // so they are not repeated in this feed.
   const items = posts.map((p) => ({ type: 'post', ...publicPost(p, byPost.get(p.id) || []) }));
-
-  // The editor's own columns appear in the newest-first feed, marked "Editor".
-  if (sort === 'new' && !kind && !tag && !focus) {
-    const upper = before || '9999';
-    const lower = more ? posts[posts.length - 1].created_at : '0000';
-    const { results: cols } = await db.prepare(`SELECT s.slug, s.headline, s.dek, s.byline, s.hero_image_url, s.hero_image_credit, s.published_at FROM stories s
-      WHERE s.lane = 'newsroom' AND s.status IN ${PUBLIC_STORY} AND (s.section_slug = 'opinion' OR s.type = 'opinion' OR s.section_slug IN (SELECT slug FROM sections WHERE parent_slug = 'opinion'))
-        AND s.published_at < ? AND s.published_at >= ? ORDER BY s.published_at DESC LIMIT 10`).bind(upper, lower).all().catch(() => ({ results: [] }));
-    for (const c of cols) {
-      items.push({ type: 'column', slug: c.slug, headline: c.headline, dek: c.dek || '', byline: c.byline || 'Boston Daily', image: c.hero_image_url || '', image_credit: c.hero_image_credit || '', created_at: c.published_at });
-    }
-    items.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-  }
 
   const next = more ? (sort === 'top' ? { offset: offset + PAGE_SIZE } : { before: posts[posts.length - 1].created_at }) : null;
   const stats = await db.prepare("SELECT COUNT(*) AS posts, COALESCE(SUM(stand_count),0) AS stands, COUNT(DISTINCT ip_hash) AS speakers FROM corner_posts WHERE status = 'live'").first();
