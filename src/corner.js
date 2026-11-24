@@ -21,6 +21,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { json, errorJson, esc, uid, nowIso, ipHash, readJson } from './util.js';
 import { checkText, cleanName, cleanLine, cleanText, cleanTag, tagLabel, youtubeId, audioMime, LIMITS, REPORT_SET, TAGS, REPORT_REASONS } from './corner-filter.js';
 import { AI_MODEL } from './advertise.js';
+import { eventsAdmin, EVENT_KINDS, EVENT_REPORT_REASONS, STATES } from './corner-events.js';
 
 const PAGE_SIZE = 15;
 const CHUNK = 512 * 1024;
@@ -408,6 +409,7 @@ export async function cornerAudio(env, request, audioId, ctx = null) {
 export async function cornerAdmin(env, request, url, editor, seg) {
   const db = env.DB;
   const method = request.method;
+  if (seg[1] === 'events') return eventsAdmin(env, request, url, editor, seg);
   if (seg.length === 1 && method === 'GET') {
     const view = ['reported', 'hidden', 'live', 'removed'].includes(url.searchParams.get('view')) ? url.searchParams.get('view') : 'reported';
     const q = {
@@ -479,7 +481,15 @@ export function cornerHero() {
 
 export function cornerApp() {
   const tags = TAGS.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
-  return `<section id="corner" class="sc" aria-label="Boston Speakers’ Corner feed" data-tags='${esc(JSON.stringify(TAGS))}' data-reasons='${esc(JSON.stringify(REPORT_REASONS))}'>
+  const states = STATES.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('');
+  const kinds = EVENT_KINDS.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
+  return `<section id="corner" class="sc" aria-label="Boston Speakers’ Corner" data-tags='${esc(JSON.stringify(TAGS))}' data-reasons='${esc(JSON.stringify(REPORT_REASONS))}' data-ereasons='${esc(JSON.stringify(EVENT_REPORT_REASONS))}'>
+    <button type="button" class="sc-today" id="sc-today" hidden></button>
+    <div class="sc-switch" role="tablist" aria-label="Speakers’ Corner sections">
+      <button type="button" role="tab" id="sc-tab-podium" aria-controls="sc-panel-podium" aria-selected="true" data-tab="podium">🎤 Podium</button>
+      <button type="button" role="tab" id="sc-tab-events" aria-controls="sc-panel-events" aria-selected="false" data-tab="events">📅 Events <span class="sc-badge" id="sc-events-count" hidden></span></button>
+    </div>
+    <div id="sc-panel-podium" role="tabpanel" aria-labelledby="sc-tab-podium">
     <div class="sc-composer" id="sc-composer">
       <div class="sc-composer-top">
         <span class="sc-avatar sc-avatar-you" aria-hidden="true">You</span>
@@ -561,6 +571,65 @@ export function cornerApp() {
     <button type="button" class="sc-new" id="sc-new" hidden></button>
     <div class="sc-feed" id="sc-feed" aria-live="polite"><p class="sc-loading">Gathering the crowd…</p></div>
     <button type="button" class="sc-more" id="sc-more" hidden>Show more voices</button>
+    </div>
+
+    <div id="sc-panel-events" role="tabpanel" aria-labelledby="sc-tab-events" hidden>
+      <div class="sc-composer sc-ev-head">
+        <h3 class="sc-ev-title">Assemble</h3>
+        <p class="sc-ev-lede">The First Amendment protects “the right of the people peaceably to assemble.” Find a rally, vigil, town hall or know-your-rights training, or post your own. Events go on the board right away.</p>
+        <button type="button" class="sc-submit" id="sc-ev-new">＋ Post an event</button>
+        <form class="sc-form" id="sc-ev-form" hidden novalidate>
+          <p class="sc-help" id="sc-ev-form-help">Fill in what, when and where. Public places only: a park, a plaza, a church hall, a library, a meeting house, or online. Never someone’s home.</p>
+          <div class="sc-row">
+            <div><label class="sc-label" for="ev-kind">What kind of gathering</label><select id="ev-kind" name="kind">${kinds}</select></div>
+            <div class="sc-span2"><label class="sc-label" for="ev-title">Event name</label><input id="ev-title" name="title" maxlength="120" placeholder="Vigil for families separated by ICE"></div>
+          </div>
+          <div class="sc-row">
+            <div><label class="sc-label" for="ev-date">Date</label><input id="ev-date" name="date" type="date"></div>
+            <div><label class="sc-label" for="ev-start">Starts</label><input id="ev-start" name="start" type="time" step="900"></div>
+            <div><label class="sc-label" for="ev-end">Ends <span class="sc-opt">(optional)</span></label><input id="ev-end" name="end" type="time" step="900"></div>
+          </div>
+          <p class="sc-note">Times are local to the event’s state.</p>
+          <label class="sc-check"><input type="checkbox" id="ev-online" name="online"> It’s online (Zoom, Google Meet, YouTube Live…)</label>
+          <div data-ev="online" hidden><label class="sc-label" for="ev-online-url">Link to join</label><input id="ev-online-url" name="online_url" type="url" placeholder="https://zoom.us/j/…"></div>
+          <div data-ev="place">
+            <label class="sc-label" for="ev-venue">Place</label><input id="ev-venue" name="venue" maxlength="120" placeholder="Boston Common, Parkman Bandstand">
+            <label class="sc-label" for="ev-address">Street address <span class="sc-opt">(optional, public venues only)</span></label><input id="ev-address" name="address" maxlength="160" placeholder="139 Tremont St">
+          </div>
+          <div class="sc-row">
+            <div data-ev="place"><label class="sc-label" for="ev-town">Town or city</label><input id="ev-town" name="town" maxlength="60" placeholder="Boston"></div>
+            <div><label class="sc-label" for="ev-state">State</label><select id="ev-state" name="state">${states}</select></div>
+            <div><label class="sc-label" for="ev-tag">Speaking for <span class="sc-opt">(optional)</span></label><select id="ev-tag" name="tag"><option value="">Choose a community</option>${tags}</select></div>
+          </div>
+          <div class="sc-row">
+            <div><label class="sc-label" for="ev-organizer">Organised by</label><input id="ev-organizer" name="organizer" maxlength="80" placeholder="Group name, or your first name"></div>
+            <div class="sc-span2"><label class="sc-label" for="ev-link">Event page or sign-up link <span class="sc-opt">(optional)</span></label><input id="ev-link" name="link" type="url" placeholder="https://www.eventbrite.com/e/…"></div>
+          </div>
+          <label class="sc-label" for="ev-body">What to know <span class="sc-opt">(optional)</span></label>
+          <textarea id="ev-body" name="body" rows="3" maxlength="2000" placeholder="What it’s about, what to bring, accessibility, who’s speaking."></textarea>
+          <label class="sc-check" data-ev="place"><input type="checkbox" id="ev-public" name="public_place"> This is a public place or a venue open to the public, not someone’s home.</label>
+          <input type="text" name="website" class="sc-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <p class="sc-error" id="sc-ev-error" role="alert" hidden></p>
+          <div class="sc-actions"><button type="submit" class="sc-submit" id="sc-ev-submit">Post the event</button><button type="button" class="sc-cancel" id="sc-ev-cancel">Cancel</button></div>
+        </form>
+      </div>
+      <details class="sc-before"><summary>Before you go: protest tips</summary>
+        <ul>
+          <li>Peaceful assembly on public sidewalks and in parks is protected. Marches that take over a street may need a city permit, so check with the organiser or your city’s website.</li>
+          <li>You can record officers doing their jobs in public. Keep a safe distance and don’t interfere. <a href="https://aclum.org/en/cases/glik-v-cunniffe" target="_blank" rel="noopener">Your right to record</a></li>
+          <li>Carry ID if you can, write a lawyer’s number on your arm, and go with a friend.</li>
+          <li>Know your rights if you’re stopped: <a href="https://www.aclu.org/know-your-rights/immigrants-rights" target="_blank" rel="noopener">ACLU guide</a> · free legal help: <a href="https://www.masslegalhelp.org" target="_blank" rel="noopener">MassLegalHelp</a></li>
+        </ul>
+      </details>
+      <div class="sc-bar">
+        <div class="sc-filters" role="group" aria-label="Filter events">
+          <select id="sc-ev-state" aria-label="State"><option value="">All states</option>${states}</select>
+          <select id="sc-ev-kind" aria-label="Kind"><option value="">All gatherings</option>${kinds}</select>
+        </div>
+        <div class="sc-seg" role="group" aria-label="When"><button type="button" data-when="upcoming" aria-pressed="true">Upcoming</button><button type="button" data-when="past" aria-pressed="false">Past</button></div>
+      </div>
+      <div class="sc-feed" id="sc-events" aria-live="polite"><p class="sc-loading">Checking the calendar…</p></div>
+    </div>
     <noscript><p class="sc-note">Turn on JavaScript to see and join Boston Speakers’ Corner.</p></noscript>
 
     <dialog class="sc-dialog" id="sc-report">
@@ -575,8 +644,28 @@ export function cornerApp() {
         <p class="sc-note">Copyright owners can also use our <a href="/terms#copyright" target="_blank">DMCA notice process</a>.</p>
       </form>
     </dialog>
+    <dialog class="sc-dialog" id="sc-ereport">
+      <form method="dialog" id="sc-ereport-form">
+        <h3>Report this event</h3>
+        <p class="sc-note">Reports go to the editor. Events at someone’s home, threats, private details, fake events and spam come down.</p>
+        <div id="sc-ereport-reasons"></div>
+        <label class="sc-label" for="sc-ereport-note">Anything else? <span class="sc-opt">(optional)</span></label>
+        <input id="sc-ereport-note" maxlength="300">
+        <p class="sc-error" id="sc-ereport-error" role="alert" hidden></p>
+        <div class="sc-actions"><button type="submit" value="send" class="sc-submit">Send report</button><button type="submit" value="cancel" class="sc-cancel" formnovalidate>Cancel</button></div>
+      </form>
+    </dialog>
   </section>
-  <script src="/js/corner.js?v=2" defer></script>`;
+  <script src="/js/corner.js?v=3" defer></script>`;
+}
+
+/** Side box: the next few gatherings, filled in by /js/corner.js. */
+export function eventsRail() {
+  return `<aside class="module sc-coming" aria-labelledby="sc-coming-title" hidden>
+    <p class="module-title" id="sc-coming-title">Coming up: gatherings</p>
+    <ol class="sc-coming-list" id="sc-coming-list"></ol>
+    <button type="button" class="sc-link" data-goto-events>See all events, or post one</button>
+  </aside>`;
 }
 
 /** Side card: First Amendment rights and the legal routes for holding ICE agents to account. Facts checked Nov 2026. */

@@ -125,7 +125,7 @@ const ILLEGAL = /\b(?:child\s+porn\w*|csam|kiddie\s+porn)\b/i;
  * Checks words someone wants to post.
  * Returns { ok: true } | { ok: true, borderline: true } | { ok: false, code, message }.
  */
-export function checkText(text, { allowEmpty = false } = {}) {
+export function checkText(text, { allowEmpty = false, allowAddress = false } = {}) {
   const t = String(text || '');
   if (!t.trim()) return allowEmpty ? { ok: true } : { ok: false, code: 'empty', message: 'Write something first.' };
 
@@ -134,7 +134,8 @@ export function checkText(text, { allowEmpty = false } = {}) {
   if (SSN.test(t)) return { ok: false, code: 'doxxing', message: 'Take out the Social Security number. Personal numbers are never posted here.' };
   if (EMAIL.test(t)) return { ok: false, code: 'doxxing', message: 'Take out the email address. To protect people, contact details aren’t posted here.' };
   if (PHONE.test(t)) return { ok: false, code: 'doxxing', message: 'Take out the phone number. To protect people, contact details aren’t posted here.' };
-  if (findAddress(t)) return { ok: false, code: 'doxxing', message: 'Take out the street address. Name the town or the building instead, so nobody’s home is exposed.' };
+  // Events may name a public venue's address; everywhere else a street address is treated as doxxing.
+  if (!allowAddress && findAddress(t)) return { ok: false, code: 'doxxing', message: 'Take out the street address. Name the town or the building instead, so nobody’s home is exposed.' };
 
   for (const re of BLOCK_PATTERNS) {
     const m = t.match(re);

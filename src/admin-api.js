@@ -321,7 +321,7 @@ async function overview(env) {
       (SELECT COUNT(*) FROM inquiries WHERE status = 'new') AS new_inquiries,
       (SELECT COUNT(*) FROM comments WHERE status = 'pending') AS pending_comments,
       (SELECT COUNT(*) FROM guest_posts WHERE status = 'received') AS new_guest_posts,
-      (SELECT COUNT(DISTINCT post_id) FROM corner_reports WHERE resolved = 0) AS corner_reports`).first();
+      (SELECT COUNT(DISTINCT post_id) FROM corner_reports WHERE resolved = 0) + (SELECT COUNT(DISTINCT event_id) FROM corner_event_reports WHERE resolved = 0) AS corner_reports`).first();
   const today = localDate(new Date(), env.TIMEZONE);
   const edition = await db.prepare('SELECT e.*, (SELECT COUNT(*) FROM edition_items i WHERE i.edition_id = e.id) AS items FROM editions e WHERE edition_date = ?').bind(today).first();
   return {

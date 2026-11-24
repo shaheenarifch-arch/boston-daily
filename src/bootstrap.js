@@ -19,6 +19,7 @@ import m0012 from '../migrations/0012_site_subscribers.sql';
 import m0013 from '../migrations/0013_guest_posts.sql';
 import m0014 from '../migrations/0014_local_section.sql';
 import m0015 from '../migrations/0015_speakers_corner.sql';
+import m0016 from '../migrations/0016_corner_events.sql';
 import seedSql from '../seed/seed.sql';
 import { CONTENT_PACKAGES } from '../content/index.js';
 
@@ -37,6 +38,7 @@ const MIGRATIONS = [
   ['0013_guest_posts.sql', m0013],
   ['0014_local_section.sql', m0014],
   ['0015_speakers_corner.sql', m0015],
+  ['0016_corner_events.sql', m0016],
 ];
 
 let ready = null;
