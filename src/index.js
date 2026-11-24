@@ -11,6 +11,7 @@ import { subscribe, unsubscribe, newslettersPage, sendNewsletter } from './newsl
 import { autofillEndpoint, copyEndpoint, checkEndpoint } from './advertise.js';
 import { siteSubscribe, siteUnsubscribe } from './site-subscribe.js';
 import { cornerFeed, cornerPost, cornerStand, cornerReplies, cornerReply, cornerReport, cornerDelete, cornerAudio } from './corner.js';
+import { eventsList, eventCreate, eventEdit, eventDelete, eventGoing, eventReport, eventIcs } from './corner-events.js';
 import { writeForUsPage, submitGuestPost, guestStatusPage, resubmitGuestPost, guestLiveSweep } from './guest-posts.js';
 import {
   homePage, editionsArchive, sectionPage, storyPage, shopPage, businessesPage, businessProfile, coursesPage,
@@ -126,6 +127,15 @@ const worker = {
       // ── Boston Speakers' Corner (open podium on the 1st Amendment Page) ──
       if (pathname.startsWith('/api/corner/')) {
         let c;
+        if (pathname === '/api/corner/events' && method === 'GET') return await eventsList(env, url);
+        if (pathname === '/api/corner/events' && method === 'POST') return await eventCreate(env, request);
+        if ((c = pathname.match(/^\/api\/corner\/events\/([a-f0-9-]{36})\/calendar\.ics$/)) && method === 'GET') return await eventIcs(env, c[1]);
+        if ((c = pathname.match(/^\/api\/corner\/events\/([a-f0-9-]{36})\/(edit|delete|going|report)$/)) && method === 'POST') {
+          if (c[2] === 'edit') return await eventEdit(env, request, c[1]);
+          if (c[2] === 'delete') return await eventDelete(env, request, c[1]);
+          if (c[2] === 'going') return await eventGoing(env, request, c[1]);
+          return await eventReport(env, request, c[1], ctx);
+        }
         if (pathname === '/api/corner/feed' && method === 'GET') return await cornerFeed(env, url);
         if (pathname === '/api/corner/post' && method === 'POST') return await cornerPost(env, request);
         if ((c = pathname.match(/^\/api\/corner\/audio\/([a-f0-9-]{36})$/)) && (method === 'GET' || method === 'HEAD')) return await cornerAudio(env, request, c[1], ctx);

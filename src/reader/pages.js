@@ -1,6 +1,6 @@
 import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
 import { guestAuthorBox, writeForUsBox } from '../guest-posts.js';
-import { cornerHero, cornerApp, rightsCard } from '../corner.js';
+import { cornerHero, cornerApp, rightsCard, eventsRail } from '../corner.js';
 import { esc, html, json, errorJson, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid, ipHash } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
@@ -421,7 +421,7 @@ export async function sectionPage(env, slug, ctx = null) {
         ${!isNewsSection && showCommerce ? paidProductAds(slug) : ''}
       </div>
       <aside class="col-rail">
-        ${slug === 'opinion' ? rightsCard() : ''}
+        ${slug === 'opinion' ? eventsRail() + rightsCard() : ''}
         ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() : ''}
         ${isNewsSection ? paidAdvertising(pickedMods.join('')) : railMods}
         ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}

@@ -554,5 +554,255 @@
 
   setKind('text');
   recTime.textContent = `0:00 / ${clock(MAX_REC)}`;
+
+  // ───────── Podium | Events tabs ─────────
+  const panels = { podium: $('#sc-panel-podium'), events: $('#sc-panel-events') };
+  const tabBtns = [...root.querySelectorAll('[data-tab]')];
+  let eventsLoaded = false;
+  function showTab(name, { scroll = false } = {}) {
+    tabBtns.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+    Object.entries(panels).forEach(([k, el]) => { el.hidden = k !== name; });
+    if (name === 'events' && !eventsLoaded) { eventsLoaded = true; loadEvents(); }
+    if (name === 'podium') stopCrowd();
+    if (scroll) root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  tabBtns.forEach((b) => b.addEventListener('click', () => {
+    showTab(b.dataset.tab);
+    history.replaceState(null, '', b.dataset.tab === 'events' ? '#events' : '#corner');
+  }));
+  document.querySelectorAll('[data-goto-events]').forEach((b) => b.addEventListener('click', () => showTab('events', { scroll: true })));
+  // The hero's "Step up" buttons always open the podium.
+  document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => showTab('podium')));
+
+  // ───────── Events: assembly ─────────
+  const EREASONS = JSON.parse(root.dataset.ereasons || '[]');
+  const evList = $('#sc-events');
+  const evForm = $('#sc-ev-form');
+  const evErr = $('#sc-ev-error');
+  const evStateSel = $('#sc-ev-state');
+  const evKindSel = $('#sc-ev-kind');
+  const evSeg = [...root.querySelectorAll('[data-when]')];
+  const going = new Set(store.get('sc-going', []));
+  const ekeys = store.get('sc-ekeys', {});
+  const eFocus = (location.hash.match(/^#e-([a-f0-9-]{36})$/) || [])[1] || null;
+  let evWhen = 'upcoming';
+  let editing = null;
+  evStateSel.value = store.get('sc-ev-state', 'MA');
+
+  const zoned = (iso, tz, opts) => new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(new Date(iso));
+  const tzShort = (iso, tz) => (new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(new Date(iso)).find((p) => p.type === 'timeZoneName') || {}).value || '';
+  const localParts = (iso, tz) => {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      .formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
+    return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}` };
+  };
+  const whenText = (e) => {
+    const day = zoned(e.starts_at, e.tz, { weekday: 'short', month: 'short', day: 'numeric' });
+    const t = (iso) => zoned(iso, e.tz, { hour: 'numeric', minute: '2-digit' });
+    return `${day} · ${t(e.starts_at)}${e.has_end ? `–${t(e.ends_at)}` : ''} ${tzShort(e.starts_at, e.tz)}`;
+  };
+  const isToday = (e) => localParts(e.starts_at, e.tz).date === localParts(new Date().toISOString(), e.tz).date;
+  const gcalTime = (iso) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const placeText = (e) => (e.online ? 'Online' : [e.venue, e.address, e.town, e.state].filter(Boolean).join(', '));
+
+  function eventCard(e) {
+    const card = h('article', { class: 'sc-card sc-ev', id: `e-${e.id}`, 'data-eid': e.id });
+    const now = Date.now();
+    const live = Date.parse(e.starts_at) <= now && Date.parse(e.ends_at) >= now;
+    card.append(h('div', { class: 'sc-ev-top' },
+      h('div', { class: 'sc-ev-date', 'aria-hidden': 'true' }, h('span', {}, zoned(e.starts_at, e.tz, { month: 'short' })), h('strong', {}, zoned(e.starts_at, e.tz, { day: 'numeric' }))),
+      h('div', { class: 'sc-ev-main' },
+        h('p', { class: 'sc-ev-kind' }, e.kind_label, live ? h('span', { class: 'sc-ev-live' }, 'Happening now') : null, e.tag_label ? h('span', { class: 'sc-chip' }, e.tag_label) : null),
+        h('h4', { class: 'sc-ev-name' }, e.title),
+        h('p', { class: 'sc-ev-when' }, '🕒 ', whenText(e)),
+        h('p', { class: 'sc-ev-where' }, e.online ? '💻 Online' : '📍 ', e.online ? '' : placeText(e)),
+        h('p', { class: 'sc-meta' }, `Organised by ${e.organizer}`))));
+    if (e.body) card.append(richText(e.body));
+    if (e.link) card.append(h('p', { class: 'sc-ev-linkline' }, h('a', { href: e.link, target: '_blank', rel: 'nofollow ugc noopener' }, 'Event page and sign-up ↗')));
+
+    const goBtn = h('button', { type: 'button', class: 'sc-act sc-stand', 'aria-pressed': String(going.has(e.id)) },
+      h('span', { 'aria-hidden': 'true' }, '🙋'), ' I’m going', h('span', { class: 'sc-n' }, e.going_count ? ` · ${e.going_count}` : ''));
+    goBtn.addEventListener('click', async () => {
+      goBtn.disabled = true;
+      try {
+        const d = await postJson(`/api/corner/events/${e.id}/going`, { vid });
+        d.going ? going.add(e.id) : going.delete(e.id);
+        store.set('sc-going', [...going].slice(-300));
+        root.querySelectorAll(`[data-eid="${e.id}"] .sc-stand`).forEach((b) => { b.setAttribute('aria-pressed', String(d.going)); b.querySelector('.sc-n').textContent = d.going_count ? ` · ${d.going_count}` : ''; });
+        if (d.going) toast('See you there. Add it to your calendar so you don’t miss it.');
+      } catch (ex) { toast(ex.message, true); } finally { goBtn.disabled = false; }
+    });
+    const gcal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(e.title)}&dates=${gcalTime(e.starts_at)}/${gcalTime(e.ends_at)}&details=${encodeURIComponent(`${e.body ? e.body + '\n\n' : ''}Organised by ${e.organizer}. ${location.origin}/section/opinion#e-${e.id}`)}&location=${encodeURIComponent(e.online ? e.online_url : placeText(e))}`;
+    const calMenu = h('div', { class: 'sc-share-menu', role: 'menu', hidden: true },
+      h('a', { role: 'menuitem', href: gcal, target: '_blank', rel: 'noopener' }, 'Google Calendar'),
+      h('a', { role: 'menuitem', href: `/api/corner/events/${e.id}/calendar.ics` }, 'Apple Calendar or Outlook (.ics)'));
+    const calBtn = h('button', { type: 'button', class: 'sc-act', 'aria-haspopup': 'menu', onclick: () => { calMenu.hidden = !calMenu.hidden; } }, h('span', { 'aria-hidden': 'true' }, '📅'), ' Add to calendar');
+    const whereBtn = e.online
+      ? (e.online_url ? h('a', { class: 'sc-act', href: e.online_url, target: '_blank', rel: 'nofollow ugc noopener' }, h('span', { 'aria-hidden': 'true' }, '💻'), ' Join link') : null)
+      : h('a', { class: 'sc-act', href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeText(e))}`, target: '_blank', rel: 'noopener' }, h('span', { 'aria-hidden': 'true' }, '🧭'), ' Directions');
+    const url = `${location.origin}/section/opinion#e-${e.id}`;
+    const text = `${e.title}: ${whenText(e)}, ${placeText(e)}`;
+    const shareMenu = h('div', { class: 'sc-share-menu', role: 'menu', hidden: true },
+      h('a', { role: 'menuitem', href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, target: '_blank', rel: 'noopener' }, 'Facebook'),
+      h('a', { role: 'menuitem', href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, target: '_blank', rel: 'noopener' }, 'X (Twitter)'),
+      h('a', { role: 'menuitem', href: `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, target: '_blank', rel: 'noopener' }, 'WhatsApp'),
+      h('button', { type: 'button', role: 'menuitem', onclick: async () => { try { await navigator.clipboard.writeText(url); toast('Link copied.'); } catch { prompt('Copy this link:', url); } shareMenu.hidden = true; } }, 'Copy link'));
+    const shareBtn = h('button', { type: 'button', class: 'sc-act', 'aria-haspopup': 'menu', onclick: async () => {
+      if (navigator.share && matchMedia('(pointer: coarse)').matches) { try { await navigator.share({ title: e.title, text, url }); } catch { /* cancelled */ } return; }
+      shareMenu.hidden = !shareMenu.hidden;
+    } }, h('span', { 'aria-hidden': 'true' }, '↗'), ' Share');
+    const reportBtn = h('button', { type: 'button', class: 'sc-act sc-act-quiet', onclick: () => openEReport(e.id) }, h('span', { 'aria-hidden': 'true' }, '⚑'), ' Report');
+    const own = ekeys[e.id];
+    const editBtn = own ? h('button', { type: 'button', class: 'sc-act sc-act-quiet', onclick: () => openEventForm(e) }, 'Edit') : null;
+    const delBtn = own ? h('button', { type: 'button', class: 'sc-act sc-act-quiet', onclick: async () => {
+      if (!confirm('Delete this event from the board? This can’t be undone.')) return;
+      try { await postJson(`/api/corner/events/${e.id}/delete`, { key: own }); root.querySelectorAll(`[data-eid="${e.id}"]`).forEach((c) => c.remove()); toast('Event deleted.'); refreshEventExtras(); } catch (ex) { toast(ex.message, true); }
+    } }, 'Delete') : null;
+    card.append(h('div', { class: 'sc-actions-row' }, goBtn, h('span', { class: 'sc-share-wrap' }, calBtn, calMenu), whereBtn, h('span', { class: 'sc-share-wrap' }, shareBtn, shareMenu), reportBtn, editBtn, delBtn));
+    return card;
+  }
+
+  async function loadEvents() {
+    const q = new URLSearchParams({ when: evWhen });
+    if (evStateSel.value) q.set('state', evStateSel.value);
+    if (evKindSel.value) q.set('kind', evKindSel.value);
+    if (eFocus) q.set('focus', eFocus);
+    try {
+      const d = await api(`/api/corner/events?${q}`);
+      evList.replaceChildren();
+      let lastDay = '';
+      for (const e of d.events) {
+        const day = zoned(e.starts_at, e.tz, { weekday: 'long', month: 'long', day: 'numeric' });
+        if (evWhen === 'upcoming' && day !== lastDay) { evList.append(h('h4', { class: 'sc-ev-day' }, isToday(e) ? `Today, ${day}` : day)); lastDay = day; }
+        evList.append(eventCard(e));
+      }
+      if (!d.events.length) {
+        const elsewhere = Object.values(d.upcoming_by_state || {}).reduce((a, b) => a + b, 0);
+        evList.append(h('div', { class: 'sc-empty' },
+          h('p', {}, h('strong', {}, evWhen === 'past' ? 'No past events here yet.' : `No upcoming events${evStateSel.value ? ` in ${evStateSel.selectedOptions[0].textContent}` : ''} yet.`)),
+          evWhen === 'upcoming' ? h('p', {}, 'Organising something? Put it on the board so people can find it.') : null,
+          evWhen === 'upcoming' && evStateSel.value && elsewhere ? h('button', { type: 'button', class: 'sc-link', onclick: () => { evStateSel.value = ''; store.set('sc-ev-state', ''); loadEvents(); } }, `See ${elsewhere} upcoming ${elsewhere === 1 ? 'event' : 'events'} in other states`) : null,
+          evWhen === 'upcoming' ? h('button', { type: 'button', class: 'sc-submit', onclick: () => openEventForm() }, '＋ Post an event') : null));
+      }
+      if (eFocus) { const el = document.getElementById(`e-${eFocus}`); if (el) { el.classList.add('sc-focus'); setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200); } }
+    } catch (ex) {
+      evList.replaceChildren(h('p', { class: 'sc-error' }, 'Events didn’t load. ', h('button', { type: 'button', class: 'sc-link', onclick: loadEvents }, 'Try again')));
+    }
+  }
+  evStateSel.addEventListener('change', () => { store.set('sc-ev-state', evStateSel.value); loadEvents(); });
+  evKindSel.addEventListener('change', loadEvents);
+  evSeg.forEach((b) => b.addEventListener('click', () => { evWhen = b.dataset.when; evSeg.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); loadEvents(); }));
+
+  // "Happening today" strip, the tab badge and the side box: one small request, on page load.
+  async function refreshEventExtras() {
+    try {
+      const st = store.get('sc-ev-state', 'MA');
+      let d = await api(`/api/corner/events?when=upcoming${st ? `&state=${st}` : ''}`);
+      let list = d.events;
+      if (!list.length && st) { d = await api('/api/corner/events?when=upcoming'); list = d.events; }
+      const today = list.filter(isToday);
+      const badge = $('#sc-events-count');
+      badge.hidden = !list.length;
+      badge.textContent = list.length > 9 ? '9+' : String(list.length);
+      const strip = $('#sc-today');
+      strip.hidden = !today.length;
+      if (today.length) strip.textContent = `📣 Happening today: ${today[0].title} · ${zoned(today[0].starts_at, today[0].tz, { hour: 'numeric', minute: '2-digit' })}${today.length > 1 ? ` and ${today.length - 1} more` : ''}. See events`;
+      const box = document.querySelector('.sc-coming');
+      const ol = document.getElementById('sc-coming-list');
+      if (box && ol) {
+        ol.replaceChildren(...list.slice(0, 4).map((e) => h('li', {},
+          h('a', { href: `#e-${e.id}`, onclick: (ev) => { ev.preventDefault(); showTab('events', { scroll: false }); setTimeout(() => document.getElementById(`e-${e.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500); } }, e.title),
+          h('span', {}, `${zoned(e.starts_at, e.tz, { weekday: 'short', month: 'short', day: 'numeric' })} · ${e.online ? 'Online' : `${e.town || ''}${e.town ? ', ' : ''}${e.state}`}`))));
+        box.hidden = !list.length;
+      }
+    } catch { /* the board still works from the tab */ }
+  }
+  $('#sc-today').addEventListener('click', () => showTab('events', { scroll: true }));
+
+  // Post / edit an event
+  const evF = (n) => evForm.elements[n];
+  const syncOnline = () => {
+    const on = evF('online').checked;
+    evForm.querySelectorAll('[data-ev="online"]').forEach((el) => { el.hidden = !on; });
+    evForm.querySelectorAll('[data-ev="place"]').forEach((el) => { el.hidden = on; });
+  };
+  evF('online').addEventListener('change', syncOnline);
+  const today = new Date();
+  evF('date').min = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  function openEventForm(e = null) {
+    showTab('events');
+    editing = e;
+    evForm.reset();
+    evF('state').value = evStateSel.value || 'MA';
+    if (e) {
+      const s = localParts(e.starts_at, e.tz);
+      Object.assign(evF('kind'), { value: e.kind }); evF('title').value = e.title; evF('date').value = s.date; evF('start').value = s.time;
+      evF('end').value = e.has_end ? localParts(e.ends_at, e.tz).time : '';
+      evF('online').checked = e.online; evF('online_url').value = e.online_url; evF('venue').value = e.venue; evF('address').value = e.address; evF('town').value = e.town;
+      evF('state').value = e.state; evF('tag').value = e.tag; evF('organizer').value = e.organizer; evF('link').value = e.link; evF('body').value = e.body; evF('public_place').checked = !e.online;
+    } else {
+      evF('organizer').value = store.get('sc-organizer', '');
+    }
+    $('#sc-ev-submit').textContent = e ? 'Save changes' : 'Post the event';
+    evErr.hidden = true;
+    syncOnline();
+    evForm.hidden = false;
+    evForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => evF('title').focus({ preventScroll: true }), 300);
+  }
+  $('#sc-ev-new').addEventListener('click', () => openEventForm());
+  $('#sc-ev-cancel').addEventListener('click', () => { evForm.hidden = true; editing = null; });
+  evForm.addEventListener('input', () => { evErr.hidden = true; evForm.querySelectorAll('[aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid')); });
+  evForm.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const b = {};
+    for (const n of ['kind', 'title', 'date', 'start', 'end', 'online_url', 'venue', 'address', 'town', 'state', 'organizer', 'link', 'tag', 'body', 'website']) b[n] = evF(n).value;
+    b.online = evF('online').checked;
+    b.public_place = evF('public_place').checked;
+    const btn = $('#sc-ev-submit');
+    btn.disabled = true;
+    try {
+      const d = editing
+        ? await postJson(`/api/corner/events/${editing.id}/edit`, { ...b, key: ekeys[editing.id] })
+        : await postJson('/api/corner/events', b);
+      if (!editing && d.event) { ekeys[d.event.id] = d.key; store.set('sc-ekeys', ekeys); }
+      store.set('sc-organizer', b.organizer);
+      evForm.hidden = true;
+      if (d.event) { evStateSel.value = d.event.state; store.set('sc-ev-state', d.event.state); evWhen = 'upcoming'; evSeg.forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.when === 'upcoming'))); }
+      await loadEvents();
+      refreshEventExtras();
+      toast(editing ? 'Event updated.' : 'Your event is on the board. Share it so people come.');
+      if (d.event) setTimeout(() => document.getElementById(`e-${d.event.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+      editing = null;
+    } catch (ex) {
+      evErr.textContent = ex.message;
+      evErr.hidden = false;
+      const f = ex.field && evForm.elements[ex.field];
+      if (f) { f.setAttribute('aria-invalid', 'true'); f.focus(); }
+    } finally { btn.disabled = false; }
+  });
+
+  // Report an event
+  const edlg = $('#sc-ereport');
+  const erForm = $('#sc-ereport-form');
+  $('#sc-ereport-reasons').append(...EREASONS.map(([k, l]) => h('label', { class: 'sc-radio' }, h('input', { type: 'radio', name: 'ereason', value: k }), ' ', l)));
+  let ereporting = null;
+  function openEReport(id) { ereporting = id; erForm.reset(); $('#sc-ereport-error').hidden = true; if (edlg.showModal) edlg.showModal(); else edlg.setAttribute('open', ''); }
+  erForm.addEventListener('submit', async (ev) => {
+    if (ev.submitter && ev.submitter.value === 'cancel') return;
+    ev.preventDefault();
+    const reason = (erForm.querySelector('input[name=ereason]:checked') || {}).value;
+    const errEl = $('#sc-ereport-error');
+    if (!reason) { errEl.textContent = 'Choose a reason.'; errEl.hidden = false; return; }
+    try {
+      const d = await postJson(`/api/corner/events/${ereporting}/report`, { reason, note: $('#sc-ereport-note').value, vid });
+      edlg.close ? edlg.close() : edlg.removeAttribute('open');
+      if (d.hidden) root.querySelectorAll(`[data-eid="${ereporting}"]`).forEach((c) => c.remove());
+      toast(d.already ? 'You already reported this event.' : 'Thank you. The editor will review it.');
+    } catch (ex) { errEl.textContent = ex.message; errEl.hidden = false; }
+  });
+
+  if (eFocus || location.hash === '#events') showTab('events');
   load();
+  refreshEventExtras();
 })();

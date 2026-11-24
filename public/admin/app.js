@@ -661,6 +661,7 @@ const SC_KIND = { text: 'Writing', voice: 'Voice', song: 'Song', video: 'Video' 
 async function renderCorner() {
   const params = new URLSearchParams(location.hash.split('?')[1] || '');
   const v = params.get('view') || 'reported';
+  if (v === 'events') return renderCornerEvents(params.get('ev') || 'reported');
   const d = await api('GET', `/corner?view=${v}`);
   const tab = (key, label) => `<a class="btn ${key === v ? 'btn-primary' : ''}" href="#/corner?view=${key}">${label}</a>`;
   const media = (p) => p.audio_url ? `<audio controls preload="none" src="${esc(p.audio_url)}" style="max-width:260px"></audio>`
@@ -668,7 +669,7 @@ async function renderCorner() {
   const btns = (p) => `${p.status !== 'live' ? `<button class="btn btn-primary" data-sc="live" data-id="${esc(p.id)}">Keep up</button>` : ''} ${p.status !== 'removed' ? `<button class="btn btn-danger" data-sc="removed" data-id="${esc(p.id)}">Take down</button>` : ''} ${p.status === 'live' && p.reasons ? `<button class="btn" data-sc="live" data-id="${esc(p.id)}">Dismiss reports</button>` : ''}`;
   view.innerHTML = `<header class="view-head"><div><h1>Speakers’ Corner</h1>
       <p class="sub">The open podium on the <a href="/section/opinion#corner" target="_blank" rel="noopener">1st Amendment Page</a>. Posts go live at once; only threats, doxxing, spam and illegal content come down. Three serious reader reports hide a post until you choose <strong>Keep up</strong> or <strong>Take down</strong>.</p></div>
-      <div class="actions">${tab('reported', 'Reported')}${tab('hidden', 'Hidden')}${tab('live', 'Live')}${tab('removed', 'Taken down')}</div></header>
+      <div class="actions">${tab('reported', 'Reported')}${tab('hidden', 'Hidden')}${tab('live', 'Live')}${tab('removed', 'Taken down')}${tab('events', 'Events')}</div></header>
     <section class="panel">${d.posts.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Posted</th><th>Speaker</th><th>Type</th><th>Post</th><th>Reports</th><th></th></tr></thead><tbody>
     ${d.posts.map((p) => `<tr><td class="nowrap">${esc(when(p.created_at))}</td><td>${esc(p.name)}${p.town ? `<br><span class="sub">${esc(p.town)}</span>` : ''}</td><td>${esc(SC_KIND[p.kind] || p.kind)}</td>
       <td class="detail">${esc(p.body || '')}${media(p) ? `<div>${media(p)}</div>` : ''}${p.status_reason ? `<p class="sub">${esc(p.status_reason)}</p>` : ''}</td>
@@ -685,6 +686,26 @@ async function renderCorner() {
   }));
   view.querySelectorAll('[data-scr]').forEach((b) => b.addEventListener('click', async () => {
     try { await api('PATCH', `/corner/reply/${b.dataset.id}`, { status: b.dataset.scr }); toast(b.dataset.scr === 'removed' ? 'Comment taken down.' : 'Comment kept up.'); renderCorner(); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
+  }));
+}
+
+async function renderCornerEvents(ev) {
+  const d = await api('GET', `/corner/events?view=${ev}`);
+  const tab = (key, label) => `<a class="btn ${key === ev ? 'btn-primary' : ''}" href="#/corner?view=events&ev=${key}">${label}</a>`;
+  const fmt = (e) => new Intl.DateTimeFormat('en-US', { timeZone: e.tz, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(e.starts_at));
+  view.innerHTML = `<header class="view-head"><div><p class="sub"><a href="#/corner">← Speakers’ Corner</a></p><h1>Events board</h1>
+      <p class="sub">Readers’ rallies, vigils, town halls and trainings, live at once. Take down anything at a private home, threatening, fake or spam. Three serious reports hide an event until you decide.</p></div>
+      <div class="actions">${tab('reported', 'Reported')}${tab('hidden', 'Hidden')}${tab('upcoming', 'Upcoming')}${tab('removed', 'Taken down')}</div></header>
+    <section class="panel">${d.events.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>When</th><th>Event</th><th>Where</th><th>Organiser</th><th>Reports</th><th></th></tr></thead><tbody>
+    ${d.events.map((e) => `<tr><td class="nowrap">${esc(fmt(e))}</td><td><strong>${esc(e.title)}</strong><br><span class="sub">${esc(e.kind_label)}</span>${e.body ? `<div class="detail">${esc(e.body)}</div>` : ''}${e.status_reason ? `<p class="sub">${esc(e.status_reason)}</p>` : ''}</td>
+      <td>${e.online ? `Online${e.online_url ? ` · <a href="${esc(e.online_url)}" target="_blank" rel="noopener">link</a>` : ''}` : esc([e.venue, e.address, e.town, e.state].filter(Boolean).join(', '))}</td><td>${esc(e.organizer)}${e.link ? `<br><a href="${esc(e.link)}" target="_blank" rel="noopener">event page</a>` : ''}</td>
+      <td>${e.reasons ? esc(e.reasons.split(',').join(', ')) : '—'}</td>
+      <td class="nowrap">${e.status !== 'live' || e.reasons ? `<button class="btn btn-primary" data-ev="live" data-id="${esc(e.id)}">Keep up</button>` : ''} ${e.status !== 'removed' ? `<button class="btn btn-danger" data-ev="removed" data-id="${esc(e.id)}">Take down</button>` : ''} <a class="btn" href="/section/opinion#e-${esc(e.id)}" target="_blank" rel="noopener">View</a></td></tr>`).join('')}
+    </tbody></table></div>` : `<p class="sub">${ev === 'reported' ? 'No reported events.' : 'Nothing here.'}</p>`}</section>`;
+  view.querySelectorAll('[data-ev]').forEach((b) => b.addEventListener('click', async () => {
+    let reason;
+    if (b.dataset.ev === 'removed') { reason = prompt('Reason for taking it down (kept in the log):', 'At a private home'); if (reason === null) return; }
+    try { await api('PATCH', `/corner/events/${b.dataset.id}`, { status: b.dataset.ev, reason }); toast(b.dataset.ev === 'removed' ? 'Event taken down.' : 'Event kept up. Reports cleared.'); renderCornerEvents(ev); refreshBadges(); } catch (err) { toast(err.message, 'err'); }
   }));
 }
 
