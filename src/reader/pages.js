@@ -1,6 +1,7 @@
 import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
 import { guestAuthorBox, writeForUsBox } from '../guest-posts.js';
 import { cornerHero, cornerApp, rightsCard, casesCard, eventsRail } from '../corner.js';
+import { tvModule } from './tv.js';
 import { esc, html, json, errorJson, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid, ipHash } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
@@ -297,6 +298,7 @@ export async function homePage(env, editionDate = null) {
     <div class="fg-b">${colB}</div>
     <aside class="fg-c">${colC}</aside>
   </section>
+  ${tvModule()}
   ${paidAdvertising(`${extras ? `<section class="front-extras" aria-label="From our partners">${extras}</section>` : ''}${mainCommercial}${premiumPicked}`, { variant: 'wide' })}
   ${sectionRows}
   ${selection.length ? `<section class="section-row selection">
