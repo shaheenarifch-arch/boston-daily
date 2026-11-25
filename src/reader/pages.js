@@ -9,6 +9,7 @@ import { adPartnerProductIds } from '../ads.js';
 import { travelDesk, travelDeskProducts } from '../travel-desk.js';
 import { SECTION_PICKS, sectionPicks, sectionPicksProducts } from '../section-picks.js';
 import { flowerCarousel } from './flower-carousel.js';
+import { printfulCard } from './printful.js';
 import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from '../advertise.js';
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
@@ -310,7 +311,8 @@ export async function homePage(env, editionDate = null) {
       <li><a href="/shop">Special Picks</a></li>
 <li><a href="/courses">Skill Center</a></li></ul>
   </section>
-  ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}`;
+  ${hasNews ? '<p class="rail-archive"><a href="/editions">Browse past editions</a></p>' : ''}
+  ${editionDate ? '' : printfulCard()}`;
 
   return html(layout(env, chrome, { drive: true,
     title: editionDate ? `Edition ${edition.edition_number}, ${formatDateLong(edition.edition_date, site.tz)}` : '',

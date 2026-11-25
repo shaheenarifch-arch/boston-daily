@@ -1171,3 +1171,17 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .lc-note { margin: .6rem 0 0; font: italic 400 .78rem/1.4 var(--sans); color: var(--granite); }
 .lc-note a { color: var(--link); font-style: normal; font-weight: 600; }
 @media (max-width: 600px) { .lc-card { flex-basis: 120px; } .lc-frame { height: 120px; } .lc-title { font-size: 1.25rem; } }
+
+/* Printful partner card at the end of the front page (src/reader/printful.js). */
+.pf-card { display: grid; grid-template-columns: minmax(0, 340px) 1fr; gap: 1.6rem; align-items: center; margin: 2.5rem 0 1rem; padding: 1.25rem; border: 1px solid var(--rule); border-radius: 16px; background: var(--paper); box-shadow: var(--shadow-card); }
+.pf-photo { display: block; border-radius: 12px; overflow: hidden; line-height: 0; }
+.pf-photo img { width: 100%; height: auto; display: block; }
+.pf-kicker { margin: 0 0 .3rem; font: 700 .72rem/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--brick); }
+.pf-title { margin: 0 0 .5rem; font: 700 1.5rem/1.15 var(--serif); color: var(--navy); }
+.pf-text { margin: 0 0 .7rem; font: 400 .98rem/1.5 var(--sans); color: var(--ink); max-width: 40rem; }
+.pf-offer { margin: 0 0 .9rem; padding: .6rem .8rem; border-radius: 10px; background: var(--wash); font: 400 .92rem/1.45 var(--sans); color: var(--ink); max-width: 40rem; }
+.pf-cta { display: inline-block; padding: .7rem 1.1rem; border-radius: 10px; background: var(--navy); color: #fff; font: 700 .9rem/1 var(--sans); text-decoration: none; }
+.pf-cta:hover, .pf-cta:focus-visible { background: var(--harbor); color: #fff; }
+.pf-note { margin: .8rem 0 0; font: italic 400 .78rem/1.4 var(--sans); color: var(--granite); }
+.pf-note a { color: var(--link); font-style: normal; font-weight: 600; }
+@media (max-width: 720px) { .pf-card { grid-template-columns: 1fr; padding: 1rem; } .pf-title { font-size: 1.25rem; } }
