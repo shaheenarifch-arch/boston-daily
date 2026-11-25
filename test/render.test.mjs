@@ -84,3 +84,16 @@ test('Business Affiliates box: Printful affiliate link, sponsored rel, disclosur
   assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
   assert.equal(affiliatesBox([]), '');
 });
+
+test('Boston Daily TV: four channels, eight sources, muted-start help, no yellow', async () => {
+  const { tvModule, TV_CHANNELS } = await import('../src/reader/tv.js');
+  const html = tvModule();
+  assert.deepEqual(TV_CHANNELS.map((c) => c.label), ['Boston', 'US', 'World', 'Business']);
+  assert.equal(TV_CHANNELS.flatMap((c) => c.sources).length, 8);
+  for (const c of TV_CHANNELS) for (const s of c.sources) assert.match(s.id, /^UC[\w-]{22}$/);
+  assert.match(html, /Sound on/);
+  assert.match(html, /src="\/js\/tv\.js\?v=2"/);
+  const cfg = JSON.parse(html.match(/id="bdtv-config">([^<]*)</)[1]);
+  assert.equal(cfg.length, 4);
+  assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
+});

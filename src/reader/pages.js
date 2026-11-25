@@ -1,6 +1,7 @@
 import { pageContext, selectOffers, cachedCandidates, recordImpressions, recordClick } from '../offers.js';
 import { guestAuthorBox, writeForUsBox } from '../guest-posts.js';
 import { cornerHero, cornerApp, rightsCard, casesCard, eventsRail } from '../corner.js';
+import { tvModule } from './tv.js';
 import { esc, html, json, errorJson, formatDateLong, formatDateTime, relativeStamp, localDate, slugify, isHttpUrl, nowIso, uid, ipHash } from '../util.js';
 import { renderMarkdown, excerpt } from '../markdown.js';
 import { getEditionWithItems } from '../editions.js';
@@ -210,7 +211,7 @@ export async function homePage(env, editionDate = null) {
 
   // Column A: the lead (or the welcome note before the first story).
   const colA = hasNews
-    ? `<h2 class="sr">Lead story</h2>${storyCard(lead, { size: 'lead', tz: site.tz, seenImages })}
+    ? `${tvModule()}<h2 class="sr">Lead story</h2>${storyCard(lead, { size: 'lead', tz: site.tz, seenImages, showImage: false })}
        ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 10).map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages })).join('')}</div>` : ''}`
     : `<div class="welcome">
         <p class="welcome-kicker">Welcome to ${esc(site.name)}</p>

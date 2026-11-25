@@ -43,7 +43,7 @@ export function storyStamp(s, tz) {
   return `<span class="stamp${cls}">${label} <time datetime="${esc(iso)}" data-ago title="${esc(formatDateTime(iso, tz))}">${esc(relativeStamp(iso, tz))}</time></span>`;
 }
 
-export function storyCard(s, { size = 'm', tz, showSection = true, showDek = true, seenImages = null } = {}) {
+export function storyCard(s, { size = 'm', tz, showSection = true, showDek = true, seenImages = null, showImage = true } = {}) {
   const commercial = s.lane === 'partner_commerce';
   const kicker = commercial
     ? `<span class="label label-commerce">${esc(s.disclosure_label || 'Partner Content')}</span>`
@@ -51,7 +51,8 @@ export function storyCard(s, { size = 'm', tz, showSection = true, showDek = tru
   const section = showSection && s.section_name ? `<a class="card-section" href="/section/${esc(s.section_slug)}">${esc(s.section_name)}</a>` : '';
   // Every story card carries its image when the story has one with recorded rights.
   // One picture appears at most once per page (seenImages is shared by every card on the page).
-  let hasImg = !!(s.hero_image_url && s.hero_image_rights);
+  // showImage: false is used where something else fills the picture slot (the front-page TV above the lead).
+  let hasImg = showImage && !!(s.hero_image_url && s.hero_image_rights);
   if (hasImg && seenImages) { if (seenImages.has(s.hero_image_url)) hasImg = false; else seenImages.add(s.hero_image_url); }
   // Text-only medium cards get a quiet section plate so card grids stay aligned.
   const img = !hasImg ? (size === 'm' ? `<figure class="card-figure card-figure-empty" aria-hidden="true"><span>${esc(s.section_name || 'Boston Daily')}</span></figure>` : '')
