@@ -104,3 +104,19 @@ test('Boston Daily TV source note sits in the footer, not under the screen', asy
   assert.ok(!tvModule().includes('bdtv-note'));
   assert.match(tvFooterNote(), /Live Boston TV plays clips from official news channels on YouTube \(NBC10 Boston,.*Bloomberg Television\)/);
 });
+
+test('Love and Care carousel: one T-shirt, holiday gifts first, real Amazon photos, affiliate tag, no yellow', async () => {
+  const { loveCareCarousel, LOVE_CARE_PRODUCTS } = await import('../src/reader/love-care.js');
+  const html = loveCareCarousel();
+  assert.equal(LOVE_CARE_PRODUCTS.filter((p) => /t-shirt/i.test(p.name)).length, 1);
+  assert.ok(LOVE_CARE_PRODUCTS[0].holiday);
+  assert.ok(LOVE_CARE_PRODUCTS.filter((p) => p.holiday).length >= 10);
+  assert.equal(new Set(LOVE_CARE_PRODUCTS.map((p) => p.asin)).size, LOVE_CARE_PRODUCTS.length);
+  for (const p of LOVE_CARE_PRODUCTS) {
+    assert.match(p.image, /^https:\/\/m\.media-amazon\.com\/images\/I\//);
+    assert.match(p.url, /^https:\/\/www\.amazon\.com\/dp\/B0[A-Z0-9]{8}\?tag=get786-20$/);
+  }
+  assert.match(html, /data-marquee="left"/);
+  assert.match(html, /Amazon Associate/);
+  assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
+});
