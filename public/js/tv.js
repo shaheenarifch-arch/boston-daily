@@ -33,14 +33,19 @@
     srcEl.textContent = '· ' + s.name;
   }
 
+  // Switching playlists inside one player is unreliable (it can keep playing the old channel),
+  // so each source change builds a fresh player. `gen` ignores events from the old one.
+  let gen = 0;
   function play() {
-    if (!player) return;
+    if (!window.YT || !window.YT.Player) return;
     clearTimeout(stallTimer);
     loading.hidden = false;
     setNow('', '');
-    player.loadPlaylist({ listType: 'playlist', list: uploads(source().id), index: 0 });
-    // If nothing starts within 15 seconds, move to the next source.
-    stallTimer = setTimeout(nextSource, 15000);
+    if (player) { try { player.destroy(); } catch (e) { /* already gone */ } player = null; }
+    const screen = root.querySelector('.bdtv-screen');
+    let slot = document.getElementById('bdtv-player');
+    if (!slot) { slot = document.createElement('div'); slot.className = 'bdtv-player'; slot.id = 'bdtv-player'; screen.prepend(slot); }
+    build();
   }
 
   function nextSource() {
@@ -58,6 +63,7 @@
   }
 
   function onState(e) {
+    if (e.target !== player) return;
     if (e.data === 1) { // playing
       clearTimeout(stallTimer);
       errors = 0;
@@ -71,20 +77,29 @@
     }
   }
 
-  function onError() {
+  function onError(e) {
+    if (e && e.target !== player) return;
     errors += 1;
     if (errors > 3) { errors = 0; nextSource(); return; }
     try { player.nextVideo(); } catch (e) { nextSource(); }
   }
 
   function build() {
+    const mine = ++gen;
     player = new window.YT.Player('bdtv-player', {
       host: 'https://www.youtube-nocookie.com',
       width: '100%',
       height: '100%',
       playerVars: { autoplay: 1, mute: 1, playsinline: 1, rel: 0, modestbranding: 1, listType: 'playlist', list: uploads(source().id) },
       events: {
-        onReady: (e) => { e.target.mute(); e.target.playVideo(); stallTimer = setTimeout(nextSource, 15000); },
+        onReady: (e) => {
+          if (mine !== gen) return;
+          if (muted) e.target.mute(); else e.target.unMute();
+          e.target.playVideo();
+          // If nothing starts within 15 seconds, move to the next source.
+          clearTimeout(stallTimer);
+          stallTimer = setTimeout(nextSource, 15000);
+        },
         onStateChange: onState,
         onError,
       },
@@ -108,7 +123,7 @@
     soundBtn.setAttribute('aria-pressed', muted ? 'false' : 'true');
     soundBtn.textContent = muted ? '🔊 Sound on' : '🔇 Sound off';
   });
-  nextBtn.addEventListener('click', () => { if (player) { try { player.nextVideo(); } catch (e) { nextSource(); } } });
+  nextBtn.addEventListener('click', () => { if (player) { try { loading.hidden = false; player.nextVideo(); } catch (e) { nextSource(); } } });
   chBtns.forEach((b, i) => b.addEventListener('click', () => { chIdx = i; srcIdx = 0; markChannel(); play(); }));
 
   if ('IntersectionObserver' in window) {

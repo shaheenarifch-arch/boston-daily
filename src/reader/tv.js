@@ -47,6 +47,6 @@ export function tvModule(channels = TV_CHANNELS) {
     <nav class="bdtv-channels" aria-label="TV channels">${channels.map((c, i) => `<button type="button" class="bdtv-ch" data-bdtv-ch="${esc(c.key)}" aria-pressed="${i === 0 ? 'true' : 'false'}">${esc(c.label)}</button>`).join('')}</nav>
     <p class="bdtv-note">Clips from official news channels on YouTube (${channels.flatMap((c) => c.sources.map((s) => esc(s.name))).join(', ')}). Boston Daily does not produce or edit them. <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube terms</a></p>
     <script type="application/json" id="bdtv-config">${config}</script>
-    <script src="/js/tv.js?v=1" defer></script>
+    <script src="/js/tv.js?v=2" defer></script>
   </section>`;
 }
