@@ -2,6 +2,7 @@ import { esc, formatDateLong, formatClock, localDate } from '../util.js';
 import { SITE } from './components.js';
 import { PACKAGES, NO_AD_SECTIONS } from '../advertise.js';
 import { tvFooterNote } from './tv.js';
+import { loveCareCarousel } from './love-care.js';
 
 /** When a live newsroom story was last updated with new developments (the masthead's "Updated" time). */
 export async function latestUpdateAt(db) {
@@ -106,7 +107,7 @@ ${drive ? TRAVELPAYOUTS_DRIVE : ''}
 <main id="main" class="wrap">
 ${body}
 </main>
-${drive ? CHAMBELLI_CAROUSEL : ''}
+${drive ? loveCareCarousel() + CHAMBELLI_CAROUSEL + '<script src="/js/marquee.js?v=1" defer></script>' : ''}
 <footer class="footer">
   <div class="wrap footer-top">
     <a class="footer-brand" href="/">${esc(site.name)}</a>
