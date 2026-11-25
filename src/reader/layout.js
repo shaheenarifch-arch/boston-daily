@@ -1,6 +1,7 @@
 import { esc, formatDateLong, formatClock, localDate } from '../util.js';
 import { SITE } from './components.js';
 import { PACKAGES, NO_AD_SECTIONS } from '../advertise.js';
+import { tvFooterNote } from './tv.js';
 
 /** When a live newsroom story was last updated with new developments (the masthead's "Updated" time). */
 export async function latestUpdateAt(db) {
@@ -147,6 +148,7 @@ ${drive ? CHAMBELLI_CAROUSEL : ''}
   </div>
   <div class="wrap footer-legal">
     <p>Some links on this website are partner links. We may receive a commission from qualifying purchases. Advertisers and partners never buy, edit or approve our news coverage. <a href="/standards#commercial">How we label commercial content</a>.</p>
+    ${tvFooterNote()}
     <p>© ${new Date().getFullYear()} ${esc(site.name)}, ${esc(site.network)}.</p>
   </div>
 </footer>
