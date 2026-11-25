@@ -120,3 +120,16 @@ test('Love and Care carousel: one T-shirt, holiday gifts first, real Amazon phot
   assert.match(html, /Amazon Associate/);
   assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
 });
+
+test('Printful card: affiliate link marked sponsored, disclosure shown, real photo, no yellow', async () => {
+  const { printfulCard, PRINTFUL_LINK } = await import('../src/reader/printful.js');
+  const html = printfulCard();
+  assert.equal(PRINTFUL_LINK, 'https://www.printful.com/a/getservices');
+  const links = [...html.matchAll(/<a [^>]*href="https:\/\/www\.printful\.com[^"]*"[^>]*>/g)].map((m) => m[0]);
+  assert.ok(links.length >= 1);
+  for (const a of links) assert.match(a, /rel="sponsored noopener"/);
+  assert.match(html, /src="\/img\/printful-dtg-printing\.webp"/);
+  assert.match(html, /affiliate link/);
+  assert.match(html, /ecommerce sellers only/);
+  assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
+});
