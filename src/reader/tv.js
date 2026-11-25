@@ -28,7 +28,7 @@ export function tvModule(channels = TV_CHANNELS) {
   const config = JSON.stringify(channels).replace(/</g, '\\u003c');
   return `<section class="bdtv" aria-labelledby="bdtv-h" data-bdtv>
     <header class="bdtv-head">
-      <h2 class="bdtv-title" id="bdtv-h"><span class="bdtv-onair"><span class="bdtv-dot" aria-hidden="true"></span>On air</span> Boston Daily TV</h2>
+      <h2 class="bdtv-title" id="bdtv-h"><span class="bdtv-onair"><span class="bdtv-dot" aria-hidden="true"></span>On air</span> Live Boston TV</h2>
       <p class="bdtv-help">Latest news clips, playing one after another. Starts muted: tap <strong>Sound on</strong> to listen.</p>
     </header>
     <div class="bdtv-set">
@@ -52,5 +52,5 @@ export function tvModule(channels = TV_CHANNELS) {
 
 /** One line for the site footer naming the TV's sources (the note lives there, not under the screen). */
 export function tvFooterNote(channels = TV_CHANNELS) {
-  return `<p>Boston Daily TV plays clips from official news channels on YouTube (${channels.flatMap((c) => c.sources.map((x) => esc(x.name))).join(', ')}). Boston Daily does not produce or edit them. <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube terms</a>.</p>`;
+  return `<p>Live Boston TV plays clips from official news channels on YouTube (${channels.flatMap((c) => c.sources.map((x) => esc(x.name))).join(', ')}). Boston Daily does not produce or edit them. <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube terms</a>.</p>`;
 }
