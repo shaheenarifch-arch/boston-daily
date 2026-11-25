@@ -1137,3 +1137,14 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .bdtv-ch[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
 .bdtv-note { max-width: 960px; margin: .6rem auto 0; text-align: center; font: italic 400 .78rem/1.4 var(--sans); color: var(--granite); }
 .bdtv-note a { color: var(--link); font-style: normal; font-weight: 600; }
+/* TV in the lead-photo slot (front page column A) */
+.fg-a .bdtv { margin: 0 0 1rem; border-top: 0; padding-top: 0; }
+.fg-a .bdtv-head { margin-bottom: .5rem; }
+.fg-a .bdtv-title { font-size: 1.05rem; }
+.fg-a .bdtv-help { font-size: .78rem; }
+.fg-a .bdtv-set { border-width: 6px; border-radius: 10px; max-width: none; }
+.fg-a .bdtv-bar { padding: .45rem .6rem; }
+.fg-a .bdtv-btn { padding: .4rem .6rem; font-size: .76rem; }
+.fg-a .bdtv-channels { justify-content: flex-start; margin-top: .55rem; max-width: none; }
+.fg-a .bdtv-ch { padding: .4rem .8rem; font-size: .8rem; }
+.fg-a .bdtv-note { text-align: left; max-width: none; margin-top: .4rem; }

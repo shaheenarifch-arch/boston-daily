@@ -211,7 +211,7 @@ export async function homePage(env, editionDate = null) {
 
   // Column A: the lead (or the welcome note before the first story).
   const colA = hasNews
-    ? `<h2 class="sr">Lead story</h2>${storyCard(lead, { size: 'lead', tz: site.tz, seenImages })}
+    ? `${tvModule()}<h2 class="sr">Lead story</h2>${storyCard(lead, { size: 'lead', tz: site.tz, seenImages, showImage: false })}
        ${top.length > 6 ? `<div class="front-pair">${top.slice(6, 10).map((s) => storyCard(s, { size: 'm', tz: site.tz, seenImages })).join('')}</div>` : ''}`
     : `<div class="welcome">
         <p class="welcome-kicker">Welcome to ${esc(site.name)}</p>
@@ -298,7 +298,6 @@ export async function homePage(env, editionDate = null) {
     <div class="fg-b">${colB}</div>
     <aside class="fg-c">${colC}</aside>
   </section>
-  ${tvModule()}
   ${paidAdvertising(`${extras ? `<section class="front-extras" aria-label="From our partners">${extras}</section>` : ''}${mainCommercial}${premiumPicked}`, { variant: 'wide' })}
   ${sectionRows}
   ${selection.length ? `<section class="section-row selection">
