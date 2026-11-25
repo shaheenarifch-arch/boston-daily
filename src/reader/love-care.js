@@ -49,7 +49,7 @@ const EVERYDAY = [
   ['B0HSFGPTJB', '51ON+c-kMZL', 'Tree of Life Pendant Necklace'],
 ];
 
-const toItem = (holiday) => ([asin, img, name]) => ({ asin, name, holiday, image: `https://m.media-amazon.com/images/I/${img}._AC_SL500_.jpg`, url: `https://www.amazon.com/dp/${asin}?tag=${AMAZON_TAG}` });
+const toItem = (holiday) => ([asin, img, name]) => ({ asin, name, holiday, image: `https://m.media-amazon.com/images/I/${img}._AC_SL300_.jpg`, url: `https://www.amazon.com/dp/${asin}?tag=${AMAZON_TAG}` });
 
 // Holiday gifts lead, then the T-shirt and everyday picks; the advent kit counts as a gift.
 export const LOVE_CARE_PRODUCTS = [
@@ -60,7 +60,7 @@ export const LOVE_CARE_PRODUCTS = [
 export function loveCareCarousel(items = LOVE_CARE_PRODUCTS) {
   if (!items.length) return '';
   const card = (p) => `<a class="lc-card" href="${esc(p.url)}" target="_blank" rel="sponsored noopener" aria-label="${esc(`${p.name} on Amazon (opens in a new tab)`)}">
-      <span class="lc-frame">${p.holiday ? '<span class="lc-badge">Holiday gift</span>' : ''}<img src="${esc(p.image)}" alt="${esc(p.name)}" width="220" height="220" loading="lazy" decoding="async"></span>
+      <span class="lc-frame">${p.holiday ? '<span class="lc-badge">Holiday gift</span>' : ''}<img src="${esc(p.image)}" alt="${esc(p.name)}" width="140" height="140" loading="lazy" decoding="async"></span>
       <span class="lc-name">${esc(p.name)}</span>
       <span class="lc-cta">View on Amazon <span aria-hidden="true">→</span></span>
     </a>`;
