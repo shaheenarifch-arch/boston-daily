@@ -48,6 +48,13 @@
     build();
   }
 
+  // Only skip a silent source while the page is actually being watched; a background tab
+  // pauses video, which would otherwise make the TV hop through every channel.
+  function stalled() {
+    if (document.visibilityState !== 'visible') { stallTimer = setTimeout(stalled, 15000); return; }
+    nextSource();
+  }
+
   function nextSource() {
     srcIdx += 1;
     if (srcIdx >= channels[chIdx].sources.length * 2) { // every source failed twice: try the next channel
@@ -98,7 +105,7 @@
           e.target.playVideo();
           // If nothing starts within 15 seconds, move to the next source.
           clearTimeout(stallTimer);
-          stallTimer = setTimeout(nextSource, 15000);
+          stallTimer = setTimeout(stalled, 15000);
         },
         onStateChange: onState,
         onError,

@@ -45,8 +45,12 @@ export function tvModule(channels = TV_CHANNELS) {
       </div>
     </div>
     <nav class="bdtv-channels" aria-label="TV channels">${channels.map((c, i) => `<button type="button" class="bdtv-ch" data-bdtv-ch="${esc(c.key)}" aria-pressed="${i === 0 ? 'true' : 'false'}">${esc(c.label)}</button>`).join('')}</nav>
-    <p class="bdtv-note">Clips from official news channels on YouTube (${channels.flatMap((c) => c.sources.map((s) => esc(s.name))).join(', ')}). Boston Daily does not produce or edit them. <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube terms</a></p>
     <script type="application/json" id="bdtv-config">${config}</script>
-    <script src="/js/tv.js?v=2" defer></script>
+    <script src="/js/tv.js?v=3" defer></script>
   </section>`;
+}
+
+/** One line for the site footer naming the TV's sources (the note lives there, not under the screen). */
+export function tvFooterNote(channels = TV_CHANNELS) {
+  return `<p>Boston Daily TV plays clips from official news channels on YouTube (${channels.flatMap((c) => c.sources.map((x) => esc(x.name))).join(', ')}). Boston Daily does not produce or edit them. <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube terms</a>.</p>`;
 }
