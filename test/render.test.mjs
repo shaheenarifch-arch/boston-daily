@@ -128,8 +128,19 @@ test('Printful card: affiliate link marked sponsored, disclosure shown, real pho
   const links = [...html.matchAll(/<a [^>]*href="https:\/\/www\.printful\.com[^"]*"[^>]*>/g)].map((m) => m[0]);
   assert.ok(links.length >= 1);
   for (const a of links) assert.match(a, /rel="sponsored noopener"/);
-  assert.match(html, /src="\/img\/printful-dtg-printing\.webp"/);
+  assert.match(html, /src="\/img\/printful-30-off-products\.webp"/);
   assert.match(html, /affiliate link/);
   assert.match(html, /ecommerce sellers only/);
   assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
+});
+
+test('Printful rail ad: affiliate link sponsored, real photo, disclosure', async () => {
+  const { printfulRailAd } = await import('../src/reader/printful.js');
+  const html = printfulRailAd();
+  const links = [...html.matchAll(/<a [^>]*href="https:\/\/www\.printful\.com\/a\/getservices"[^>]*>/g)].map((m) => m[0]);
+  assert.equal(links.length, 2);
+  for (const l of links) assert.match(l, /rel="sponsored noopener"/);
+  assert.match(html, /src="\/img\/printful-30-off-products\.webp"/);
+  assert.match(html, /commission/);
+  assert.doesNotMatch(html, /yellow|#ff0|#ffff00/i);
 });
