@@ -76,6 +76,7 @@ import d20261124 from './2026-11-24.sql';
 import d20261124fapage from './2026-11-24-first-amendment-page.sql';
 import d20261124local from './2026-11-24-local.sql';
 import d20261125 from './2026-11-25.sql';
+import d20261126amazonbf from './2026-11-26-amazon-black-friday.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -152,4 +153,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-24-first-amendment-page', d20261124fapage],
   ['2026-11-24-local', d20261124local],
   ['2026-11-25', d20261125],
+  ['2026-11-26-amazon-black-friday', d20261126amazonbf],
 ];
