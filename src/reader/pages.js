@@ -9,7 +9,7 @@ import { adPartnerProductIds } from '../ads.js';
 import { travelDesk, travelDeskProducts } from '../travel-desk.js';
 import { SECTION_PICKS, sectionPicks, sectionPicksProducts } from '../section-picks.js';
 import { flowerCarousel } from './flower-carousel.js';
-import { printfulCard } from './printful.js';
+import { printfulCard, printfulRailAd } from './printful.js';
 import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from '../advertise.js';
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
 import { subscribeBox } from '../newsletter.js';
@@ -427,7 +427,7 @@ export async function sectionPage(env, slug, ctx = null) {
       </div>
       <aside class="col-rail">
         ${slug === 'opinion' ? eventsRail() + rightsCard() + casesCard() : ''}
-        ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() : ''}
+        ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() + printfulRailAd() : ''}
         ${isNewsSection ? paidAdvertising(businessAffiliates + pickedMods.join('')) : businessAffiliates + railMods}
         ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>

@@ -1185,3 +1185,10 @@ button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .pf-note { margin: .8rem 0 0; font: italic 400 .78rem/1.4 var(--sans); color: var(--granite); }
 .pf-note a { color: var(--link); font-style: normal; font-weight: 600; }
 @media (max-width: 720px) { .pf-card { grid-template-columns: 1fr; padding: 1rem; } .pf-title { font-size: 1.25rem; } }
+/* Printful rail ad (1st Amendment Page) */
+.pf-rail { background: var(--paper); border: 1px solid var(--rule); margin-bottom: 1.25rem; }
+.pf-rail-photo { display: block; border-radius: 10px; overflow: hidden; line-height: 0; margin: .4rem 0 .7rem; }
+.pf-rail-photo img { width: 100%; height: auto; display: block; }
+.pf-rail-title { margin: 0 0 .35rem; font: 700 1.15rem/1.2 var(--serif); color: var(--navy); }
+.pf-rail-text { margin: 0 0 .8rem; font: 400 .88rem/1.45 var(--sans); color: var(--ink); }
+.pf-rail .pf-cta { display: block; text-align: center; }

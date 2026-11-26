@@ -17,3 +17,16 @@ export function printfulCard() {
     </div>
   </section>`;
 }
+
+// Compact Printful ad for the right rail (1st Amendment Page), under the guest-post box.
+// Photo is Printful's own "30% off your first order" creative (sent by the publisher, Nov 2026).
+export function printfulRailAd() {
+  return `<div class="module pf-rail" aria-label="Partner offer from Printful">
+    <p class="pf-kicker">Partner offer · Printful</p>
+    <a class="pf-rail-photo" href="${PRINTFUL_LINK}" target="_blank" rel="sponsored noopener" tabindex="-1" aria-hidden="true"><img src="/img/printful-30-off-products.webp" alt="" width="600" height="552" loading="lazy" decoding="async"></a>
+    <p class="pf-rail-title">30% off your first order</p>
+    <p class="pf-rail-text">Sign up free and get 30% off a sample order placed within your first 24 hours. Printful says this discount is for ecommerce sellers only.</p>
+    <a class="pf-cta" href="${PRINTFUL_LINK}" target="_blank" rel="sponsored noopener">Get 30% off <span aria-hidden="true">→</span></a>
+    <p class="pf-note">Affiliate link: we may earn a commission at no extra cost to you. Printful sets the offer and can change it. <a href="/standards#commercial">How we label commercial content</a></p>
+  </div>`;
+}
