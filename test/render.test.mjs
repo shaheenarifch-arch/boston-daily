@@ -128,7 +128,7 @@ test('Printful card: affiliate link marked sponsored, disclosure shown, real pho
   const links = [...html.matchAll(/<a [^>]*href="https:\/\/www\.printful\.com[^"]*"[^>]*>/g)].map((m) => m[0]);
   assert.ok(links.length >= 1);
   for (const a of links) assert.match(a, /rel="sponsored noopener"/);
-  assert.match(html, /src="\/img\/printful-dtg-printing\.webp"/);
+  assert.match(html, /src="\/img\/printful-30-off-products\.webp"/);
   assert.match(html, /affiliate link/);
   assert.match(html, /ecommerce sellers only/);
   assert.ok(!/yellow|#ff0\b|#ffff00|var\(--gold/i.test(html));
