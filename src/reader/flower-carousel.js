@@ -42,3 +42,29 @@ export function flowerCarousel(slug) {
     <script src="/js/carousel.js?v=1" defer></script>
   </section>`;
 }
+
+// Compact flower-delivery ad for right rails: the 1st Amendment Page (under the Printful card) and
+// the front page (under the email sign-up), where the rail had blank space (Nov 2026).
+// Links go to flowerofheaven.store/flowers/ (Florist One local-florist delivery). The photo is
+// Florist One's own product photo of "The Red Rose Bouquet" (code E2-4305), the same image the shop shows.
+// Florist One sets the price; if it changes, update RED_ROSES.price.
+const RED_ROSES = { code: 'E2-4305', name: 'The Red Rose Bouquet', price: '$99.95', image: 'https://cdn.floristone.com/large/E2-4305_d1.jpg' };
+
+export function flowerDeliveryRailAd(campaign = 'rail') {
+  const utm = `utm_source=bostondaily&utm_medium=rail&utm_campaign=${encodeURIComponent(campaign)}`;
+  const roses = `${SITE}/flowers/checkout/?code=${RED_ROSES.code}&${utm}`;
+  const all = `${SITE}/flowers/?${utm}`;
+  return `<div class="module fd-rail" aria-label="Sponsored: flower delivery from Flower of Heaven">
+    <p class="fd-kicker">Sponsored · Flower of Heaven</p>
+    <div class="fd-row">
+      <a class="fd-photo" href="${esc(roses)}" target="_blank" rel="sponsored noopener" tabindex="-1" aria-hidden="true"><img src="${esc(RED_ROSES.image)}" alt="" loading="lazy" decoding="async"></a>
+      <div><p class="fd-title">Flower &amp; bouquet delivery across the US</p>
+        <p class="fd-text">${esc(RED_ROSES.name.replace(/^The /, ''))}, ${esc(RED_ROSES.price)}. Hand-delivered by a local florist.</p></div>
+    </div>
+    <div class="fd-ctas">
+      <a class="pf-cta fd-cta" href="${esc(roses)}" target="_blank" rel="sponsored noopener">Send red roses <span aria-hidden="true">→</span></a>
+      <a class="fd-more" href="${esc(all)}" target="_blank" rel="sponsored noopener">All bouquets <span aria-hidden="true">→</span></a>
+    </div>
+    <p class="pf-note">Check the recipient’s ZIP code for delivery. A GetServices.ai network shop. <a href="/standards#commercial">How we label ads</a></p>
+  </div>`;
+}
