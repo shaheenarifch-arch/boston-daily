@@ -37,7 +37,7 @@ const TRAVELPAYOUTS_DRIVE = "<script nowprocket data-noptimize=\"1\" data-cfasyn
 // Chambelli store carousel (30-50 CJ products, left/right arrows), shown just above the footer on
 // pages where commerce is allowed (the same pages as the Travelpayouts script). It hides
 // itself when no products are approved. Manage products: chambelli.getservices.ai/carousels
-const CHAMBELLI_CAROUSEL = '<div class="chambelli-store wrap" role="region" aria-label="Shop Chambelli picks"><script async src="https://chambelli.getservices.ai/widget.js" data-api="https://chambelli.getservices.ai" data-site="bostondaily" data-placement="article-footer" data-title="Shop Chambelli picks"></script></div>';
+const CHAMBELLI_CAROUSEL = '<div class="chambelli-store wrap" role="region" aria-label="Shop Chambelli picks"><script async src="https://chambelli.getservices.ai/widget.js" data-api="https://chambelli.getservices.ai" data-site="bostondaily" data-placement="article-footer" data-title="Shop Chambelli picks" data-card-width="180" data-card-width-mobile="150"></script></div>';
 
 export function layout(env, chrome, { title, description = '', canonical = '', body, jsonLd = null, ogType = 'website', image = '', active = '', noindex = false, drive = false }) {
   const site = SITE(env);

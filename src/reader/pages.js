@@ -8,7 +8,7 @@ import { getEditionWithItems } from '../editions.js';
 import { adPartnerProductIds } from '../ads.js';
 import { travelDesk, travelDeskProducts } from '../travel-desk.js';
 import { SECTION_PICKS, sectionPicks, sectionPicksProducts } from '../section-picks.js';
-import { flowerCarousel } from './flower-carousel.js';
+import { flowerCarousel, flowerDeliveryRailAd } from './flower-carousel.js';
 import { printfulCard, printfulRailAd } from './printful.js';
 import { PACKAGES, policyProblems, adFrom, smartMessage, normalizeWebsite } from '../advertise.js';
 import { layout, loadChrome, latestUpdateAt } from './layout.js';
@@ -271,7 +271,8 @@ export async function homePage(env, editionDate = null) {
         <ol class="latest">${railLatest.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a> ${storyStamp(s, site.tz)}</li>`).join('')}</ol></section>` : ''}
       ${railMostRead.length ? `<section class="rail-block"><h2 class="col-label">Most read</h2>
         <ol class="most-read">${railMostRead.map((s) => `<li><a href="/story/${esc(s.slug)}">${esc(s.headline)}</a></li>`).join('')}</ol></section>` : ''}
-      ${subscribeBox({ compact: true })}`;
+      ${subscribeBox({ compact: true })}
+      ${editionDate ? '' : flowerDeliveryRailAd('front-page')}`;
   // Partner and ad modules sit in a packed band under the front grid, so the rail never runs far
   // past the lead and Top stories columns and leaves blank space beside it.
   const extras = railCommercial.trim();
@@ -427,7 +428,7 @@ export async function sectionPage(env, slug, ctx = null) {
       </div>
       <aside class="col-rail">
         ${slug === 'opinion' ? eventsRail() + rightsCard() + casesCard() : ''}
-        ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() + printfulRailAd() : ''}
+        ${slug === 'opinion' || section.parent?.slug === 'opinion' ? writeForUsBox() + printfulRailAd() + flowerDeliveryRailAd('first-amendment') : ''}
         ${isNewsSection ? paidAdvertising(businessAffiliates + pickedMods.join('')) : businessAffiliates + railMods}
         ${!isNewsSection && showCommerce ? sidePanelProductAds(slug, adProducts) : ''}
       </aside>
