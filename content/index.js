@@ -79,6 +79,7 @@ import d20261125 from './2026-11-25.sql';
 import d20261126amazonbf from './2026-11-26-amazon-black-friday.sql';
 import d20261126 from './2026-11-26.sql';
 import d20261126elsayed from './2026-11-26-el-sayed-trumpcare.sql';
+import d20261127nvidiacol from './2026-11-27-nvidia-huang-column.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -158,4 +159,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-26-amazon-black-friday', d20261126amazonbf],
   ['2026-11-26', d20261126],
   ['2026-11-26-el-sayed-trumpcare', d20261126elsayed],
+  ['2026-11-27-nvidia-huang-column', d20261127nvidiacol],
 ];
