@@ -329,6 +329,15 @@ export const BUSINESS_AFFILIATES = [
     uses: 'T-shirts, hoodies, hats, embroidery, posters and accessories',
     cta: 'Start with Printful',
   },
+  {
+    // Keeper Security via Rakuten Advertising (MID 54233, text link 2, publisher ID Lg3HrbhoGSk); tested Nov 26, 2026.
+    // It lands on Keeper's own affiliate sale page; Keeper sets the price and can change it.
+    name: 'Keeper Security',
+    url: 'https://click.linksynergy.com/fs-bin/click?id=Lg3HrbhoGSk&offerid=2065364.2&type=3&subid=0&u1=bd-keeper',
+    blurb: 'A password manager that creates, stores and fills strong passwords for you and your team, so one leaked password does not open every account.',
+    uses: 'Password manager, passkeys, secure file storage and team sharing',
+    cta: 'See Keeper plans',
+  },
 ];
 
 export function affiliatesBox(items = BUSINESS_AFFILIATES) {
