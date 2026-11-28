@@ -82,6 +82,7 @@ import d20261126elsayed from './2026-11-26-el-sayed-trumpcare.sql';
 import d20261127 from './2026-11-27.sql';
 import d20261127nvidiacol from './2026-11-27-nvidia-huang-column.sql';
 import d20261127aitoys from './2026-11-27-ny-ai-toy-ban.sql';
+import d20261128 from './2026-11-28.sql';
 
 export const CONTENT_PACKAGES = [
   ['2026-10-17', d20261017],
@@ -164,4 +165,5 @@ export const CONTENT_PACKAGES = [
   ['2026-11-27', d20261127],
   ['2026-11-27-nvidia-huang-column', d20261127nvidiacol],
   ['2026-11-27-ny-ai-toy-ban', d20261127aitoys],
+  ['2026-11-28', d20261128],
 ];
